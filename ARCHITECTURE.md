@@ -17,6 +17,8 @@ resize or move panels. Layout changes occur only through user interaction.
   inventory/default-tab layout keeps its original schema for existing profiles.
 - Storage/BankAccess/BankWindow: purchased containers, native bank context, exact
   unified bank routing, access guards and independent bank controllers.
+- BankTools: pooled purchased-tab controls, native settings and transaction dialogs,
+  automatic deposits, reagent inclusion and event-driven Warband money display.
 - Placement: surviving GUID positions, favorite reservations, optional compaction,
   physical empty destinations and collision-aware persistent geometry.
 - Theme/BagTools/UI: pooled Blizzard decoration and native slot buttons. Physical

@@ -26,7 +26,7 @@ GetLocale = function() return TEST_LOCALE end
 A = {}
 ''')
 addon = lua.globals().A
-for name in ["Locale.lua", "Core.lua", "Query.lua", "Views.lua", "Storage.lua", "ItemFeatures.lua", "BulkActions.lua", "Inventory.lua", "Placement.lua", "Features.lua", "Profiles.lua", "Interaction.lua", "BankAccess.lua", "BankWindow.lua", "Integration.lua", "BagTools.lua", "FeatureSettings.lua"]:
+for name in ["Locale.lua", "Core.lua", "Query.lua", "Views.lua", "Storage.lua", "ItemFeatures.lua", "BulkActions.lua", "Inventory.lua", "Placement.lua", "Features.lua", "Profiles.lua", "Interaction.lua", "BankAccess.lua", "BankTools.lua", "BankWindow.lua", "Integration.lua", "BagTools.lua", "FeatureSettings.lua"]:
     sources[name]("BlockBags", addon)
 lua.execute('''
 A:InitializeDatabase()
@@ -130,6 +130,10 @@ function methods:GetAttribute(key) local attributes=rawget(self,"attributes"); r
 function methods:GetParent() return rawget(self,"parent") end
 function methods:SetText(text) self.text=text end
 function methods:GetText() return self.text end
+function methods:SetChecked(value) self.checked=not not value end
+function methods:GetChecked() return rawget(self,"checked") or false end
+function methods:SetEnabled(value) self.enabled=not not value end
+function methods:IsEnabled() return rawget(self,"enabled")~=false end
 function methods:SetShown(shown) self.shown=shown end
 function methods:Show() self.shown=true end
 function methods:Hide() self.shown=false end
@@ -1164,3 +1168,5 @@ lua.execute((root / "tests" / "backpack_controls.lua").read_text(encoding="utf-8
 lua.execute((root / "tests" / "item_borders.lua").read_text(encoding="utf-8"))
 
 lua.execute((root / "tests" / "bank_access.lua").read_text(encoding="utf-8"))
+
+lua.execute((root / "tests" / "bank_tools.lua").read_text(encoding="utf-8"))

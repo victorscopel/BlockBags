@@ -236,7 +236,7 @@ function A:RenderPhysicalBags()
     self.forceItemPaint=nil
     local c=self.capacity
     if c then self.status:SetText(string.format(A.L["Livres: %d/%d  |  Reagentes livres: %d/%d"],c.free,c.total,c.reagentFree,c.reagentTotal)) end
-    self.money:SetText(GetCoinTextureString(GetMoney()))
+    self:PaintMoney()
 end
 
 -- Use a secure visibility driver so Blizzard cannot reveal the bar in combat.

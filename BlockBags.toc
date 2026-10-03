@@ -3,7 +3,7 @@
 ## Notes: Automatic inventory categories with persistent layouts.
 ## Notes-ptBR: Categorias automaticas com posicoes e tamanhos persistentes.
 ## Author: victo
-## Version: 0.7.1
+## Version: 0.8.0
 ## Category: Inventory
 ## SavedVariables: BlockBagsDB
 ## Dependencies: Blizzard_UIPanels_Game
@@ -28,5 +28,6 @@ Interaction.lua
 Settings.lua
 FeatureSettings.lua
 BankAccess.lua
+BankTools.lua
 BankWindow.lua
 Integration.lua

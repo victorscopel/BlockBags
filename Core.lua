@@ -1,7 +1,7 @@
 local _, A = ...
 BlockBags = A
 AnchorBags = A -- Compatibility for existing bindings/scripts.
-A.version = "0.7.1"
+A.version = "0.8.0"
 A.cell, A.padding, A.header, A.scrollGutter = 40, 8, 36, 0
 A.categories = {
     { id = "equipment", name = A.L["Equipamentos"], x = 0, y = 0, cols = 8, rows = 4 },
@@ -149,7 +149,7 @@ events:SetScript("OnEvent", function(_, event, arg, success)
         A:RegisterSettings()
         A.ready = true
         for _, name in ipairs({ "PLAYER_LOGIN", "PLAYER_ENTERING_WORLD", "BAG_UPDATE_DELAYED", "ITEM_LOCK_CHANGED",
-            "BAG_UPDATE_COOLDOWN", "GET_ITEM_INFO_RECEIVED", "ITEM_DATA_LOAD_RESULT", "PLAYER_MONEY", "PLAYER_REGEN_ENABLED",
+            "BAG_UPDATE_COOLDOWN", "GET_ITEM_INFO_RECEIVED", "ITEM_DATA_LOAD_RESULT", "PLAYER_MONEY", "ACCOUNT_MONEY", "CVAR_UPDATE", "PLAYER_REGEN_ENABLED",
             "PLAYER_REGEN_DISABLED", "MERCHANT_SHOW", "MERCHANT_CLOSED", "CURSOR_CHANGED",
             "PLAYER_EQUIPMENT_CHANGED", "EQUIPMENT_SETS_CHANGED", "TRANSMOG_COLLECTION_UPDATED", "CURRENCY_DISPLAY_UPDATE",
             "BANKFRAME_OPENED", "BANKFRAME_CLOSED", "BAG_UPDATE", "PLAYERBANKSLOTS_CHANGED", "PLAYER_ACCOUNT_BANK_TAB_SLOTS_CHANGED",
@@ -197,7 +197,7 @@ events:SetScript("OnEvent", function(_, event, arg, success)
     elseif event == "BAG_UPDATE_DELAYED" then
         if not A.bagUpdateBatch then A:QueueRefresh() end
         A.bagUpdateBatch=nil
-    elseif event=="PLAYERBANKSLOTS_CHANGED" or event=="PLAYER_ACCOUNT_BANK_TAB_SLOTS_CHANGED" or event=="BANK_TABS_CHANGED" then
+    elseif event=="PLAYERBANKSLOTS_CHANGED" or event=="PLAYER_ACCOUNT_BANK_TAB_SLOTS_CHANGED" or event=="BANK_TABS_CHANGED" or event=="BANK_TAB_SETTINGS_UPDATED" or event=="ACCOUNT_MONEY" or event=="CVAR_UPDATE" then
         -- Bank slot events are handled by the bank controller.
     else
         if event=="MERCHANT_CLOSED" then A:CancelBulkAction() end

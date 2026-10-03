@@ -4,9 +4,11 @@ function A:BankState(storage)
     storage=storage or self.storage or "character"
     local kind=self:BankType(storage)
     if not self.atBank or not C_Bank or not C_Bank.CanViewBank(kind) then return "unavailable" end
-    if not C_Bank.CanUseBank(kind) then return "readonly" end
+    local reason=C_Bank.FetchBankLockedReason and C_Bank.FetchBankLockedReason(kind)
+    if reason~=nil and reason~=(Enum.BankLockedReason and Enum.BankLockedReason.None or 0) then return "readonly" end
     local bags=self:GetBankContainers(kind)
     if #bags==0 then return "empty" end
+    if not C_Bank.CanUseBank(kind) then return "readonly" end
     local selected=tonumber(storage:match("^account_(%d+)$"))
     if selected then
         local found=false
@@ -16,14 +18,22 @@ function A:BankState(storage)
     return "ready"
 end
 
-function A:BankStateText(state)
+function A:BankStateText(state,storage)
+    local kind=self:BankType(storage or self.storage)
+    local reason=C_Bank and C_Bank.FetchBankLockedReason and C_Bank.FetchBankLockedReason(kind)
+    local enum=Enum.BankLockedReason or {}
+    if reason~=nil then
+        if enum.NoAccountInventoryLock~=nil and reason==enum.NoAccountInventoryLock then return BANK_LOCKED_REASON_NO_ACCOUNT_INVENTORY_LOCK or self.L["O banco da tropa está em uso em outra sessão."] end
+        if enum.BankDisabled~=nil and reason==enum.BankDisabled then return BANK_LOCKED_REASON_BANK_DISABLED or self.L["Este banco está temporariamente desativado."] end
+        if enum.BankConversionFailed~=nil and reason==enum.BankConversionFailed then return BANK_LOCKED_REASON_BANK_CONVERSION_FAILED or self.L["Não foi possível converter os dados deste banco."] end
+    end
     return self.L[state=="readonly" and "Banco somente para consulta." or state=="empty" and "Nenhuma aba comprada. Compre uma aba pelo menu da bolsa." or "Banco indisponível."]
 end
 
 function A:CanMutateBank(storage,quiet)
     local state=self:BankState(storage)
     local allowed=state=="ready" and not self.draft and not InCombatLockdown()
-    if not allowed and not quiet then self:Print(InCombatLockdown() and self.L["Aguarde o fim do combate."] or self.draft and self.L["Salve ou cancele a edição antes de trocar de armazenamento."] or self:BankStateText(state)) end
+    if not allowed and not quiet then self:Print(InCombatLockdown() and self.L["Aguarde o fim do combate."] or self.draft and self.L["Salve ou cancele a edição antes de trocar de armazenamento."] or self:BankStateText(state,storage)) end
     return allowed
 end
 

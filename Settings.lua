@@ -367,6 +367,9 @@ end
 
 function A:OpenSettings(section,id)
     if InCombatLockdown() then self:Print(A.L["Aguarde o fim do combate."]); return end
+    self:CloseBankTabSettings()
+    if self.inventoryController then self.inventoryController:CloseBankTabSettings() end
+    if self.bankController then self.bankController:CloseBankTabSettings() end
     self:RegisterSettings()
     if not self.settingsIDs then self:Print(A.L["A página de opções do WoW está indisponível."]); return end
     if id then self.settingsCategory=id end

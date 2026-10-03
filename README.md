@@ -21,6 +21,9 @@ category keeps item positions or automatically fills gaps.
 - Favorites and a visual highlight for newly acquired items.
 - Category tabs with independent layouts.
 - Unified Warband inventory covering every purchased physical tab.
+- Visible bank tab count, numbered tab icons and purchase control.
+- Warband gold balance and native gold deposit/withdraw dialogs.
+- Native automatic deposits, optional Warband reagent inclusion and physical-tab deposit filters.
 - Separate bank window; character and Warband banks have independent categories, settings and profiles. Favorites are backpack-only.
 - Character bank and Warband tabs with independent layouts.
 - Temporary physical-bag view and equipped-bag controls.

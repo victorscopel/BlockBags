@@ -272,13 +272,16 @@ function A:ResizeCanvas()
         end
     end
     if self.physicalBagView then neededWidth, neededHeight = 0, self:PhysicalBagGeometry() end
+    local toolbar=self:BankToolbarExtra()
+    self.viewport:SetPoint("TOPLEFT",16,-78-toolbar)
     local extra=self.physicalBagView and 0 or self:FooterExtra()
-    local minWidth,minHeight=math.max(650,math.ceil(neededWidth+40)),math.max(400,math.ceil(neededHeight+124+extra))
+    local minWidth,minHeight=math.max(650,math.ceil(neededWidth+40)),math.max(400,math.ceil(neededHeight+124+extra+toolbar))
+    if self.isBankWindow then minWidth=math.max(minWidth,#self:GetBankContainers(self:BankType(self.storage))*28+144) end
     self.window:SetResizeBounds(minWidth,minHeight,math.max(2000,minWidth),math.max(1600,minHeight))
     if self.window:GetWidth()<minWidth or self.window:GetHeight()<minHeight then
         self.window:SetSize(math.max(minWidth,self.window:GetWidth()),math.max(minHeight,self.window:GetHeight()))
     end
-    self.canvasWidth,self.canvasHeight=self.window:GetWidth()-40,self.window:GetHeight()-124-extra
+    self.canvasWidth,self.canvasHeight=self.window:GetWidth()-40,self.window:GetHeight()-124-extra-toolbar
     self.viewport:SetPoint("BOTTOMRIGHT",-24,46+extra)
     self.canvas:SetSize(self.canvasWidth, self.canvasHeight)
     for _,bar in ipairs({self.windowScrollX,self.windowScrollY}) do
@@ -843,7 +846,7 @@ function A:Render()
     if self.ready and not self.window:IsShown() then self.inventoryDirty=true; return end
     self:ApplyLayout()
     self:RefreshBagSlots()
-    self:PaintCurrencyBar(); self:PaintTabs(); self:PaintStorageSelector()
+    self:PaintCurrencyBar(); self:PaintTabs(); self:PaintStorageSelector(); self:RefreshBankControls()
     if self.physicalBagView then self:RenderPhysicalBags(); return end
     if self.physicalSections then for _,panel in pairs(self.physicalSections) do panel:Hide() end end
     if not self.groups then return end
@@ -928,6 +931,6 @@ function A:Render()
             local state=self:BankState()
             self.status:SetText(self.bankLoading and A.L["Carregando dados do banco…"] or state=="ready" and string.format(A.L["Livres: %d/%d"],c.free,c.total) or self:BankStateText(state))
         else self.status:SetText(string.format(A.L["Livres: %d/%d  |  Reagentes livres: %d/%d"], c.free, c.total, c.reagentFree, c.reagentTotal)) end
-        self.money:SetText(self:FormatMoney(GetMoney()))
+        self:PaintMoney()
     end
 end

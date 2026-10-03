@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.0 — preview
+
+- Add a bank toolbar with purchased-tab count, numbered icons and a purchase button.
+- Display Warband gold and open native gold deposit/withdraw dialogs.
+- Add native automatic deposits and the Warband include-reagents option.
+- Open native tab settings for names, icons and deposit/expansion filters while keeping the inventory unified.
+- Show specific bank lock reasons and close bank dialogs on storage changes, combat or interaction end.
+- Update balances by event and reuse toolbar frames; fix account slot-change invalidation.
+
 ## 0.7.1 — preview
 
 - Keep native Settings above backpack and bank windows.

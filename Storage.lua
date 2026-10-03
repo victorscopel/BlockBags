@@ -49,6 +49,8 @@ function A:SetStorage(storage)
     if not found then return false end
     self:CancelBulkAction()
     if self.physicalBagView then self:SetPhysicalBagView(false) end
+    self:CloseBankTabSettings()
+    if self.isBankWindow then self:CloseBankTransactions() end
     self:CancelInteractions(); self.storage=storage
     if self.isBankWindow then self:BeginBankLoad() end
     self:ActivateBankScope(storage)
@@ -131,6 +133,11 @@ function A:PurchaseBankTab(bankType)
     if InCombatLockdown() or not self.atBank or not C_Bank.CanPurchaseBankTab or not C_Bank.CanPurchaseBankTab(bankType) then return end
     local data=C_Bank.FetchNextPurchasableBankTabData(bankType)
     if not data or not data.canAfford then self:Print(A.L["Não há uma aba disponível para compra ou gold suficiente."]); return end
+    if StaticPopupDialogs.CONFIRM_BUY_BANK_TAB then
+        local dialog=StaticPopup_Show("CONFIRM_BUY_BANK_TAB",nil,nil,{bankType=bankType})
+        if dialog and dialog.text and data.purchasePromptConfirmation then dialog.text:SetText(data.purchasePromptConfirmation) end
+        return
+    end
     local ok,costText=pcall(GetCoinTextureString,data.tabCost)
     if not ok or type(costText)~="string" then self:Print(A.L["Não foi possível obter o preço desta aba."]); return end
     StaticPopupDialogs.BLOCKBAGS_PURCHASE_BANK_TAB=StaticPopupDialogs.BLOCKBAGS_PURCHASE_BANK_TAB or {

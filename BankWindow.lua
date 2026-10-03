@@ -133,6 +133,8 @@ function A:EnsureBankWindow()
 end
 
 function A:CloseBankWindow()
+    self:CloseBankTabSettings()
+    self:CloseBankTransactions()
     self.atBank=false; self.bankLoadGeneration=(self.bankLoadGeneration or 0)+1; self.bankLoadRetryQueued=nil; self.bankLoading=nil
     self:CancelBulkAction(); self:CancelInteractions()
     if InCombatLockdown() then self.pendingBankWindowClose=true; return end
@@ -142,6 +144,7 @@ end
 
 function A:HandleBankWindowEvent(event,arg,success)
     if event=="PLAYER_REGEN_DISABLED" then
+        self:CloseBankTabSettings(); self:CloseBankTransactions()
         self:CancelBulkAction(); self:CancelInteractions()
         if self.draft then self:FinishEdit(false) end
         self.combatOverlay:Show()
@@ -154,8 +157,9 @@ function A:HandleBankWindowEvent(event,arg,success)
         self:ItemDataResult(arg,success)
     elseif event=="CURSOR_CHANGED" then
         if not CursorHasItem() then self.itemDrag=nil; self:HideCategoryDropHint() end
-    elseif event=="PLAYER_MONEY" then
-        if self.window:IsShown() then self.money:SetText(self:FormatMoney(GetMoney())) end
+    elseif event=="PLAYER_MONEY" or event=="ACCOUNT_MONEY" or event=="CVAR_UPDATE" then
+        if event=="CVAR_UPDATE" and (type(arg)~="string" or arg:lower()~="bankautodepositreagents") then return end
+        if self.window:IsShown() then self:PaintMoney(); if not InCombatLockdown() then self:RefreshBankControls() end end
     elseif event=="CURRENCY_DISPLAY_UPDATE" then
         -- Character currencies are displayed only in the backpack.
     elseif self.atBank and event=="BAG_UPDATE" then
@@ -175,10 +179,10 @@ function A:HandleBankWindowEvent(event,arg,success)
         if (event=="PLAYERBANKSLOTS_CHANGED" and kind==Enum.BankType.Character)
             or (event=="PLAYER_ACCOUNT_BANK_TAB_SLOTS_CHANGED" and kind==Enum.BankType.Account) then
             local changed={}
-            for _,bag in ipairs(self:GetScannedBags()) do if not arg or event=="PLAYERBANKSLOTS_CHANGED" or arg==bag then changed[bag]=true end end
+            for _,bag in ipairs(self:GetScannedBags()) do changed[bag]=true end
             if next(changed) then self:QueueRefresh(changed) end
         end
-    elseif self.atBank and (event=="PLAYER_EQUIPMENT_CHANGED" or event=="EQUIPMENT_SETS_CHANGED" or event=="TRANSMOG_COLLECTION_UPDATED" or event=="BANK_TABS_CHANGED" or event=="PLAYER_ENTERING_WORLD") then
+    elseif self.atBank and (event=="PLAYER_EQUIPMENT_CHANGED" or event=="EQUIPMENT_SETS_CHANGED" or event=="TRANSMOG_COLLECTION_UPDATED" or event=="BANK_TABS_CHANGED" or event=="BANK_TAB_SETTINGS_UPDATED" or event=="PLAYER_ENTERING_WORLD") then
         if event=="PLAYER_EQUIPMENT_CHANGED" or event=="EQUIPMENT_SETS_CHANGED" or event=="TRANSMOG_COLLECTION_UPDATED" then self.invalidateTooltips=true end
         self:QueueRefresh()
     end

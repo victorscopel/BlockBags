@@ -80,3 +80,14 @@ Offline tests cover tab routing, access guards, native button template selection
 - [ ] Warband storage shows items and total capacity from every purchased tab, in categorized and physical views.
 - [ ] Storage selector offers only character bank and Warband bank. Fill one physical tab and verify deposits use another.
 - [ ] Existing per-tab manual assignments survive migration into the unified bank.
+
+### Native bank controls (0.8.0)
+
+- [ ] Warband footer displays account gold, not backpack gold, and updates after deposit/withdraw. Verify native money inputs and cancellation.
+- [ ] Both bank types show purchased-tab count and numbered icons; + shows cost, confirms purchase, updates immediately and disappears at maximum tabs.
+- [ ] Native deposit button obeys physical-tab filters; include-reagents follows the native CVar and persists through reload.
+- [ ] Refundable auto-deposits ask for confirmation before losing refund rights.
+- [ ] Click a numbered icon and save name, icon, deposit flags and expansion filters in the native editor. All physical tabs remain visible together.
+- [ ] Read-only/locked access disables banking actions and shows the specific native reason. No-tab access still allows eligible tab purchases.
+- [ ] Switch bank type, enter combat or close bank while dialogs are open; transactions/settings close without acting on another bank.
+- [ ] Test header controls in both categorized and physical views at the minimum window size, including resized category icons.
