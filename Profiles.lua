@@ -186,7 +186,18 @@ function A:DeleteCategory(id)
     for _,characters in pairs(BlockBagsDB.inventoryPositions) do
         if characters[self.profileKey] then
             characters[self.profileKey][id]=nil
-            for _,view in pairs(characters[self.profileKey].views or {}) do view[id]=nil end
+            for identity,target in pairs(characters[self.profileKey].dropSlots or {}) do
+                if target.category==id then characters[self.profileKey].dropSlots[identity]=nil end
+            end
+            for _,assignments in pairs(characters[self.profileKey].stackCategories or {}) do
+                for identity,category in pairs(assignments) do if category==id then assignments[identity]=nil end end
+            end
+            for _,view in pairs(characters[self.profileKey].views or {}) do
+                view[id]=nil
+                for identity,target in pairs(view.dropSlots or {}) do
+                    if target.category==id then view.dropSlots[identity]=nil end
+                end
+            end
         end
     end
     self.settingsCategory=nil

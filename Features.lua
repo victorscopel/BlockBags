@@ -32,16 +32,29 @@ function A:SetManualCategory(item, category, index)
         self:Print(A.L["A categoria da bolsa de reagentes acompanha a bolsa física."]); return
     end
     local id = item.info.itemID
-    self.profile.manualCategories[id] = category
+    self:GetStackCategories()[item.identity] = category
+    if not category then
+        self.profile.manualCategories[id]=nil
+        self:GetDropSlots()[item.identity]=nil
+    end
     local favorite = self.profile.favorites[id]
-    if favorite then
+    if favorite and favorite.identity==item.identity then
         self.profile.favorites[id] = nil
-        favorite.category = category or self:AutomaticCategory(item)
-        favorite.index = index or 1
+        favorite.category = self:VisibleCategory(category or self:AutomaticCategory(item))
+        local destination=index
+        if not destination then
+            local group=self.groups[favorite.category]
+            destination=1
+            while group and ((group.positions[destination] and group.positions[destination].identity~=item.identity)
+                or (group.reserved[destination] and group.reserved[destination]~=id)) do
+                destination=destination+1
+            end
+        end
+        favorite.index = destination
         self.profile.favorites[id] = favorite
     end
     for _, current in ipairs(self.items) do
-        if current.info.itemID==id then current.category=self:Classify(current) end
+        if current.identity==item.identity then current.category=self:Classify(current) end
     end
     self:Reconcile(); self:Render()
 end

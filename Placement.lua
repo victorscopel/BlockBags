@@ -10,6 +10,12 @@ end
 
 function A:Reconcile()
     local stored=self:GetPositions()
+    local dropSlots=self:GetDropSlots()
+    if self.organizeCategory then
+        for identity,target in pairs(dropSlots) do
+            if target.category==self.organizeCategory then dropSlots[identity]=nil end
+        end
+    end
     self.groups = self.groups or {}
     for id in pairs(self.groups) do if not self:GetLayout()[id] then self.groups[id]=nil end end
     for id in pairs(self.emptyPositions or {}) do if not self:GetLayout()[id] then self.emptyPositions[id]=nil end end
@@ -51,12 +57,14 @@ function A:Reconcile()
             if chosen then nextPositions[chosen.identity],claimed[index]=index,chosen end
         end
         local compact = self:GetLayout()[cat.id].compact or self.organizeCategory == cat.id
-        if not compact then
-            for _, item in ipairs(group.items) do
-                local target = self.pendingPlacements and self.pendingPlacements[item.slotKey]
-                if target and (not target.itemID or target.itemID==item.info.itemID) and target.category == cat.id and not nextPositions[item.identity] and not claimed[target.index] and not group.reserved[target.index] then
-                    nextPositions[item.identity], claimed[target.index] = target.index, item
-                end
+        for _, item in ipairs(group.items) do
+            local target = self.pendingPlacements and self.pendingPlacements[item.slotKey]
+            if target and (not target.itemID or target.itemID==item.info.itemID) and target.category==cat.id then
+                dropSlots[item.identity]={category=cat.id,index=target.index}
+            end
+            target=target or dropSlots[item.identity]
+            if target and (not target.itemID or target.itemID==item.info.itemID) and target.category == cat.id and not nextPositions[item.identity] and not claimed[target.index] and not group.reserved[target.index] then
+                nextPositions[item.identity], claimed[target.index] = target.index, item
             end
         end
         -- Preserve occupied positions when items are removed.

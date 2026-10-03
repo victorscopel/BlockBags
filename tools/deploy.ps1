@@ -5,7 +5,7 @@ $ErrorActionPreference = 'Stop'
 $sourceRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $targetRoot = [IO.Path]::GetFullPath((Join-Path $AddOnsPath 'BlockBags'))
 if ($sourceRoot -eq $targetRoot) { throw 'Execute este comando na pasta de desenvolvimento, fora do jogo.' }
-$entries = @('BlockBags.toc', 'LICENSE', 'THIRD_PARTY_NOTICES.md')
+$entries = @('BlockBags.toc', 'Bindings.xml', 'LICENSE', 'THIRD_PARTY_NOTICES.md')
 foreach ($line in Get-Content -LiteralPath (Join-Path $sourceRoot 'BlockBags.toc')) {
     $entry = $line.Trim()
     if ($entry -and -not $entry.StartsWith('#')) { $entries += $entry }

@@ -3,6 +3,10 @@ local _, A = ...
 local locale = GetLocale and GetLocale() or "enUS"
 local portuguese = locale == "ptBR" or locale == "ptPT"
 local english = {
+    ["Buscar:"] = "Search:",
+    ["Nenhuma moeda encontrada."] = "No currencies found.",
+    ["Selecionar moedas (%d resultados)"] = "Select currencies (%d results)",
+    ["Página %d/%d"] = "Page %d/%d",
     ["\nConfirmar a compra?"] = "\nConfirm purchase?",
     ["\nCusto: "] = "\nCost: ",
     ["\nÁrea ocupada"] = "\nArea occupied",

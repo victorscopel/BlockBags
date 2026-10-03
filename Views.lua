@@ -24,6 +24,20 @@ function A:GetPositions()
     all.views=all.views or {}; all.views[self:ViewKey()]=all.views[self:ViewKey()] or {}
     return all.views[self:ViewKey()]
 end
+function A:GetStackCategories()
+    local all=BlockBagsDB.inventoryPositions[self.characterKey][self.profileKey]
+    all.stackCategories=all.stackCategories or {}
+    local storage=self.storage or "bags"
+    all.stackCategories[storage]=all.stackCategories[storage] or {}
+    return all.stackCategories[storage]
+end
+
+function A:GetDropSlots()
+    local positions=self:GetPositions()
+    positions.dropSlots=positions.dropSlots or {}
+    return positions.dropSlots
+end
+
 function A:IsCategoryOnTab(id)
     return ((self.profile.categoryTabs or {})[id] or "default")== (self.activeTab or "default")
 end

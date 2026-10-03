@@ -19,6 +19,7 @@ CreateFrame = function() return { RegisterEvent = function() end, SetScript = fu
 SlashCmdList = {}
 C_Timer = { After = function(_, fn) pending = fn end }
 InCombatLockdown = function() return false end
+CursorHasItem = function() return false end
 UnitName = function() return "Tester" end
 GetRealmName = function() return "Realm" end
 GetLocale = function() return TEST_LOCALE end
@@ -119,6 +120,10 @@ function methods:CreateTexture() return CreateFrame("Texture",nil,self) end
 function methods:SetScript(key, fn) self.scripts[key]=fn end
 function methods:HookScript(key, fn) self.scripts[key]=fn end
 function methods:GetScript(key) return self.scripts[key] end
+function methods:SetAttribute(key,value)
+    self.attributes=rawget(self,"attributes") or {}; self.attributes[key]=value
+end
+function methods:GetAttribute(key) local attributes=rawget(self,"attributes"); return attributes and attributes[key] end
 function methods:GetParent() return rawget(self,"parent") end
 function methods:SetText(text) self.text=text end
 function methods:GetText() return self.text end
@@ -291,10 +296,10 @@ assert(not A.emptyPositions.consumables[pinned])
 A.items={potion,other}; A:Reconcile()
 assert(A.profile.placements.consumables[potion.identity]==pinned)
 A:SetManualCategory(potion,"misc")
-assert(potion.category=="misc" and A.profile.manualCategories[1]=="misc")
+assert(potion.category=="misc" and A:GetStackCategories()[potion.identity]=="misc")
 assert(A.profile.favorites[1].category=="misc")
 A:RemoveFavorite(1); A:SetManualCategory(potion,nil)
-assert(potion.category=="consumables" and not A.profile.manualCategories[1])
+assert(potion.category=="consumables" and not A:GetStackCategories()[potion.identity])
 -- Numeric settings and undo preserve the editor draft.
 A:StartEdit()
 local before=A:GetSettings().categorySpacing
@@ -376,7 +381,7 @@ local export=A:ExportProfile()
 local decoded,err=A:DecodeProfile(export)
 assert(decoded,err)
 assert(decoded.layout[cat].name=="Personal tools" and not decoded.favorites[101].identity)
-assert(decoded.manualCategories[101]==cat and next(decoded.placements)==nil)
+assert(decoded.manualCategories[101]==nil and next(decoded.placements)==nil)
 assert(not A:DecodeProfile(export:sub(1,-7)))
 assert(not A:DecodeProfile("BB1:0000"))
 local overlapping=A:Copy(A.profile.layout[cat])
@@ -393,7 +398,7 @@ A:RemoveFavorite(101); A:SetManualCategory(A.items[1],nil)
 GetCursorInfo=function() return "item",101 end
 A:RememberDrop({anchorCategory="misc",anchorIndex=5,anchorSlotKey="0:1"})
 A:ScanInventory(); A:Reconcile(); A:Render()
-assert(A.profile.manualCategories[101]=="misc" and A.items[1].category=="misc")
+assert(A:GetStackCategories()[A.items[1].identity]=="misc" and A.items[1].category=="misc")
 assert(A.profile.placements.misc[A.items[1].identity]==5)
 A:RememberDrop({anchorCategory=cat,anchorIndex=3,anchorSlotKey="0:1"})
 A.pendingPlacements["0:1"].itemID=999 -- rejected/incompatible physical drop
@@ -407,6 +412,7 @@ A:ChooseCategoryColor(cat); pickerInfo.swatchFunc()
 assert(A:GetLayout()[cat].tint.b==1)
 pickerInfo.cancelFunc(); assert(A:GetLayout()[cat].tint==nil and previous==nil)
 -- No permanent gutter; showing the border scrollbar never changes columns.
+A:GetDropSlots()[A.items[1].identity]=nil
 A.profile.placements.misc[A.items[1].identity]=500
 A:Reconcile(); A:Render()
 local beforeCols=A.panels.misc.currentMetrics.cols
@@ -743,7 +749,7 @@ for _,parent in pairs(panel.bagParents) do assert(parent.mouse==false) end
 panel.dropTarget.scripts.OnReceiveDrag()
 assert(cursor==nil and pickups==1)
 A:ScanInventory(); A:Reconcile(); A:Render()
-assert(A.items[1].category=="misc" and A.profile.manualCategories[101]=="misc")
+assert(A.items[1].category=="misc" and A:GetStackCategories()[A.items[1].identity]=="misc")
 -- A native rejection (ordinary item into reagent bag) preserves the cursor and
 -- leaves no pending category override. No transfer is attempted while editing.
 cursor=101
@@ -789,7 +795,7 @@ GetMouseFoci=function() return {A.panels.misc.title} end
 source.scripts.OnDragStop(source)
 assert(cursor==nil and clears==1 and pickups==0)
 assert(A.items[1].category=="misc" and physical[1]==101 and physical[2]==102)
-assert(A.profile.manualCategories[101]=="misc")
+assert(A:GetStackCategories()[A.items[1].identity]=="misc")
 -- The item is usable in a native slot after reclassification, and a favorite
 -- follows the same explicit destination index without making a physical swap.
 A:ToggleFavorite(A.items[1])
@@ -797,6 +803,33 @@ A:CaptureItemSource(source); cursor=101
 assert(A:TryVirtualDrop("consumables",7))
 assert(A.profile.favorites[101].category=="consumables" and A.profile.favorites[101].index==7)
 assert(A.profile.placements.consumables[A.items[1].identity]==7 and pickups==0)
+-- Dropping onto the same item must reach the native stack handler, with or
+-- without a favorite. A remaining cursor stack must not be reclassified on stop.
+local target={info={itemID=101,stackCount=5},identity="second-stack",bag=0,slot=2}
+local savedPosition=A.groups.consumables.positions[9]
+local savedFavorite=A.profile.favorites[101]
+A.groups.consumables.positions[9]=target
+local focus={anchorCategory="consumables",anchorIndex=9}
+for _,favorite in ipairs({true,false}) do
+    if not favorite then A:RemoveFavorite(101) end
+    A.groups.consumables.positions[9]=target
+    cursor=nil; A:CaptureItemSource(source); cursor=101
+    local beforeClears=clears
+    local beforeRule=A.profile.manualCategories[101]
+    local beforeFavorite=A.profile.favorites[101]
+    assert(not A:TryVirtualDrop("consumables",9))
+    assert(cursor==101 and clears==beforeClears and not A.itemDrag)
+    assert(A.profile.manualCategories[101]==beforeRule and A.profile.favorites[101]==beforeFavorite)
+    -- A full or partially filled target may leave items on the cursor.
+    GetMouseFoci=function() return {focus} end
+    source.scripts.OnDragStop(source)
+    assert(cursor==101 and clears==beforeClears and A.profile.manualCategories[101]==beforeRule)
+    A.groups.consumables.positions[9]=target
+end
+A.groups.consumables.positions[9]=savedPosition
+A.profile.favorites[101]=savedFavorite
+cursor=nil
+print("Stack drops OK: identical items reach native handling with and without favorites; remaining cursor stacks are not virtually moved")
 -- An unrelated cursor item, split stack or reagent transfer is never consumed.
 A:CaptureItemSource(source); cursor=102
 local old=A.profile.manualCategories[101]
@@ -1080,3 +1113,19 @@ print("Settings close OK: Escape/global bag close and queued closes preserve inv
 lua.execute((root / "tests" / "expanded.lua").read_text(encoding="utf-8"))
 
 lua.execute((root / "tests" / "localization.lua").read_text(encoding="utf-8"))
+
+lua.execute((root / "tests" / "stack_layout.lua").read_text(encoding="utf-8"))
+
+# Bindings.xml is loaded automatically by WoW, not as an ordinary TOC XML file.
+import xml.etree.ElementTree as ET
+binding_root = ET.fromstring((root / "Bindings.xml").read_text(encoding="utf-8"))
+assert binding_root.tag == "Bindings"
+assert sum("header" in binding.attrib for binding in binding_root) == 1
+assert len({binding.attrib["name"] for binding in binding_root}) == len(binding_root)
+assert "Bindings.xml" not in (root / "BlockBags.toc").read_text(encoding="utf-8").splitlines()
+item_button_source = (root / "UI.lua").read_text(encoding="utf-8").split("function A:GetItemButton",1)[1].split("function A:PaintItem",1)[0]
+assert "ContainerFrameItemButtonTemplate,SecureActionButtonTemplate" in item_button_source
+assert 'b:HookScript("OnClick"' in item_button_source and 'b:SetScript("OnClick"' not in item_button_source
+print("Bindings/security setup OK: automatic XML load, one header, preserved secure click handler")
+
+lua.execute((root / "tests" / "favorite_restore.lua").read_text(encoding="utf-8"))

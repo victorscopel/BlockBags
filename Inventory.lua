@@ -9,7 +9,15 @@ function A:AutomaticCategory(item)
     local id = item.info.itemID
     local favorite = self.profile and self.profile.favorites and self.profile.favorites[id]
     local manual = self.profile and self.profile.manualCategories and self.profile.manualCategories[id]
-    if favorite then return favorite.category end
+    local stack=self:GetStackCategories()[item.identity]
+    if stack and self:GetLayout()[stack] then return stack end
+    if favorite then
+        local preferredPresent=false
+        for _,current in ipairs(self.items or {}) do
+            if current.identity==favorite.identity then preferredPresent=true; break end
+        end
+        if not preferredPresent or favorite.identity==item.identity then return favorite.category end
+    end
     if manual then return manual end
     for _,cat in ipairs(self.categories) do
         local rule=self:GetLayout()[cat.id].rule
@@ -106,20 +114,40 @@ function A:ScanInventory()
                 present[info.itemID]=true
                 local target = self.pendingPlacements and self.pendingPlacements[slotKey]
                 if target and target.itemID == info.itemID and target.category ~= "reagentbag" and bag ~= Enum.BagIndex.ReagentBag then
-                    self.profile.manualCategories[info.itemID] = target.category
+                    self:GetStackCategories()[identity] = target.category
                     local favorite = self.profile.favorites[info.itemID]
-                    if favorite then favorite.category, favorite.index = target.category, target.index end
+                    if favorite and favorite.identity==identity then favorite.category, favorite.index = target.category, target.index end
                 end
                 -- Keep the previous category while metadata is loading.
                 item.category = item.pending and not target and not self.profile.manualCategories[info.itemID] and self.lastCategories and self.lastCategories[identity] or nil
-                item.category = item.category or self:Classify(item)
-                item.category = self:VisibleCategory(item.category)
                 items[#items + 1] = item
             else
                 model.info,model.quest,model.identity,model.category,model.name,model.sortName=nil,nil,nil,nil,nil,nil
                 model.family=family or 0
                 self.emptySlots[#self.emptySlots + 1] = model
             end
+        end
+    end
+    for _,item in ipairs(items) do
+        item.category=self:VisibleCategory(item.category or self:Classify(item))
+    end
+    if not CursorHasItem() and ((self.storage or "bags")=="bags" or self.atBank) then
+        local assignments=self:GetStackCategories()
+        self.liveIdentities=self:ClearTable(self.liveIdentities or {})
+        for _,item in ipairs(items) do self.liveIdentities[item.identity]=true end
+        for identity in pairs(assignments) do
+            if not self.liveIdentities[identity] then assignments[identity]=nil end
+        end
+        local all=BlockBagsDB.inventoryPositions[self.characterKey][self.profileKey]
+        local function pruneSlots(positions)
+            for identity in pairs(positions.dropSlots or {}) do
+                if not self.liveIdentities[identity] then positions.dropSlots[identity]=nil end
+            end
+        end
+        local storage=self.storage or "bags"
+        if storage=="bags" then pruneSlots(all) end
+        for key,positions in pairs(all.views or {}) do
+            if key:sub(1,#storage+1)==storage..":" then pruneSlots(positions) end
         end
     end
     self.lastCategories = self:ClearTable(self.lastCategories or {})

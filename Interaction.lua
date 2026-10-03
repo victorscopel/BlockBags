@@ -1,5 +1,18 @@
 local _, A = ...
 
+local itemContextFrames={"MerchantFrame","GuildBankFrame","MailFrame","AuctionHouseFrame","AuctionFrame",
+    "TradeFrame","ItemUpgradeFrame","ObliterumForgeFrame","ChallengesKeystoneFrame",
+    "AzeriteRespecFrame","RuneforgeFrame"}
+
+function A:CanUseItemDirectly()
+    if self.draft or self.atBank or (self.storage or "bags")~="bags" or CursorHasItem() then return false end
+    for _,name in ipairs(itemContextFrames) do
+        local frame=_G[name]
+        if frame and frame:IsShown() then return false end
+    end
+    return true
+end
+
 function A:InstallInteractionHooks()
     if self.interactionHooksInstalled or not C_Container.SplitContainerItem then return end
     self.interactionHooksInstalled=true
@@ -48,8 +61,15 @@ function A:TryVirtualDrop(category,index)
     if not info or info.itemID~=source.itemID then self.itemDrag=nil; return false end
     local model=self.slotModels and self.slotModels[source.slotKey]
     if not model or model.identity~=source.identity then self.itemDrag=nil; return false end
-    local targetIndex=index
     local group=self.groups[category]
+    if not group then return false end
+    local target=index and group.positions[index]
+    if target and target.info.itemID==id then
+        -- Native slots handle merging, full stacks and incompatible variants.
+        self.itemDrag=nil
+        return false
+    end
+    local targetIndex=index
     if not targetIndex or group.positions[targetIndex] or group.reserved[targetIndex] then
         targetIndex=1
         while group.positions[targetIndex] or group.reserved[targetIndex] do targetIndex=targetIndex+1 end

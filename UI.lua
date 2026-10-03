@@ -614,9 +614,21 @@ function A:GetItemButton(item, panel)
     end
     local parent = panel.bagParents[item.bag]
     if not b then
-        b = CreateFrame("ItemButton", "BlockBagsItem" .. item.bag .. "_" .. item.slot, parent, "ContainerFrameItemButtonTemplate")
+        b = CreateFrame("ItemButton", "BlockBagsItem" .. item.bag .. "_" .. item.slot, parent, "ContainerFrameItemButtonTemplate,SecureActionButtonTemplate")
         self.buttons[item.slotKey] = b
         b:Initialize(item.bag, item.slot)
+        b:RegisterForClicks("LeftButtonUp","RightButtonUp")
+        b:SetAttribute("useOnKeyDown",false)
+        b:SetAttribute("item2",item.bag.." "..item.slot)
+        b:SetAttribute("type2","item")
+        for _,prefix in ipairs({"alt-","ctrl-","shift-","alt-ctrl-","alt-shift-","ctrl-shift-","alt-ctrl-shift-"}) do
+            b:SetAttribute(prefix.."type2","")
+        end
+        b:HookScript("PreClick",function(frame)
+            if InCombatLockdown() then return end
+            local action=frame.currentItem and self:CanUseItemDirectly() and "item" or ""
+            if frame:GetAttribute("type2")~=action then frame:SetAttribute("type2",action) end
+        end)
         b:SetSize(36, 36)
         b:EnableMouseWheel(true)
         b:HookScript("OnEnter", function(frame)
@@ -634,8 +646,9 @@ function A:GetItemButton(item, panel)
             self:CompleteItemDrag()
             if nativeStop then nativeStop(frame,...) end
         end)
-        local nativeClick=b:GetScript("OnClick")
-        b:SetScript("OnClick",function(frame,mouseButton,...)
+        local nativeClick=ContainerFrameItemButtonMixin and ContainerFrameItemButtonMixin.OnClick or ContainerFrameItemButton_OnClick
+        -- Keep the secure template's OnClick untouched; observe it afterward.
+        b:HookScript("OnClick",function(frame,mouseButton,...)
             if mouseButton=="LeftButton" then
                 if CursorHasItem() and self:TryVirtualDrop(frame.anchorCategory,frame.anchorIndex) then return end
                 if not CursorHasItem() then self:CaptureItemSource(frame) end
@@ -646,6 +659,8 @@ function A:GetItemButton(item, panel)
             elseif mouseButton=="RightButton" and self.atBank and frame.currentItem and not IsModifiedClick() then
                 local destination=(self.storage or "bags")=="bags" and (self.bankDepositTarget or "character") or self.storage
                 C_Container.UseContainerItem(frame.currentItem.bag,frame.currentItem.slot,nil,self:BankType(destination))
+            elseif mouseButton=="RightButton" and not IsModifiedClick() and frame:GetAttribute("type2")=="item" then
+                return
             elseif nativeClick then nativeClick(frame,mouseButton,...) end
         end)
         for _, event in ipairs({"OnReceiveDrag", "OnMouseDown"}) do
@@ -712,7 +727,8 @@ function A:PaintItem(b,item,search)
     if p.itemLevel ~= level or full then b.levelLabel:SetText(type(level) == "number" and tostring(level) or ""); p.itemLevel = level end
     b.levelLabel:SetShown(showLevel)
     self:PaintItemIndicators(b,item)
-    b.favoriteMarker:SetShown(self.profile.favorites[info.itemID]~=nil)
+    local group=self.groups[item.category]
+    b.favoriteMarker:SetShown(group and group.reserved[b.anchorIndex]==info.itemID and group.positions[b.anchorIndex]==item)
     b.focusBorder:SetShown(self.focusedSearchIdentity==item.identity)
     local match=search=="" or self:MatchesQuery(item,search)
     b:SetAlpha(match and 1 or 0.22); b:EnableMouse(not self.draft)
@@ -827,6 +843,6 @@ function A:Render()
         self.money:SetText("")
     elseif c then
         self.status:SetText(string.format(A.L["Livres: %d/%d  |  Reagentes livres: %d/%d"], c.free, c.total, c.reagentFree, c.reagentTotal))
-        self.money:SetText(GetCoinTextureString(GetMoney()))
+        self.money:SetText(self:FormatMoney(GetMoney()))
     end
 end

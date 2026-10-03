@@ -1,5 +1,15 @@
 local _, A = ...
 
+function A:FormatMoney(amount)
+    local value=GetCoinTextureString(amount)
+    local gold=math.floor(amount/10000)
+    if gold<1000 then return value end
+    return (value:gsub("^(%d+)",function(number)
+        if tonumber(number)~=gold then return number end
+        return number:reverse():gsub("(%d%d%d)","%1."):reverse():gsub("^%.","")
+    end))
+end
+
 local equipmentSlots={INVTYPE_HEAD={1},INVTYPE_NECK={2},INVTYPE_SHOULDER={3},INVTYPE_BODY={4},INVTYPE_CHEST={5},
     INVTYPE_ROBE={5},INVTYPE_WAIST={6},INVTYPE_LEGS={7},INVTYPE_FEET={8},INVTYPE_WRIST={9},INVTYPE_HAND={10},
     INVTYPE_FINGER={11,12},INVTYPE_TRINKET={13,14},INVTYPE_CLOAK={15},INVTYPE_WEAPON={16,17},

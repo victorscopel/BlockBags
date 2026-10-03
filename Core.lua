@@ -1,7 +1,7 @@
 local _, A = ...
 BlockBags = A
 AnchorBags = A -- Compatibility for existing bindings/scripts.
-A.version = "0.5.1"
+A.version = "0.5.2"
 A.cell, A.padding, A.header, A.scrollGutter = 40, 8, 36, 0
 A.categories = {
     { id = "equipment", name = A.L["Equipamentos"], x = 0, y = 0, cols = 8, rows = 4 },
@@ -167,7 +167,7 @@ events:SetScript("OnEvent", function(_, event, arg, success)
     elseif event == "GET_ITEM_INFO_RECEIVED" or event == "ITEM_DATA_LOAD_RESULT" then
         A:ItemDataResult(arg,success)
     elseif event == "PLAYER_MONEY" then
-        if A.window:IsShown() then A.money:SetText(GetCoinTextureString(GetMoney())) end
+        if A.window:IsShown() then A.money:SetText(A:FormatMoney(GetMoney())) end
     elseif event == "BANKFRAME_OPENED" then
         A:BankOpened()
     elseif event == "BANKFRAME_CLOSED" then

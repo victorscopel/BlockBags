@@ -1,4 +1,4 @@
 <Bindings>
     <Binding name="BLOCKBAGS_TOGGLE" header="BLOCKBAGS">BlockBags:Toggle()</Binding>
-    <Binding name="ANCHORBAGS_TOGGLE" header="BLOCKBAGS">BlockBags:Toggle()</Binding>
+    <Binding name="ANCHORBAGS_TOGGLE">BlockBags:Toggle()</Binding>
 </Bindings>

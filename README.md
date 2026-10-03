@@ -9,13 +9,13 @@ inventory, so you can always find things where you expect them.
 Arrange categories like blocks, choose their dimensions, and decide whether each
 category keeps item positions or automatically fills gaps.
 
-> **Early preview — 0.5.1.** Bank integration and bulk actions are still being
+> **Early preview — 0.5.2.** Bank integration and bulk actions are still being
 > tested in-game. The interface follows your WoW client language: Portuguese or English.
 
 ## Features
 
 - Unified inventory, including the reagent bag.
-- Automatic categories, custom rules, and manual item assignments.
+- Automatic categories, custom rules, and manual assignments per item stack.
 - Persistent category layouts with free resizing, alignment guides, and snapping.
 - Per-category colors, item sizes, spacing, and optional compaction.
 - Favorites and a visual highlight for newly acquired items.

@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.5.2 — preview
+
+- Restore favorites to a free slot in their automatic category without displacing existing items.
+
+- Move only the selected stack between categories, leaving identical stacks in place.
+- Keep split stacks in the chosen slot, including categories with automatic compaction.
+- Allow native stack merging without intercepting the drop as a category move.
+- Use secure item actions for ordinary inventory right-clicks.
+- Load key bindings once and declare the binding header only once.
+- Add currency search by name or ID, selected currencies first, and eight entries per page.
+- Separate gold thousands with dots, preserving silver and copper values.
+- Prune assignments and explicit positions for consumed stacks.
+
 ## 0.5.1 — preview
 
 - Use `/bb` as the primary command; `/blockbags` and `/blocks` remain available.
