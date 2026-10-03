@@ -138,3 +138,9 @@ Do not require full WTF folders to reproduce issues.
 - [ ] Start/cancel layout editing, switch physical bag view and return; item interaction remains available outside editing.
 - [ ] Rule-priority buttons show arrows, move the selected category and disable at the top/bottom of the list.
 - [ ] Offline inventory uses the new name in each supported language; its menu shortcut is absent without collection or saved inventories.
+
+## Combat handle regression (0.9.3)
+
+- [ ] Enter and leave combat repeatedly with the backpack open and closed, physical bags visible and hidden, and while editing a layout. Confirm no Invalid frame handle errors.
+- [ ] Use consumables and open/close the backpack with keys, X and Escape in combat.
+- [ ] Confirm window dragging remains blocked in combat and works again afterward.

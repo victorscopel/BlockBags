@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.3 — preview
+
+- Explicitly protect the editor controls and equipped-bag panel referenced by the secure combat handler, preventing invalid frame handles on combat entry.
+- Model restricted handles in combat tests so ordinary child frames cannot pass as protected targets.
+- Keep backpack movement and layout changes locked during combat while retaining secure item use.
+
+
 ## 0.9.2 — preview
 
 - Keep item slots and category controls above the background drop receiver from the first render; normalize native item-button levels after reparenting.

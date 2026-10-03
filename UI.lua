@@ -20,8 +20,8 @@ local function label(parent, text, size)
     return font
 end
 
-local function button(parent, text, width, action)
-    local b = CreateFrame("Button", nil, parent, "BackdropTemplate")
+local function button(parent, text, width, action, protected)
+    local b = CreateFrame("Button", nil, parent, protected and "BackdropTemplate,SecureHandlerBaseTemplate" or "BackdropTemplate")
     b:SetSize(width, 24)
     A:StyleCommand(b,text)
     b:SetScript("OnClick", action)
@@ -29,8 +29,8 @@ local function button(parent, text, width, action)
     return b
 end
 
-local function iconButton(parent, texture, title, description, action)
-    local b = CreateFrame("Button", nil, parent)
+local function iconButton(parent, texture, title, description, action, protected)
+    local b = CreateFrame("Button", nil, parent, protected and "SecureHandlerBaseTemplate" or nil)
     b:SetSize(18, 18)
     b:SetNormalTexture(texture)
     b:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
@@ -134,13 +134,13 @@ function A:BuildUI()
     self.searchClear:SetScript("OnClick", function() self.search:SetText(""); self.search:ClearFocus() end)
     self.editButton = button(w, A.L["Editar layout"], 112, function() self:StartEdit() end)
     self.editButton:SetPoint("TOPRIGHT", -24, -48)
-    self.saveButton = button(w, A.L["Salvar"], 75, function() self:FinishEdit(true) end)
+    self.saveButton = button(w, A.L["Salvar"], 75, function() self:FinishEdit(true) end, not self.isBankWindow)
     self.saveButton:SetPoint("TOPRIGHT", -24, -48)
-    self.cancelButton = button(w, A.L["Cancelar"], 85, function() self:FinishEdit(false) end)
+    self.cancelButton = button(w, A.L["Cancelar"], 85, function() self:FinishEdit(false) end, not self.isBankWindow)
     self.cancelButton:SetPoint("RIGHT", self.saveButton, "LEFT", -6, 0)
     self.generalButton = button(w, A.L["Configurações"], 110, function() self:OpenGeneralSettings() end)
     self.generalButton:SetPoint("RIGHT", self.cancelButton, "LEFT", -6, 0)
-    self.undoButton = iconButton(w, "Interface\\Buttons\\UI-SpellbookIcon-PrevPage-Up", A.L["Desfazer"], A.L["Desfaz o último ajuste do editor (até 50 etapas)."], function() self:UndoEdit() end)
+    self.undoButton = iconButton(w, "Interface\\Buttons\\UI-SpellbookIcon-PrevPage-Up", A.L["Desfazer"], A.L["Desfaz o último ajuste do editor (até 50 etapas)."], function() self:UndoEdit() end, not self.isBankWindow)
     self.undoButton:SetPoint("RIGHT", self.generalButton, "LEFT", -5, 0)
     for _,control in ipairs({self.generalButton,self.cancelButton,self.saveButton,self.editButton,self.undoButton}) do
         control:SetFrameLevel(w:GetFrameLevel()+20)

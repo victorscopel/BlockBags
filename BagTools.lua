@@ -74,7 +74,7 @@ end
 
 function A:BuildBagSlots()
     if self.bagSlots then return end
-    local panel = CreateFrame("Frame", nil, self.window, "BackdropTemplate")
+    local panel = CreateFrame("Frame", nil, self.window, self.combatController and "BackdropTemplate,SecureHandlerBaseTemplate" or "BackdropTemplate")
     self.bagSlots = panel
     if self.combatController then self.combatController:SetFrameRef("bag-slots",panel) end
     panel:SetSize(230, 72)

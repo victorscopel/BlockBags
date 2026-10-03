@@ -21,7 +21,16 @@ local header=T.combatController
 header.GetName=function() return "BlockBagsSecureToggle" end
 header.refs={window=T.window,save=T.saveButton,cancel=T.cancelButton,undo=T.undoButton,["bag-slots"]=T.bagSlots}
 header.SetFrameRef=function(_,name,frame) header.refs[name]=frame end
-header.GetFrameRef=function(_,name) return header.refs[name] end
+local function frameHandle(frame)
+    if not frame then return nil end
+    return setmetatable({}, {__index=function(_,method)
+        return function(_, ...)
+            assert(not combat or (frame.template or ""):find("Secure"), "Invalid frame handle: "..tostring(frame.name or frame.kind))
+            return frame[method](frame, ...)
+        end
+    end})
+end
+header.GetFrameRef=function(_,name) return frameHandle(header.refs[name]) end
 header.bindings={}
 header.SetBindingClick=function(_,priority,key,name,button) assert(secure); header.bindings[key]={name=name,button=button} end
 header.ClearBindings=function() assert(secure); header.bindings={} end
@@ -39,6 +48,16 @@ T.window.Hide=function(w)
 end
 for _,b in pairs(T.buttons) do T:PrepareCombatButton(b) end
 assert(header:GetAttribute("key-count")==3 and header:GetAttribute("slot-count")>0)
+-- An ordinary child of a protected window still has an invalid restricted handle.
+local plain=CreateFrame("Frame",nil,T.window)
+header.refs.unprotected=plain
+combat=true
+assert(not pcall(function() header:GetFrameRef("unprotected"):Hide() end))
+combat=false
+header.refs.unprotected=nil
+for _,name in ipairs({"window","save","cancel","undo","bag-slots"}) do
+    assert((header.refs[name].template or ""):find("Secure"),name.." must be explicitly protected")
+end
 local button=T.buttons["0:1"]
 button:SetAttribute("combat-reveal",true)
 local originalItems=T.items

@@ -6,7 +6,7 @@ BlockBags replaces the bags in World of Warcraft Retail with categories that kee
 their position and size when items enter or leave your inventory. Arrange panels
 like blocks, resize each one, and choose fixed or automatic item positions.
 
-> **Early preview — 0.9.2.** Combat controls, bank transactions and visual behavior
+> **Early preview — 0.9.3.** Combat controls, bank transactions and visual behavior
 > still need testing in the Retail client. Automated Lua tests do not certify
 > freedom from taint. Interface languages: English, Portuguese, Spanish (esES/esMX)
 > and French. Other clients use English.

@@ -33,6 +33,7 @@ function A:BuildCombatControls()
     self.combatController=control
     control:RegisterForClicks("AnyUp")
     control:SetFrameRef("window",self.window)
+    -- Restricted combat handlers require explicitly protected target frames.
     for _,key in ipairs({"save","cancel","undo"}) do control:SetFrameRef(key,self[key.."Button"]) end
     control:SetAttribute("_onclick",toggleSnippet)
     control:SetAttribute("_onstate-combat",stateSnippet)
