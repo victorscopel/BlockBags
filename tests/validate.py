@@ -1155,3 +1155,5 @@ print("Profile text OK: hidden FontString measures height, empty text preserves 
 lua.execute((root / "tests" / "bank_window.lua").read_text(encoding="utf-8"))
 
 lua.execute((root / "tests" / "backpack_controls.lua").read_text(encoding="utf-8"))
+
+lua.execute((root / "tests" / "item_borders.lua").read_text(encoding="utf-8"))

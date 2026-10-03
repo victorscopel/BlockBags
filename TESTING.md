@@ -10,7 +10,7 @@ python tools/package.py
 ```
 
 Os testes usam Lua 5.1 através do lupa. Compilam todos os módulos e exercitam
-classificação, posições, editor, importação, integração e os recursos da 0.6.1
+classificação, posições, editor, importação, integração e os recursos da 0.6.2
 com APIs simuladas. Incluem limites de cache, crescimento retido após GC,
 reutilização de frames e cancelamento de operações. Não substituem o cliente.
 
@@ -30,6 +30,7 @@ Use itens comuns e baratos para validar ações de servidor.
 - [ ] Usar, equipar, separar pilhas, linkar no chat e mover fisicamente itens.
 - [ ] Arrastar um item entre categorias com bolsas cheias; atribuição persiste.
 - [ ] Comprar/receber/remover itens sem mover ou redimensionar categorias.
+- [ ] Alterar tamanho dos itens (24–56 px), conferir bordas de qualidade/missão e alternar bolsas físicas.
 - [ ] Redimensionar/arrastar categorias; Salvar/Cancelar preservam cada visão.
 - [ ] Novo item mantém sua categoria e recebe destaque.
 - [ ] Mostrar bolsas físicas, trocar uma bolsa equipada e voltar às categorias.

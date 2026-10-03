@@ -609,6 +609,35 @@ function A:EndPanelDrag(panel)
     self:Render()
 end
 
+local itemFrameOverlays={"IconBorder","IconOverlay","IconOverlay2"}
+
+function A:SizeItemButton(button,size)
+    if button.renderSize==size then return end
+    button:SetSize(size,size)
+    button.renderSize=size
+    -- The native button is 37px; its quickslot artwork includes transparent padding.
+    local scale=size/37
+    local normal=button:GetNormalTexture()
+    if normal then
+        normal:ClearAllPoints()
+        normal:SetPoint("CENTER",button,"CENTER",0,-scale)
+        normal:SetSize(64*scale,64*scale)
+    end
+    for _,key in ipairs(itemFrameOverlays) do
+        local overlay=button[key]
+        if type(overlay)=="table" or type(overlay)=="userdata" then
+            overlay:ClearAllPoints()
+            overlay:SetAllPoints(button)
+        end
+    end
+    local quest=button.IconQuestTexture
+    if type(quest)=="table" or type(quest)=="userdata" then
+        quest:ClearAllPoints()
+        quest:SetPoint("TOP",button,"TOP",0,0)
+        quest:SetSize(size,38*scale)
+    end
+end
+
 function A:GetItemButton(item, panel)
     local b = self.buttons[item.slotKey]
     if not panel.bagParents[item.bag] then
@@ -636,7 +665,7 @@ function A:GetItemButton(item, panel)
             local action=frame.currentItem and self:CanUseItemDirectly() and "item" or ""
             if frame:GetAttribute("type2")~=action then frame:SetAttribute("type2",action) end
         end)
-        b:SetSize(36, 36)
+        self:SizeItemButton(b,36)
         b:EnableMouseWheel(true)
         b:HookScript("OnEnter", function(frame)
             if frame.newMarker then frame.newMarker:Hide() end
@@ -809,7 +838,7 @@ function A:Render()
                 local b = self:GetItemButton(item or empty, panel)
                 b.anchorCategory, b.anchorIndex = cat.id, index
                 b.renderSerial=self.renderSerial
-                if b.renderSize~=metrics.size then b:SetSize(metrics.size,metrics.size); b.renderSize=metrics.size end
+                self:SizeItemButton(b,metrics.size)
                 if b.renderPanel~=panel or b.renderX~=x or b.renderY~=y then
                     b:ClearAllPoints(); b:SetPoint("TOPLEFT",panel.content,"TOPLEFT",x,-y)
                     b.renderPanel,b.renderX,b.renderY=panel,x,y

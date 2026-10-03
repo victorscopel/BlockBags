@@ -216,7 +216,7 @@ function A:RenderPhysicalBags()
                 local x, y = ((slot - 1) % cols) * 34, math.floor((slot - 1) / cols) * 34
                 b.anchorCategory, b.anchorIndex, b.anchorSlotKey = nil, nil, model.slotKey
                 b.renderSerial = self.renderSerial
-                if b.renderSize ~= 32 then b:SetSize(32,32); b.renderSize=32 end
+                self:SizeItemButton(b,32)
                 if b.renderPanel ~= panel or b.renderX ~= x or b.renderY ~= y then
                     b:ClearAllPoints(); b:SetPoint("TOPLEFT",panel.content,"TOPLEFT",x,-y)
                     b.renderPanel,b.renderX,b.renderY=panel,x,y

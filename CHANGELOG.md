@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.2 — preview
+
+- Resize item quality borders, special-item overlays and quest frames with category icons.
+- Scale quickslot artwork proportionally and restore border sizing when switching to physical bags.
+
 ## 0.6.1 — preview
 
 - Use the WoW client's localized Backpack title.
