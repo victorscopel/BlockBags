@@ -312,10 +312,14 @@ local english = {
     ["O depósito remove o direito de reembolso. Use o arraste nativo para confirmar."] = "Depositing removes refund eligibility. Use native drag to confirm.",
 }
 
--- Portuguese strings are the keys; other clients use English.
+A.english=english
+A.translations={}
+
+-- Custom category names remain in the language chosen by their owner.
 A.locale = locale
 A.L = setmetatable({}, {__index = function(_, key)
-    return portuguese and key or english[key] or key
+    local translated=A.translations[locale]
+    return portuguese and key or translated and translated[english[key] or key] or english[key] or key
 end})
 
 local categoryNames = {
@@ -330,12 +334,18 @@ local categoryNames = {
 
 function A:DefaultCategoryName(id, name)
     local original = categoryNames[id]
-    if original and (name == original or name == english[original]) then return self.L[original] end
+    if original then
+        if name==original or name==english[original] then return self.L[original] end
+        for _,strings in pairs(A.translations) do if name==strings[english[original]] then return self.L[original] end end
+    end
     return name
 end
 
 function A:TabName(tab)
-    if tab.id == "default" and (tab.name == "Principal" or tab.name == "Main") then return self.L["Principal"] end
+    if tab.id=="default" then
+        if tab.name=="Principal" or tab.name=="Main" then return self.L["Principal"] end
+        for _,strings in pairs(A.translations) do if tab.name==strings.Main then return self.L["Principal"] end end
+    end
     return tab.name
 end
 

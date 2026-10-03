@@ -301,6 +301,9 @@ function A:ValidateProfile(p)
             local valid,err=self:ValidateCategoryRule(d.rule); assert(valid,err)
             assert(cat.id~="reagentbag" or d.rule=="",A.L["bolsa física de reagentes"])
         end
+        assert(d.stackGrouping==nil or type(d.stackGrouping)=="boolean",A.L["Regra inválida."])
+        assert(d.sortBy==nil or d.sortBy=="name" or d.sortBy=="quality" or d.sortBy=="ilvl" or d.sortBy=="count" or d.sortBy=="expansion",A.L["Regra inválida."])
+        assert(d.sortDescending==nil or type(d.sortDescending)=="boolean",A.L["Regra inválida."])
         if d.tint then for _,key in ipairs({"r","g","b"}) do number(d.tint[key],0,1) end end
         if not d.hidden then visible=visible+1 end
     end
@@ -308,6 +311,7 @@ function A:ValidateProfile(p)
     for _,cat in ipairs(self.baseCategories) do assert(ids[cat.id],A.L["categoria padrão ausente"]) end
     for id in pairs(p.layout) do assert(ids[id],A.L["layout desconhecido"]) end
     number(p.settings.categorySpacing,0,16)
+    assert(p.settings.theme==nil or p.settings.theme=="blizzard" or p.settings.theme=="dark" or p.settings.theme=="elvui",A.L["Tema inválido."])
     assert(p.settings.layoutLocked==nil or type(p.settings.layoutLocked)=="boolean",A.L["bloqueio de layout"])
     assert(p.settings.showBlizzardBagBar==nil or type(p.settings.showBlizzardBagBar)=="boolean",A.L["Bolsas"])
     assert(p.settings.showItemLevel==nil or type(p.settings.showItemLevel)=="boolean",A.L["nível dos equipamentos"])

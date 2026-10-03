@@ -2,6 +2,7 @@ local _, A = ...
 
 -- DefaultPanelTemplate decoration adapted from BetterBags/themes/default.lua.
 -- Copyright (c) 2023 Antonio Lobato. MIT; see THIRD_PARTY_NOTICES.md.
+local darkBackground,darkBorder={0.035,0.04,0.055},{0.25,0.27,0.32}
 local sectionBackdrop={bgFile="Interface\\Buttons\\WHITE8X8",edgeFile="Interface\\Buttons\\WHITE8X8",edgeSize=1}
 
 function A:DecorateInventory()
@@ -43,7 +44,12 @@ function A:StyleCategory(panel,data)
         panel.blockStyled=true
     end
     local color=data.tint
-    panel:SetBackdropColor(0.045,0.05,0.065,0.94)
+    local theme,background,border,font=self:ThemeColors()
+    if theme=="blizzard" then panel:SetBackdropColor(0.045,0.05,0.065,0.94)
+    else
+        panel:SetBackdropColor(background[1] or background.r,background[2] or background.g,background[3] or background.b,0.94)
+    end
+    panel.title:SetFont(theme=="blizzard" and STANDARD_TEXT_FONT or font,12,"")
     panel.tintBackground:SetShown(color~=nil)
     if color then panel.tintBackground:SetColorTexture(color.r,color.g,color.b,0.16) end
     panel.title:SetTextColor(1,0.82,0.4)
@@ -78,4 +84,26 @@ function A:UpdateHeaderLayers()
     if self.titleDrag then self.titleDrag:SetFrameLevel(level+21) end
     if self.bagMenuButton then self.bagMenuButton:SetFrameLevel(level+30) end
     if self.closeButton then self.closeButton:SetFrameLevel(level+30) end
+end
+
+function A:ThemeColors()
+    local theme=self:GetSettings().theme or "blizzard"
+    local engine=theme=="elvui" and ElvUI and ElvUI[1]
+    local media=engine and engine.media
+    return theme,media and media.backdropcolor or darkBackground,media and media.bordercolor or darkBorder,
+        media and media.normFont or STANDARD_TEXT_FONT
+end
+
+function A:ApplyWindowTheme()
+    local theme,background,border,font=self:ThemeColors()
+    if self.appliedTheme==theme and self.appliedThemeProfile==self.profile then return end
+    self.appliedTheme,self.appliedThemeProfile=theme,self.profile
+    self.windowTitle:SetFont(theme=="blizzard" and STANDARD_TEXT_FONT or font,12,"")
+    self.decoration:SetShown(theme=="blizzard")
+    if theme=="blizzard" then self.window:SetBackdrop(nil)
+    else
+        self.window:SetBackdrop(sectionBackdrop)
+        self.window:SetBackdropColor(background[1] or background.r,background[2] or background.g,background[3] or background.b,0.98)
+        self.window:SetBackdropBorderColor(border[1] or border.r,border[2] or border.g,border[3] or border.b,1)
+    end
 end

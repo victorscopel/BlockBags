@@ -3,7 +3,7 @@ local _, A = ...
 function A:Toggle()
     if not self.ready then return end
     if InCombatLockdown() then
-        self:Print(A.L["Nesta versão, abrir ou fechar a bolsa fica disponível fora de combate."])
+        self:Print(A.L["Em combate, use sua tecla de mochila para abrir ou fechar."])
         return
     end
     self.window:SetShown(not self.window:IsShown())
@@ -48,6 +48,7 @@ function A:InstallIntegration()
     end
     if InCombatLockdown() then return end
     self.integrationInstalled=true
+    self:RefreshCombatBindings()
     self:ApplyBlizzardBagBarVisibility()
     self.hiddenBags = CreateFrame("Frame")
     self.hiddenBags:Hide()

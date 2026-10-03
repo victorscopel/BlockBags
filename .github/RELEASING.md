@@ -16,14 +16,16 @@ addon files, key bindings, README, changelog, license and third-party notices.
 
 ## Prepare a version
 
-1. Set the base version in `BlockBags.toc`, for example `0.8.0`.
+1. Set the matching base version in `BlockBags.toc` and `Core.lua`, for example `0.9.0`.
 2. Add the release notes to `CHANGELOG.md` in English.
-3. Run the offline validation for both client languages and build the package:
+3. Run the offline validation for the supported client languages and build the package:
 
    ```sh
    python -m pip install -r tests/requirements.txt
    python tests/validate.py ptBR
    python tests/validate.py enUS
+   python tests/validate.py esES
+   python tests/validate.py frFR
    python tools/package.py
    ```
 
@@ -42,12 +44,12 @@ Use the `v` prefix so the same tag triggers the existing GitHub release workflow
 
 | Tag example | CurseForge file type | GitHub release |
 | --- | --- | --- |
-| `v0.8.0-alpha1` | Alpha | Pre-release |
-| `v0.8.0-beta1` | Beta | Pre-release |
-| `v0.8.0` | Release | Stable |
+| `v0.9.0-alpha1` | Alpha | Pre-release |
+| `v0.9.0-beta1` | Beta | Pre-release |
+| `v0.9.0` | Release | Stable |
 
 The version without the `v` prefix and alpha/beta suffix must match the TOC base
-version. Use a new tag for each build, such as `v0.8.0-beta2` for another preview.
+version. Use a new tag for each build, such as `v0.9.0-beta2` for another preview.
 Use an `alpha` or `beta` suffix for previews; the CurseForge packager does not
 classify `rc` as a preview suffix.
 

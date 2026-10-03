@@ -39,10 +39,10 @@ end
 function A:LoadMetadata(id)
     if self.itemCache[id] then return self.itemCache[id] end
     if self.loading[id] or self.itemRequests[id]=="failed" then return end
-    local name, _, _, itemLevel, _, _, subtype, _, equipLoc, _, _, classID, subclassID, bindType, expansionID, _, reagent = C_Item.GetItemInfo(id)
+    local name, _, _, itemLevel, _, _, subtype, maxStack, equipLoc, _, _, classID, subclassID, bindType, expansionID, _, reagent = C_Item.GetItemInfo(id)
     if name then
         local data = { name = name, classID = classID, subclassID = subclassID, reagent = reagent, itemLevel=itemLevel,
-            subtype=subtype,equipLoc=equipLoc,bindType=bindType,expansionID=expansionID }
+            subtype=subtype,maxStack=maxStack,equipLoc=equipLoc,bindType=bindType,expansionID=expansionID }
         self.itemCache[id] = data
         self.loading[id],self.itemRequests[id]=nil,nil
         return data

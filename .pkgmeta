@@ -6,6 +6,9 @@ manual-changelog:
   markup-type: markdown
 
 ignore:
+  - .github
+  - .gitignore
+  - .gitattributes
   - tests
   - tools
   - branding

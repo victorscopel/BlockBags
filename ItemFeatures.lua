@@ -73,6 +73,11 @@ function A:IsUpgrade(item)
 end
 
 function A:EnrichItem(item,data,location)
+    item.craftQuality=nil
+    local trade=C_TradeSkillUI
+    if trade and trade.GetItemReagentQualityByItemInfo and item.reagent then
+        item.craftQuality=trade.GetItemReagentQualityByItemInfo(item.info.hyperlink or item.info.itemID)
+    end
     item.equipLoc=data and data.equipLoc
     item.expansionID=data and data.expansionID
     item.subtype=data and data.subtype
@@ -99,6 +104,7 @@ function A:EnrichItem(item,data,location)
 end
 
 function A:GetSearchTooltip(item)
+    if item.offline then return "" end
     if item.tooltipText then return item.tooltipText end
     if not C_TooltipInfo or not C_TooltipInfo.GetBagItem then return "" end
     local tooltip=C_TooltipInfo.GetBagItem(item.bag,item.slot)
@@ -166,4 +172,20 @@ function A:PaintCurrencyBar()
         end
     end
     bar:SetWidth(math.max(1,x)); bar:SetShown(#ids>0 and not self.draft)
+end
+
+local professionFamilies={
+    alchemy={9},inscription={9,16},blacksmithing={7},mining={7},engineering={1,2,3,7},
+    jewelcrafting={4,7},leatherworking={6},skinning={6},tailoring={5},enchanting={12},cooking={8},herbalism={9}}
+local professionAliases={alquimia="alchemy",inscricao="inscription",ferraria="blacksmithing",mineracao="mining",
+    engenharia="engineering",joalheria="jewelcrafting",couraria="leatherworking",esfolamento="skinning",
+    alfaiataria="tailoring",encantamento="enchanting",culinaria="cooking",herborismo="herbalism"}
+
+function A:MatchesProfessionFamily(item,name)
+    name=professionAliases[name] or name
+    if item.classID~=7 then return false end
+    for _,subclass in ipairs(professionFamilies[name] or {}) do
+        if item.subclassID==subclass then return true end
+    end
+    return false
 end

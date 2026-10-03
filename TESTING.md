@@ -1,93 +1,131 @@
-# Validação
+# BlockBags validation
 
-## Automatizada
+## Automated checks
 
 ```sh
 python -m pip install -r tests/requirements.txt
 python tests/validate.py ptBR
 python tests/validate.py enUS
+python tests/validate.py esES
+python tests/validate.py frFR
 python tools/package.py
 ```
 
-Os testes usam Lua 5.1 através do lupa. Compilam todos os módulos e exercitam
-classificação, posições, editor, importação, integração e os recursos da 0.6.2
-com APIs simuladas. Incluem limites de cache, crescimento retido após GC,
-reutilização de frames e cancelamento de operações. Não substituem o cliente.
+The suite uses Lua 5.1 through lupa and mocked WoW APIs. It compiles all modules
+and exercises persistent slots, rules, profiles, native button setup, banks,
+combat snippets, themes, grouping, locale catalogs and bounded offline history.
+Stress checks measure frame reuse, coalescing and retained Lua growth after test GC.
+They do not measure native frame memory or certify freedom from taint.
 
-## No WoW Retail, antes de publicar como estável
+## Retail checklist — 0.9.0
 
-- [ ] Confirmar título Backpack/Mochila conforme o cliente e sons ao abrir/fechar.
-- [ ] Barra nativa de bolsas oculta por padrão; alternar pelo menu, trocar perfil e dar reload.
-- [ ] Conferir menus e mensagens em clientes ptBR e enUS; testar `/bb help`.
-- [ ] Confirmar que o X aparece e fecha o inventário em ambos os modos de bolsas.
+No native result is implied by automated tests. Complete these before a stable
+release. Enable `/console scriptErrors 1`, disable other bag replacements and
+`/reload`. Use ordinary, inexpensive items for server actions.
 
-Ative `/console scriptErrors 1`, desative outros substitutos de bolsa e dê `/reload`.
-Use itens comuns e baratos para validar ações de servidor.
+### Backpack and item interactions
 
-- [ ] Abrir pelas teclas de bolsa, fechar pelo X e por Esc; arrastar o título.
-- [ ] Abrir/fechar opções por Esc e X sem fechar o inventário; o próximo Esc
-  fecha o inventário. Inventário fechado permanece fechado ao abrir opções.
-- [ ] Usar, equipar, separar pilhas, linkar no chat e mover fisicamente itens.
-- [ ] Arrastar um item entre categorias com bolsas cheias; atribuição persiste.
-- [ ] Comprar/receber/remover itens sem mover ou redimensionar categorias.
-- [ ] Alterar tamanho dos itens (24–56 px), conferir bordas de qualidade/missão e alternar bolsas físicas.
-- [ ] Redimensionar/arrastar categorias; Salvar/Cancelar preservam cada visão.
-- [ ] Novo item mantém sua categoria e recebe destaque.
-- [ ] Mostrar bolsas físicas, trocar uma bolsa equipada e voltar às categorias.
-- [ ] Moedas atualizam por evento; limite de sete e seleção persistem no reload.
-- [ ] Ilvl corresponde à instância; conjuntos usam o gerenciador nativo do WoW.
-- [ ] Setas ignoram equipamento inutilizável; Pawn funciona e ausência dele
-  mantém comparação por ilvl. Transmog T desaparece após aprender a aparência.
-- [ ] Buscar conjunto e tooltip com valores entre aspas; combinar/negativar filtros.
-- [ ] Criar/renomear/excluir abas, atribuir categorias e editar layouts distintos.
-- [ ] Exportar/importar perfis do inventário e do banco separadamente; preservar abas, moedas e layouts de cada um.
-- [ ] Abrir banco do personagem e tropa sem sobreposição da interface Blizzard.
-- [ ] Manter inventário e banco abertos juntos; alternar banco/tropa sem alterar o inventário.
-- [ ] Renomear/recolorir/criar categorias no banco sem alterar o inventário; conferir favoritos e perfis independentes.
-- [ ] Arrastar entre inventário e banco transfere fisicamente; arrastar dentro do banco altera apenas sua categoria.
-- [ ] Abrir opções de cada janela e fechar por Esc sem fechar nenhuma das duas.
-- [ ] Banco da tropa respeita restrições, abas compradas e estado de bloqueio.
-- [ ] Menu de compra de aba mostra confirmação e atualiza a seleção após compra.
-- [ ] Depositar/retirar uma categoria; favoritos e conjuntos não se movem.
-- [ ] Vender uma categoria só após confirmar; verificar itens vendidos/recompra.
-- [ ] Fechar banco/vendedor, entrar em combate ou pegar outro item interrompe lote.
-- [ ] Banco/inventário cheio ou transferência rejeitada não cria tentativas infinitas.
-- [ ] Fechar só o inventário mantém o banco aberto; fechar o banco encerra a sessão sem fechar o inventário.
-- [ ] Layouts e posições de banco da versão anterior sobrevivem à migração e ao reload.
-- [ ] Em combate, atualizações são pausadas e retomadas sem erros de taint.
-- [ ] Repetir abas/bancos/arrastos e comparar `/bb memory`; usar `/bb memory gc`
-  apenas no diagnóstico, distinguindo temporários de memória retida.
+- [ ] Open through bag keys/native backpack button; close by X and Escape. Check
+  localized Backpack title, sounds and native bag-bar show/hide after reload.
+- [ ] Keep settings, backpack and bank open; controls remain clickable and settings
+  above both. Closing settings keeps bags open without opening Game Menu.
+- [ ] Use/equip, split/merge, link in chat and physically move items.
+- [ ] Move one of two identical stacks to another category; the other stays put.
+  Remove its favorite and confirm subsequent movement remains independent.
+- [ ] Split into a chosen slot; the new stack keeps that visual position.
+- [ ] Reposition within a category by dropping onto a slot; a background drop in
+  the same category leaves the item in its original slot.
+- [ ] Exact-slot previews distinguish swaps, native merges and favorite reservations.
+- [ ] Consume a favorite: its faded icon supports tooltip/removal. Reacquiring it
+  restores its slot. Restore its automatic category without displacing other items.
+- [ ] Loot/remove items without changing panel geometry; new highlights stay in-category.
+- [ ] Switch physical bags, change an equipped bag and return to categories.
+- [ ] Check instance levels, equipment sets, transmog and upgrade indicators with
+  and without Pawn; unusable equipment should not gain upgrade arrows.
+- [ ] Selected currencies update by event and obey the seven-currency limit.
+  Gold uses the requested thousands separators.
 
-Registre build do WoW, versão e erro completo em um issue. Nunca envie arquivos
-WTF completos como requisito de reprodução.
+### Combat
 
-### Bank regression checks (0.7.0)
+- [ ] Enter with backpack closed/open; every assigned bag key, native button, X
+  and Escape toggles it without ADDON_ACTION_FORBIDDEN.
+- [ ] Right-click a consumable and verify use, counts, icons, locks and cooldowns.
+- [ ] Receive/remove items: physical slots remain usable; categories refresh afterward.
+- [ ] Enter while editing/dragging. Draft cancellation writes no protected geometry
+  or attributes; saved layout returns after combat.
+- [ ] Collapsed groups reveal individual physical stacks.
+- [ ] Scrolling, editing, movement, sorting and transfers stay disabled. Bank stays paused.
+- [ ] Change bindings outside combat; next combat uses them. Exit clears addon
+  overrides, including Escape; other panels close normally afterward.
+- [ ] Repeat after bank/settings interactions with native bag bar shown and hidden;
+  check accumulated taint errors.
 
-Offline tests cover tab routing, access guards, native button template selection, refund popup arguments, scoped profiles, selective reads and bounded retries. Native clicks, protected execution and visual layering still need the WoW client.
+### Layouts, rules and themes
 
-- [ ] Select a Warband tab; right-click a backpack item and confirm it goes only to that tab. Fill it and confirm other tabs are not used.
-- [ ] Check incompatible item dimming, read-only access, no purchased tabs and blocked bank access.
-- [ ] Shift-split, link, drag and right-click bank items without taint errors. Confirm or cancel refundable deposits.
-- [ ] Create/edit profiles and categories separately in character bank and Warband bank; reload and verify each.
-- [ ] Bank settings omit currencies, the equipped-bag bar and favorites. Backpack favorites still work.
-- [ ] Overlap both windows, click/drag each title and click items; the active window and its controls stay together.
-- [ ] Open bank with slow data arrival, switch storage and close while loading. Check recovery and that retries stop.
+- [ ] Resize icons 24–56px; quality/mission borders scale with them.
+- [ ] Resize panels with visible slot previews and slot snapping; Shift gives free
+  pixel sizes. Magnetic movement aligns without trapping the cursor.
+- [ ] Save/cancel drafts with category spacing 0 and 16. Scrollbars stay outside
+  item grids; window minimum respects panel bounds.
+- [ ] Each preset affects only the current backpack tab/bank scope; rules,
+  favorites and placements survive. Other layouts stay untouched.
+- [ ] Appearance copy changes icons/spacing/color, preserving rules and geometry.
+  Single-category reset and draft cancellation preserve other panels.
+- [ ] Visual AND conditions/OR groups, comparisons and negation match their previews.
+  Priority changes classification without moving panels; manual assignments win.
+- [ ] Advanced parentheses/quoted names/tooltip text work; invalid expressions
+  are rejected and advanced rules are not silently overwritten by visual editing.
+- [ ] Profession material families and native reagent qualities match expected items.
+- [ ] Each sort field/direction works: fixed slots stay put until Organize;
+  automatic positions sort/fill gaps while favorite reservations stay fixed.
+- [ ] Grouping sums identical stacks; + exposes original slots; use/drag affects
+  one physical stack. Favorites, equipment and manually pinned stacks stay separate.
+- [ ] Switch Blizzard/dark/ElvUI and back; fonts/colors restore. Test ElvUI absent
+  and installed with its bags module disabled.
+- [ ] Custom categories create/rename/hide/delete; built-ins cannot be deleted.
+  Category tabs exist only for backpack; bank stays unified.
+- [ ] Check ptBR/enUS/esES/esMX/frFR wording. Default labels follow locale changes;
+  custom names remain unchanged.
+- [ ] Export/import each scope: rules, themes, sorting and grouping survive;
+  physical GUIDs and offline history are excluded.
 
-### Window focus and unified Warband (0.7.1)
+### Character bank and Warband bank
 
-- [ ] Open Settings and backpack/bank together. Settings stays above both while typing/clicking controls.
-- [ ] Overlap, reopen and drag both inventory windows; bag button, title and close button remain visible.
-- [ ] Warband storage shows items and total capacity from every purchased tab, in categorized and physical views.
-- [ ] Storage selector offers only character bank and Warband bank. Fill one physical tab and verify deposits use another.
-- [ ] Existing per-tab manual assignments survive migration into the unified bank.
+- [ ] Separate windows focus correctly when overlapped; header controls follow
+  their window. Each bank scope has independent categories/settings/profiles.
+- [ ] All purchased tabs contribute capacity/items in categorized and physical
+  views. Compatible deposits find another tab when one is full.
+- [ ] Tab count/icons remain visible; + shows cost/confirmation, updates after
+  purchase and disappears at the maximum.
+- [ ] Native tab name/icon/deposit/expansion settings persist and never filter the
+  unified view. Include-reagents and automatic deposits obey native settings.
+- [ ] Warband gold reflects account money. Native deposit/withdraw input, cancel
+  and event-driven updates work.
+- [ ] Native bank clicks/splits/dragging/chat links are taint-free. Refundable items
+  use Blizzard confirmation; unavailable/read-only/incompatible actions are guarded.
+- [ ] Confirm category deposits/withdrawals/sales. Equipment-set items and relevant
+  backpack favorite protections are respected.
+- [ ] Closing bank/vendor, cursor items, scope changes and combat cancel batches.
+  Full/locked/rejected destinations stop without infinite retries.
+- [ ] Bank settings omit favorites, backpack currencies/equipped bags/category tabs.
+- [ ] Closing only backpack keeps bank open; closing bank ends its interaction
+  without closing backpack. Dialogs close on scope changes/combat/bank close.
+- [ ] Delayed bank data recovers within six retries; switching/closing cancels
+  stale callbacks. Existing data survives migration/reload.
 
-### Native bank controls (0.8.0)
+### Offline history and performance
 
-- [ ] Warband footer displays account gold, not backpack gold, and updates after deposit/withdraw. Verify native money inputs and cancellation.
-- [ ] Both bank types show purchased-tab count and numbered icons; + shows cost, confirms purchase, updates immediately and disappears at maximum tabs.
-- [ ] Native deposit button obeys physical-tab filters; include-reagents follows the native CVar and persists through reload.
-- [ ] Refundable auto-deposits ask for confirmation before losing refund rights.
-- [ ] Click a numbered icon and save name, icon, deposit flags and expansion filters in the native editor. All physical tabs remain visible together.
-- [ ] Read-only/locked access disables banking actions and shows the specific native reason. No-tab access still allows eligible tab purchases.
-- [ ] Switch bank type, enter combat or close bank while dialogs are open; transactions/settings close without acting on another bank.
-- [ ] Test header controls in both categorized and physical views at the minimum window size, including resized category icons.
+- [ ] Collection starts only after enabling. Visit backpack and both bank scopes;
+  /bb offline shows dates, searchable saved records and backpack gold.
+- [ ] Offline icons provide saved item tooltips without use/drag/transfer actions.
+  Warband has one shared record across characters.
+- [ ] Limits remove oldest whole snapshots; oversized snapshots are rejected.
+  Disabling retains records until expiration/clear, and clear requires confirmation.
+- [ ] Level/set/appearance changes refresh metadata even without slot/count changes.
+- [ ] Repeated scrolling/reopening keeps viewer frames bounded to its viewport.
+- [ ] Stress loot, moves/splits/merges, settings and banks; compare /bb diagnostics
+  and /bb memory. Use /bb memory gc only for manual diagnosis.
+- [ ] Enable scriptProfile and reload only when profiling CPU, then disable after
+  testing. Record WoW build/addon version, reproduction and full errors.
+
+Do not require full WTF folders to reproduce issues.

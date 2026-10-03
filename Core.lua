@@ -1,7 +1,7 @@
 local _, A = ...
 BlockBags = A
 AnchorBags = A -- Compatibility for existing bindings/scripts.
-A.version = "0.8.0"
+A.version = "0.9.0"
 A.cell, A.padding, A.header, A.scrollGutter = 40, 8, 36, 0
 A.categories = {
     { id = "equipment", name = A.L["Equipamentos"], x = 0, y = 0, cols = 8, rows = 4 },
@@ -116,20 +116,25 @@ function A:QueueRefresh(changedBags)
         for bag in pairs(changedBags) do self.scanDirtyBags[bag]=true end
     else self.fullInventoryScan=true end
     if not self.ready or self.refreshQueued then return end
-    if self.window and not self.window:IsShown() then self.inventoryDirty=true; return end
+    if self.window and not self.window:IsShown() and self.isBankWindow then self.inventoryDirty=true; return end
     self.refreshQueued = true
     C_Timer.After(0.05, function()
         self.refreshQueued = false
         if not self.ready then return end
-        if not self.window:IsShown() then self.inventoryDirty=true; return end
-        if InCombatLockdown() then self.pendingRefresh = true; return end
+        if not self.window:IsShown() and self.isBankWindow then self.inventoryDirty=true; return end
+        if InCombatLockdown() then self.pendingRefresh = true; self:PaintCombatInventory(); return end
         self.pendingRefresh = nil
         self.inventoryDirty = nil
         local changed=not self.fullInventoryScan and self.scanDirtyBags or nil
         self.fullInventoryScan=nil; self.scanDirtyBags=nil
+        local started=self:BeginRefreshMeasurement()
         self:ScanInventory(changed)
         self:Reconcile()
+        self.renderPreparing=not self.isBankWindow
         self:Render()
+        self.renderPreparing=nil
+        self:FinishRefreshMeasurement(started)
+        self:CaptureOfflineSnapshot()
     end)
 end
 
@@ -153,21 +158,27 @@ events:SetScript("OnEvent", function(_, event, arg, success)
             "PLAYER_REGEN_DISABLED", "MERCHANT_SHOW", "MERCHANT_CLOSED", "CURSOR_CHANGED",
             "PLAYER_EQUIPMENT_CHANGED", "EQUIPMENT_SETS_CHANGED", "TRANSMOG_COLLECTION_UPDATED", "CURRENCY_DISPLAY_UPDATE",
             "BANKFRAME_OPENED", "BANKFRAME_CLOSED", "BAG_UPDATE", "PLAYERBANKSLOTS_CHANGED", "PLAYER_ACCOUNT_BANK_TAB_SLOTS_CHANGED",
-            "BANK_TABS_CHANGED", "BANK_TAB_SETTINGS_UPDATED" }) do events:RegisterEvent(name) end
+            "BANK_TABS_CHANGED", "BANK_TAB_SETTINGS_UPDATED", "UPDATE_BINDINGS", "PLAYER_LOGOUT" }) do events:RegisterEvent(name) end
         A:QueueRefresh()
     elseif event == "PLAYER_LOGIN" then
         A:InstallIntegration()
+        A:RefreshCombatBindings(); A:PruneOfflineCache()
         A:QueueRefresh()
     elseif event == "PLAYER_REGEN_DISABLED" then
         A:CancelBulkAction()
         A:CancelInteractions()
-        if A.bagSlots then A.bagSlots:Hide() end
         if A.draft then A:FinishEdit(false) end
-        A.combatOverlay:Show()
+        A:PaintCombatInventory()
     elseif event == "PLAYER_REGEN_ENABLED" then
         A.forceItemPaint=true
         A:ApplyBlizzardBagBarVisibility()
         A.combatOverlay:Hide()
+        if A.pendingEditCancel then
+            local snapshot=A.pendingEditCancel; A.pendingEditCancel=nil
+            if snapshot.width then A.window:SetSize(snapshot.width,snapshot.height) end
+            A:ResizeCanvas(); A:ApplyLayout()
+        end
+        A:RefreshCombatBindings()
         if A.pendingStorageReset then A.pendingStorageReset=nil; A:SetStorage("bags") end
         if A.pendingBankOpen and A.atBank then A:BankOpened() end
         if A.physicalBagView then
@@ -175,6 +186,11 @@ events:SetScript("OnEvent", function(_, event, arg, success)
             else A:SetPhysicalBagView(false) end
         end
         A:QueueRefresh()
+    elseif event == "UPDATE_BINDINGS" then
+        A:RefreshCombatBindings()
+    elseif event == "PLAYER_LOGOUT" then
+        if A:GetOfflineCache().enabled and not InCombatLockdown() and not CursorHasItem() then A:ScanInventory() end
+        A:CaptureOfflineSnapshot(); A:PruneOfflineCache()
     elseif event == "GET_ITEM_INFO_RECEIVED" or event == "ITEM_DATA_LOAD_RESULT" then
         A:ItemDataResult(arg,success)
     elseif event == "PLAYER_MONEY" then
@@ -191,7 +207,7 @@ events:SetScript("OnEvent", function(_, event, arg, success)
         A.bagUpdateBatch=true
         if type(arg)=="number" and arg>=0 and arg<=Enum.BagIndex.ReagentBag then A:QueueRefresh({[arg]=true}) end
     elseif event == "BAG_UPDATE_COOLDOWN" then
-        if not InCombatLockdown() and A.window:IsShown() then
+        if A.window:IsShown() then
             for _,button in pairs(A.buttons) do if button.currentItem and button:IsShown() then button:UpdateCooldown(true) end end
         end
     elseif event == "BAG_UPDATE_DELAYED" then
@@ -215,11 +231,16 @@ SlashCmdList.BLOCKBAGS = function(message)
     local command = (message or ""):lower():match("^%s*(.-)%s*$")
     if command == "memory gc" then
         A:ReportMemory(true)
+    elseif command == "offline" then
+        A:OpenOfflineInventory()
+    elseif command == "diagnostics" then
+        A:ReportPerformance()
     elseif command == "memory" then
         A:ReportMemory()
     elseif command == "config" then
         A:OpenSettings()
     elseif command == "edit" then
+        if InCombatLockdown() then A:Print(A.L["Aguarde o fim do combate."]); return end
         A.window:Show()
         A:StartEdit()
     elseif command == "reset" then
@@ -240,5 +261,6 @@ SlashCmdList.BLOCKBAGS = function(message)
         else A:Print(A.L["Use /bb scale 0.85 (intervalo: 0.5 a 1.25)."]) end
     elseif command == "help" then
         A:Print(A.L["/bb — abrir; /bb edit — editar; /bb config — opções; /bb memory — diagnóstico; /bb reset — restaurar layout; /bb scale 0.85."])
+        A:Print(A.L["/bb offline — histórico; /bb diagnostics — CPU, memória e tempo de atualização."])
     else A:Toggle() end
 end

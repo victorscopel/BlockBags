@@ -26,7 +26,7 @@ GetLocale = function() return TEST_LOCALE end
 A = {}
 ''')
 addon = lua.globals().A
-for name in ["Locale.lua", "Core.lua", "Query.lua", "Views.lua", "Storage.lua", "ItemFeatures.lua", "BulkActions.lua", "Inventory.lua", "Placement.lua", "Features.lua", "Profiles.lua", "Interaction.lua", "BankAccess.lua", "BankTools.lua", "BankWindow.lua", "Integration.lua", "BagTools.lua", "FeatureSettings.lua"]:
+for name in ["Locale.lua", "LocaleExtras.lua", "LocaleesES.lua", "LocalefrFR.lua", "Core.lua", "Combat.lua", "LayoutTools.lua", "Diagnostics.lua", "Offline.lua", "VirtualStacks.lua", "RuleEditor.lua", "RoadmapSettings.lua", "Query.lua", "Views.lua", "Storage.lua", "ItemFeatures.lua", "BulkActions.lua", "Inventory.lua", "Placement.lua", "Features.lua", "Profiles.lua", "Interaction.lua", "BankAccess.lua", "BankTools.lua", "BankWindow.lua", "Integration.lua", "BagTools.lua", "FeatureSettings.lua"]:
     sources[name]("BlockBags", addon)
 lua.execute('''
 A:InitializeDatabase()
@@ -113,6 +113,7 @@ function CreateFrame(kind, name, parent, template)
         minimum=0, maximum=0, scripts={}, children={}, Low=false, High=false, Text=false, IconQuestTexture=false }, mt)
 end
 UIParent = CreateFrame("Frame")
+GameTooltip = CreateFrame("GameTooltip")
 UISpecialFrames = {}
 STANDARD_TEXT_FONT = "font"
 function methods:CreateFontString() return CreateFrame("FontString",nil,self) end
@@ -127,6 +128,7 @@ function methods:SetAttribute(key,value)
     self.attributes=rawget(self,"attributes") or {}; self.attributes[key]=value
 end
 function methods:GetAttribute(key) local attributes=rawget(self,"attributes"); return attributes and attributes[key] end
+function methods:GetID() return rawget(self,"slot") or rawget(self,"containerSlotID") end
 function methods:GetParent() return rawget(self,"parent") end
 function methods:SetText(text) self.text=text end
 function methods:GetText() return self.text end
@@ -475,12 +477,13 @@ end
 collectgarbage("collect")
 assert(createdFrames==frames,"Repeated use created permanent frames")
 assert(collectgarbage("count")-baseline<128,"Retained Lua data grows with repeated use")
--- Explicit events coalesce; closed inventory schedules no work.
+-- Hidden backpack updates coalesce to prepare native slots for combat.
 local jobs={}
 C_Timer.After=function(_,fn) jobs[#jobs+1]=fn end
 A.refreshQueued=false; A.window:Hide()
 for n=1,100 do A:QueueRefresh() end
-assert(#jobs==0 and A.inventoryDirty)
+assert(#jobs==1)
+jobs[1](); jobs={}
 A.window:Show()
 for n=1,100 do A:QueueRefresh() end
 assert(#jobs==1)
@@ -510,7 +513,7 @@ for gap=0,16 do
     local copy=A:Copy(layout); A:PackLayout(layout,gap)
     assert(layout.a.x==copy.a.x and layout.c.y==copy.c.y)
 end
-print("Stress OK: 150 repeated dialog/options/render cycles create zero new frames; retained Lua growth <128KB; 100 updates coalesce; hidden inventory schedules no timer; Settings preserves editor; real spacing 0-16 verified")
+print("Stress OK: 150 repeated dialog/options/render cycles create zero new frames; retained Lua growth <128KB; 100 updates coalesce; hidden preparation is event-driven and coalesced; Settings preserves editor; real spacing 0-16 verified")
 ''')
 
 lua.execute('''
@@ -600,7 +603,7 @@ A:FinishEdit(false)
 local candidate=A:Copy(A.profile.layout.equipment)
 A:UpdateEditorVisuals("equipment",candidate,true,true,false)
 assert(A.editorVisuals:IsShown() and A.editorVisuals.preview:IsShown())
-assert(A.editorVisuals.preview.caption:GetText():find("slots"))
+assert(A.editorVisuals.preview.caption:GetText()==string.format(A.L["%d × %d px\\n%d colunas × %d linhas · %d slots%s"],select(3,A:PanelRect(candidate)),select(4,A:PanelRect(candidate)),A:ItemMetrics(candidate).cols,A:ItemMetrics(candidate).rows,A:ItemMetrics(candidate).cols*A:ItemMetrics(candidate).rows,""))
 local count=createdFrames
 for n=1,100 do A:UpdateEditorVisuals("equipment",candidate,true,true,false) end
 assert(createdFrames==count and #A.editorVisuals.preview.lines<=130)
@@ -1172,3 +1175,7 @@ lua.execute((root / "tests" / "item_borders.lua").read_text(encoding="utf-8"))
 lua.execute((root / "tests" / "bank_access.lua").read_text(encoding="utf-8"))
 
 lua.execute((root / "tests" / "bank_tools.lua").read_text(encoding="utf-8"))
+
+lua.execute((root / "tests" / "roadmap.lua").read_text(encoding="utf-8"))
+lua.execute((root / "tests" / "offline.lua").read_text(encoding="utf-8"))
+lua.execute((root / "tests" / "combat.lua").read_text(encoding="utf-8"))

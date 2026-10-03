@@ -62,7 +62,7 @@ function A:BuildUI()
     self.canvasWidth, self.canvasHeight = 880, 600
     self.panels, self.buttons = {}, {}
     self.windowName=self.windowName or "BlockBagsWindow"
-    local w = CreateFrame("Frame", self.windowName, UIParent, "BackdropTemplate")
+    local w = CreateFrame("Frame", self.windowName, UIParent, self.isBankWindow and "BackdropTemplate" or "BackdropTemplate,SecureHandlerBaseTemplate")
     self.window = w
     w.blockOwner=self
     w:SetSize(self.profile.window.width or 912, self.profile.window.height or 716)
@@ -96,6 +96,7 @@ function A:BuildUI()
     move:RegisterForDrag("LeftButton")
     move:SetScript("OnDragStart", function() if not InCombatLockdown() then w:StartMoving() end end)
     move:SetScript("OnDragStop", function()
+        if InCombatLockdown() then self.pendingRefresh=true; return end
         w:StopMovingOrSizing()
         local x, y = w:GetCenter()
         local scale = w:GetEffectiveScale() / UIParent:GetEffectiveScale()
@@ -106,13 +107,13 @@ function A:BuildUI()
         -- Store offsets in the window's own coordinate space.
         self.profile.window.x, self.profile.window.y = self.profile.window.x / scale, self.profile.window.y / scale
     end)
-    local close = CreateFrame("Button", nil, w, "UIPanelCloseButton")
+    local close = CreateFrame("Button", nil, w, self.isBankWindow and "UIPanelCloseButton" or "UIPanelCloseButton,SecureHandlerBaseTemplate")
     self.closeButton=close
     close:SetFrameStrata("HIGH")
     close:SetFrameLevel(w:GetFrameLevel()+150)
     close:SetSize(24,24)
     close:SetPoint("TOPRIGHT", -4, -2)
-    close:SetScript("OnClick",function() w:Hide() end)
+    close:SetScript("OnClick",function() if not InCombatLockdown() then w:Hide() end end)
     close:Show()
 
     self.search = CreateFrame("EditBox", nil, w, "InputBoxTemplate")
@@ -120,7 +121,7 @@ function A:BuildUI()
     self.search:SetPoint("TOPLEFT", 24, -48)
     self.search:SetAutoFocus(false)
     self.search:HookScript("OnMouseDown",function() self:FocusWindow() end)
-    self.search:SetMaxLetters(100)
+    self.search:SetMaxLetters(256)
     self.search:SetScript("OnEscapePressed", function(edit) edit:SetText(""); edit:ClearFocus() end)
     self.search:SetScript("OnEnterPressed", function(edit) edit:ClearFocus() end)
     self.search:SetScript("OnTextChanged", function() if self.ready then self:Render() end end)
@@ -177,6 +178,7 @@ function A:BuildUI()
     self.windowScrollX = self:CreateWindowScrollBar(false)
     self.viewport:EnableMouseWheel(true)
     self.viewport:SetScript("OnMouseWheel", function(_, delta)
+        if InCombatLockdown() then return end
         local bar = IsShiftKeyDown() and self.windowScrollX or self.windowScrollY
         local lo, hi = bar:GetMinMaxValues()
         bar:SetValue(math.max(lo, math.min(hi, bar:GetValue() - delta * self.cell)))
@@ -200,11 +202,12 @@ function A:BuildUI()
         if key == "LeftButton" and self.draft and not InCombatLockdown() then self:PushUndo(); w:StartSizing("BOTTOMRIGHT") end
     end)
     resize:SetScript("OnMouseUp", function()
+        if InCombatLockdown() then self.pendingRefresh=true; return end
         w:StopMovingOrSizing()
         self:ResizeCanvas()
     end)
     w:SetScript("OnSizeChanged", function()
-        if self.windowScrollY then self:ResizeCanvas() end
+        if self.windowScrollY and not InCombatLockdown() then self:ResizeCanvas() end
     end)
     self.combatOverlay = CreateFrame("Frame", nil, w, "BackdropTemplate")
     self.combatOverlay:SetPoint("TOPLEFT", 1, -38)
@@ -216,13 +219,17 @@ function A:BuildUI()
     self.combatOverlay:SetBackdropColor(0.04, 0.05, 0.06, 0.85)
     label(self.combatOverlay, A.L["Inventário pausado durante o combate.\nAs atualizações serão aplicadas ao sair de combate."], 14):SetPoint("CENTER")
     self.combatOverlay:Hide()
-    w:SetScript("OnShow", function() self:FocusWindow(); self:PlayBackpackSound(true); self.forceItemPaint=true; self:QueueRefresh() end)
+    w:SetScript("OnShow", function()
+        self:FocusWindow(); self:PlayBackpackSound(true)
+        if InCombatLockdown() then self:PaintCombatInventory(); return end
+        self.forceItemPaint=true; self:QueueRefresh()
+    end)
     w:SetScript("OnHide", function()
-        if self.openingSettings then w:Show(); return end
+        if self.openingSettings and not InCombatLockdown() then w:Show(); return end
         self:PlayBackpackSound(false)
         self:CancelBulkAction()
         if self.physicalBagView and not InCombatLockdown() then self:SetPhysicalBagView(false) end
-        if self.bagSlots then self.bagSlots:Hide() end
+        if self.bagSlots and not InCombatLockdown() then self.bagSlots:Hide() end
         if self.isBankWindow and self.atBank and not self.closingBank and C_Bank and C_Bank.CloseBankFrame then
             self.closingBank=true; C_Bank.CloseBankFrame(); self.closingBank=nil
         end
@@ -233,6 +240,7 @@ function A:BuildUI()
     self:ResizeCanvas()
     self:ApplyLayout()
     self:UpdateHeaderLayers()
+    self:BuildCombatControls()
 end
 
 function A:CreateWindowScrollBar(vertical)
@@ -255,6 +263,7 @@ function A:CreateWindowScrollBar(vertical)
     bar:SetValueStep(1)
     bar:SetValue(0)
     bar:SetScript("OnValueChanged", function(_, value)
+        if InCombatLockdown() then return end
         if vertical then self.viewport:SetVerticalScroll(value)
         else self.viewport:SetHorizontalScroll(value) end
     end)
@@ -323,6 +332,7 @@ function A:CreatePanel(category)
     panel.tintBackground:SetPoint("BOTTOMRIGHT",-5,5)
     panel.tintBackground:Hide()
     panel.favoriteGhosts={}
+    panel.dropSlot=false
     panel.dropGlow=CreateFrame("Frame",nil,panel,"BackdropTemplate")
     panel.dropGlow:SetAllPoints(panel)
     panel.dropGlow:SetFrameLevel(panel:GetFrameLevel()+10)
@@ -372,10 +382,12 @@ function A:CreatePanel(category)
     if panel.bar.High then panel.bar.High:Hide() end
     if panel.bar.Text then panel.bar.Text:Hide() end
     panel.bar:SetScript("OnValueChanged", function(_, value)
+        if InCombatLockdown() then return end
         panel.offset = value
         panel.scroll:SetVerticalScroll(value)
     end)
     panel.wheel = function(_, delta)
+        if InCombatLockdown() then return end
         local _, maximum = panel.bar:GetMinMaxValues()
         local metrics = panel.currentMetrics or self:ItemMetrics(self:GetLayout()[panel.id])
         panel.bar:SetValue(math.max(0, math.min(maximum, panel.offset - delta * metrics.step)))
@@ -436,6 +448,7 @@ function A:CreatePanel(category)
 end
 
 function A:ApplyLayout()
+    self:ApplyWindowTheme()
     local layout = self:GetLayout()
     for _, cat in ipairs(self.categories) do
         local panel, data = self.panels[cat.id], layout[cat.id]
@@ -543,6 +556,14 @@ function A:CreateSettingSlider(parent, y, minimum, maximum, step, onChange)
 end
 
 function A:FinishEdit(save)
+    if InCombatLockdown() then
+        self.pendingEditCancel=self.windowDraft or {}
+        self.draft,self.draftSettings,self.windowDraft=nil,nil,nil
+        self.undoStack={}
+        for _,panel in pairs(self.panels) do panel:SetScript("OnUpdate",nil); panel.drag=nil end
+        self.pendingRefresh=true
+        return
+    end
     self:HideEditorVisuals()
     if self.editorGrid then self.editorGrid:Hide() end
     for _, panel in pairs(self.panels) do panel:SetScript("OnUpdate", nil); panel.drag = nil end
@@ -676,6 +697,7 @@ function A:GetItemButton(item, panel)
         local template=bankButton and "BankItemButtonTemplate" or "ContainerFrameItemButtonTemplate,SecureActionButtonTemplate"
         b = CreateFrame("ItemButton", (self.itemButtonPrefix or "BlockBagsItem") .. item.bag .. "_" .. item.slot, parent, template)
         self.buttons[item.slotKey] = b
+        b.stackBadge=false
         if bankButton then
             b:Init(self:BankType(self.storage),item.bag,item.slot)
             b.GetBagID=function(frame) return frame:GetBankTabID() end
@@ -703,31 +725,36 @@ function A:GetItemButton(item, panel)
         end
         b:HookScript("PreClick",function(frame)
             if InCombatLockdown() then return end
-            local action=frame.currentItem and self:CanUseItemDirectly() and "item" or ""
+            local action=self:CanUseItemDirectly() and "item" or ""
             if frame:GetAttribute("type2")~=action then frame:SetAttribute("type2",action) end
         end)
+        b.bagID=item.bag
+        self:PrepareCombatButton(b)
         self:SizeItemButton(b,36)
         b:EnableMouseWheel(true)
         b:HookScript("OnEnter", function(frame)
             if frame.newMarker then frame.newMarker:Hide() end
             if frame.bankBlocked then GameTooltip:AddLine(self.L["Este item não pode ser depositado nesse banco."],1,0.3,0.3,true); GameTooltip:Show() end
-            self:ShowCategoryDropHint(frame.anchorCategory)
+            self:ShowCategoryDropHint(frame.anchorCategory,frame.anchorIndex)
         end)
         b:HookScript("OnLeave",function() self:HideCategoryDropHint() end)
         local nativeDrag=b:GetScript("OnDragStart")
         b:SetScript("OnDragStart",function(frame,...)
+            if InCombatLockdown() then return end
             if bankButton and not self:CanMutateBank(nil,true) then return end
             self:CaptureItemSource(frame)
             if nativeDrag then nativeDrag(frame,...) end
         end)
         local nativeStop=b:GetScript("OnDragStop")
         b:SetScript("OnDragStop",function(frame,...)
+            if InCombatLockdown() then return end
             self:CompleteItemDrag()
             if nativeStop then nativeStop(frame,...) end
         end)
         local nativeClick=bankButton and b:GetScript("OnClick") or (ContainerFrameItemButtonMixin and ContainerFrameItemButtonMixin.OnClick or ContainerFrameItemButton_OnClick)
         -- Keep the secure template's OnClick untouched; observe it afterward.
         local function click(frame,mouseButton,...)
+            if InCombatLockdown() then return end
             if bankButton and not self:CanMutateBank(nil,true) then return end
             if mouseButton=="LeftButton" then
                 if CursorHasItem() and self:TryVirtualDrop(frame.anchorCategory,frame.anchorIndex) then return end
@@ -746,6 +773,7 @@ function A:GetItemButton(item, panel)
         for _, event in ipairs({"OnReceiveDrag", "OnMouseDown"}) do
             local native=b:GetScript(event)
             b:SetScript(event,function(frame,...)
+                if InCombatLockdown() then return end
                 if event=="OnMouseDown" then self:FocusWindow() end
                 if bankButton and not self:CanMutateBank(nil,true) then return end
                 if event=="OnReceiveDrag" and self:TryVirtualDrop(frame.anchorCategory,frame.anchorIndex) then return end
@@ -780,6 +808,7 @@ end
 
 function A:PaintItem(b,item,search)
     local info,q=item.info,item.quest or {}
+    local displayCount=self:DisplayStackCount(b,item)
     local p=b.paintState
     if type(p)~="table" then p={}; b.paintState=p end
     local full=p.kind~="item" or self.forceItemPaint
@@ -787,7 +816,7 @@ function A:PaintItem(b,item,search)
     b.currentItem=item; b.emptyAnchor=nil
     if full then b:SetHasItem(true) end
     if full or p.icon~=info.iconFileID then SetItemButtonTexture(b,info.iconFileID) end
-    if full or p.count~=info.stackCount then SetItemButtonCount(b,info.stackCount) end
+    if full or p.count~=displayCount then SetItemButtonCount(b,displayCount) end
     if full or p.quality~=(info.quality or false) or p.link~=(info.hyperlink or false) then SetItemButtonQuality(b,info.quality,info.hyperlink) end
     if full or p.locked~=(info.isLocked or false) then SetItemButtonDesaturated(b,info.isLocked) end
     if full or changedIdentity or p.locked~=(info.isLocked or false) then b:UpdateCooldown(true) end
@@ -799,7 +828,7 @@ function A:PaintItem(b,item,search)
     if full or p.new~=isNew or p.quality~=(info.quality or false) then b:UpdateNewItem(info.quality) end
     if full or p.quality~=(info.quality or false) or p.noValue~=(info.hasNoValue or false) then b:UpdateJunkItem(info.quality,info.hasNoValue) end
     if b.UpdateItemContextMatching and (full or changedIdentity or p.link~=(info.hyperlink or false)) then b:UpdateItemContextMatching() end
-    p.kind,p.identity,p.icon,p.count="item",item.identity,info.iconFileID,info.stackCount
+    p.kind,p.identity,p.icon,p.count="item",item.identity,info.iconFileID,displayCount
     p.quality,p.link,p.locked,p.readable=info.quality or false,info.hyperlink or false,info.isLocked or false,info.isReadable or false
     p.questItem,p.questID,p.questActive=q.isQuestItem or false,q.questID or false,q.isActive or false
     p.new,p.noValue=isNew,info.hasNoValue or false
@@ -823,6 +852,8 @@ function A:PaintEmpty(b,slot,panel,index)
     b.anchorSlotKey=slot.slotKey
     b.emptyAnchor,b.anchorCategory,b.anchorIndex=true,panel.id,index
     b.currentItem=nil
+    if b.stackBadge then b.stackBadge:Hide() end
+    if self.combatController then b:SetAttribute("combat-reveal",false) end
     local p=b.paintState
     if type(p)~="table" then p={}; b.paintState=p end
     if p.kind~="empty" or self.forceItemPaint then
@@ -867,8 +898,16 @@ function A:PaintFavoriteGhost(panel,ordinal,id,index,size,x,y)
             if CursorHasItem() then self:TryVirtualDrop(ghost.anchorCategory,ghost.anchorIndex) end
         end
         ghost:SetScript("OnReceiveDrag",receive)
-        ghost:RegisterForClicks("LeftButtonUp")
-        ghost:SetScript("OnClick",receive)
+        ghost:RegisterForClicks("LeftButtonUp","RightButtonUp")
+        ghost:SetScript("OnClick",function(_,key)
+            if key=="RightButton" and not CursorHasItem() and not InCombatLockdown() then
+                MenuUtil.CreateContextMenu(ghost,function(_,root)
+                    local entry=self.profile.favorites[ghost.favoriteID]
+                    root:CreateTitle(entry and entry.name or self.L["Favoritos"])
+                    root:CreateButton(self.L["Remover favorito"],function() self:RemoveFavorite(ghost.favoriteID) end)
+                end)
+            else receive() end
+        end)
         ghost:SetScript("OnEnter",function()
             if CursorHasItem() then return end
             GameTooltip:SetOwner(ghost,"ANCHOR_RIGHT")
@@ -896,8 +935,8 @@ function A:PaintFavoriteGhost(panel,ordinal,id,index,size,x,y)
 end
 
 function A:Render()
-    if InCombatLockdown() then self.pendingRefresh = true; return end
-    if self.ready and not self.window:IsShown() then self.inventoryDirty=true; return end
+    if InCombatLockdown() then self.pendingRefresh = true; self:PaintCombatInventory(); return end
+    if self.ready and not self.window:IsShown() and not self.renderPreparing then self.inventoryDirty=true; return end
     self:ApplyLayout()
     self:RefreshBagSlots()
     self:PaintCurrencyBar(); self:PaintTabs(); self:PaintStorageSelector(); self:RefreshBankControls()
@@ -905,6 +944,7 @@ function A:Render()
     if self.physicalSections then for _,panel in pairs(self.physicalSections) do panel:Hide() end end
     if not self.groups then return end
     self:AssignEmptySlots()
+    self:BuildVirtualStacks()
     self.renderSerial=(self.renderSerial or 0)+1
     local search = (self.search:GetText() or ""):lower()
     self.searchHint:SetShown(search == "")
@@ -947,10 +987,11 @@ function A:Render()
                 end
                 if item then
                     if self:PaintItem(b, item, search) then matches = matches + 1 end
+                    self:PaintVirtualStack(b,item)
                 else
                     self:PaintEmpty(b, empty, panel, index)
                 end
-                if self:CategoryDisplayed(cat.id) then
+                if self:CategoryDisplayed(cat.id) and not group.virtualHidden[index] then
                     if not b:IsShown() then b:Show() end
                 elseif b:IsShown() then b:Hide() end
             elseif group.reserved and group.reserved[index] then
@@ -971,6 +1012,7 @@ function A:Render()
         if b.renderSerial~=self.renderSerial then
             if b:IsShown() then b:Hide() end
             b.currentItem=nil
+            if self.combatController and b:GetAttribute("combat-reveal") then b:SetAttribute("combat-reveal",false) end
         end
     end
     self.forceItemPaint=nil

@@ -1,13 +1,5 @@
 local _, A = ...
 
-local function compare(a, b)
-    if a.pending ~= b.pending then return not a.pending end
-    local an, bn = a.sortName or a.name:lower(), b.sortName or b.name:lower()
-    if an ~= bn then return an < bn end
-    if a.info.itemID ~= b.info.itemID then return a.info.itemID < b.info.itemID end
-    return a.slotKey < b.slotKey
-end
-
 function A:ReleaseCategoryDropSlots(category)
     local dropSlots=self:GetDropSlots()
     for identity,target in pairs(dropSlots) do
@@ -37,7 +29,7 @@ function A:Reconcile()
         local group = self.groups[cat.id]
         local previous = stored[cat.id] or {}
         local nextPositions, claimed = {}, group.positions
-        table.sort(group.items, compare)
+        table.sort(group.items, self:ItemComparator(cat.id))
         local favoriteIDs=self:ClearTable(group.favoriteIDs)
         for id,favorite in pairs(self.profile.favorites or {}) do
             if self:VisibleCategory(favorite.category)==cat.id then favoriteIDs[#favoriteIDs+1]=id end

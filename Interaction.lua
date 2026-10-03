@@ -65,6 +65,9 @@ function A:TryVirtualDrop(category,index)
     local group=self.groups[category]
     if not group then return false end
     local target=index and group.positions[index]
+    if index and group.reserved[index] and not target and group.reserved[index]~=id then
+        self.itemDrag=nil; ClearCursor(); return not CursorHasItem()
+    end
     if target and target.info.itemID==id and target.identity~=source.identity then
         -- Native slots handle merging, full stacks and incompatible variants.
         self.itemDrag=nil
@@ -196,36 +199,75 @@ function A:CancelInteractions()
     end
 end
 
-function A:ShowCategoryDropHint(id)
+function A:DropPreview(id,index)
+    local group=self.groups and self.groups[id]
+    if not group then return false,self.L["Destino indisponível."] end
+    local source=self.itemDrag
+    local _,itemID=GetCursorInfo()
+    local target=index and group.positions[index]
+    local reserved=index and group.reserved[index]
+    if reserved and not target and reserved~=itemID then return false,self.L["Este slot está reservado para um favorito."] end
+    if source and source.category==id and not index then return false,self.L["Solte sobre um slot para mudar a posição nesta categoria."] end
+    if target and source and target.identity==source.identity then return false,self.L["O item permanecerá neste slot."] end
+    if target and target.info.itemID==itemID then return true,self.L["Juntar pilhas se os itens forem compatíveis."] end
+    if source and source.bag~=Enum.BagIndex.ReagentBag and id~="reagentbag" then
+        return true,target and source.category==id and self.L["Trocar a posição destes dois itens."] or self.L["Mover apenas esta pilha para a categoria."]
+    end
+    local data=self.itemCache[itemID]
+    for _,slot in ipairs(self.emptySlots or {}) do
+        if (id=="reagentbag" and slot.bag==Enum.BagIndex.ReagentBag and data and data.reagent) or
+            (id~="reagentbag" and slot.bag~=Enum.BagIndex.ReagentBag and (slot.family or 0)==0) then
+            return true,self.L["Mover para um slot físico livre."]
+        end
+    end
+    return false,self.L["Não há um slot físico livre compatível para receber este item."]
+end
+
+function A:ShowCategoryDropHint(id,index)
     self:HideCategoryDropHint()
     if self.draft or InCombatLockdown() or not CursorHasItem() then return end
     local panel=self.panels[id]
     if not panel then return end
-    local canDrop=self.itemDrag and self.itemDrag.bag~=Enum.BagIndex.ReagentBag and id~="reagentbag"
-    if not canDrop then
-        local _,itemID=GetCursorInfo()
-        local data=self.itemCache[itemID]
-        for _,slot in ipairs(self.emptySlots or {}) do
-            if (id=="reagentbag" and slot.bag==Enum.BagIndex.ReagentBag and data and data.reagent) or
-                (id~="reagentbag" and slot.bag~=Enum.BagIndex.ReagentBag and (slot.family or 0)==0) then canDrop=true; break end
-        end
-    end
+    local canDrop,message=self:DropPreview(id,index)
     panel.dropGlow:SetShown(true)
     panel.dropGlow:SetBackdropBorderColor(canDrop and 0.25 or 1,canDrop and 0.9 or 0.25,0.4,0.95)
+    if index then
+        if not panel.dropSlot then
+            panel.dropSlot=CreateFrame("Frame",nil,panel.content,"BackdropTemplate")
+            panel.dropSlot:SetBackdrop({edgeFile="Interface\\Buttons\\WHITE8X8",edgeSize=2})
+            panel.dropSlot:SetFrameLevel(panel.dropGlow:GetFrameLevel()+5); panel.dropSlot:EnableMouse(false)
+        end
+        local metrics=panel.currentMetrics or self:ItemMetrics(self:GetLayout()[id])
+        panel.dropSlot:ClearAllPoints(); panel.dropSlot:SetPoint("TOPLEFT",panel.content,"TOPLEFT",((index-1)%metrics.cols)*metrics.step,-math.floor((index-1)/metrics.cols)*metrics.step)
+        panel.dropSlot:SetSize(metrics.size,metrics.size)
+        panel.dropSlot:SetBackdropBorderColor(canDrop and 0.25 or 1,canDrop and 0.9 or 0.25,0.4,1)
+        panel.dropSlot:Show()
+        GameTooltip:AddLine(message,canDrop and 0.25 or 1,canDrop and 0.9 or 0.3,0.4,true); GameTooltip:Show()
+    else
+        GameTooltip:SetOwner(panel.dropTarget,"ANCHOR_TOP")
+        GameTooltip:SetText(self:CategoryName(id)); GameTooltip:AddLine(message,canDrop and 0.25 or 1,canDrop and 0.9 or 0.3,0.4,true); GameTooltip:Show()
+    end
     self.dropHintPanel=panel
 end
 
 function A:HideCategoryDropHint()
-    if self.dropHintPanel then self.dropHintPanel.dropGlow:Hide(); self.dropHintPanel=nil end
+    local panel=self.dropHintPanel
+    if panel then
+        panel.dropGlow:Hide(); if panel.dropSlot then panel.dropSlot:Hide() end
+        if GameTooltip and GameTooltip.IsOwned and GameTooltip:IsOwned(panel.dropTarget) then GameTooltip:Hide() end
+        self.dropHintPanel=nil
+    end
 end
 
 function A:OpenCategoryMenu(panel)
     if InCombatLockdown() then return end
     MenuUtil.CreateContextMenu(panel.move,function(_,root)
         root:CreateTitle(self:CategoryName(panel.id))
-        root:CreateButton(A.L["Organizar itens"],function() self.organizeCategory=panel.id; self:Reconcile(); self:Render() end)
+        root:CreateButton(A.L["Organizar itens"],function() if not InCombatLockdown() and not self.draft then self.organizeCategory=panel.id; self:Reconcile(); self:Render() end end)
         root:CreateCheckbox(A.L["Compactar automaticamente"],function() return self:GetLayout()[panel.id].compact end,
             function() self:SetCategoryOption(panel.id,"compact",not self:GetLayout()[panel.id].compact) end)
+        root:CreateButton(A.L["Regras automáticas"],function() self:OpenSettings("rules",panel.id) end)
+        root:CreateButton(A.L["Ordenação desta categoria"],function() self.settingsCategory=panel.id; self:OpenSettings("tools",panel.id) end)
         root:CreateButton(A.L["Personalizar categoria"],function() self:OpenCustomization(panel.id) end)
         self:AddCategoryActions(root,panel.id)
         root:CreateButton(A.L["Redimensionar no editor"],function() self.window:Show(); self:StartEdit() end)

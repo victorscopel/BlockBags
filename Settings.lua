@@ -43,6 +43,11 @@ function A:SetCategoryOption(id,key,value)
         local valid,err=self:ValidateCategoryRule(value)
         if not valid then self:Print(err); return end
     end
+    if key=="itemSize" then
+        local candidate=self:Copy(data); candidate.itemSize=value
+        local _,_,w,h=self:PanelRect(candidate); local minW,minH=self:MinimumPanelSize(candidate)
+        if w<minW or h<minH then self:Print(self.L["Esse tamanho não cabe: verifique o mínimo, os outros painéis e a janela."]); self:RefreshSettings(); return end
+    end
     if key=="width" or key=="height" then
         if not self.draft then self:Print(A.L["Entre no modo Editar layout para alterar dimensões."]); self:RefreshSettings(); return end
         local candidate=self:Copy(data); candidate[key]=value
@@ -67,7 +72,7 @@ function A:SetCategoryOption(id,key,value)
     local enableAutomatic=key=="compact" and value and not data.compact
     data[key]=value
     if enableAutomatic and not self.draft then self:ReleaseCategoryDropSlots(id) end
-    if key=="compact" and self.draft then
+    if (key=="compact" or key=="sortBy" or key=="sortDescending") and self.draft then
         self:Render(); self:RefreshSettings()
         return
     end
@@ -124,8 +129,18 @@ function A:RegisterSettings()
     local profilePage=Settings.RegisterCanvasLayoutSubcategory(category,profiles,A.L["Perfis"])
     local features=page(A.L[self.isBankWindow and "Indicadores e ações" or "Moedas, indicadores e abas"],self.isBankWindow and 530 or 1080)
     local featurePage=Settings.RegisterCanvasLayoutSubcategory(category,features,A.L["Recursos"])
-    self.settingsPages={general=general,categories=categories,profiles=profiles,features=features}
+    local rules=page(A.L["Regras automáticas"],1120)
+    local rulePage=Settings.RegisterCanvasLayoutSubcategory(category,rules,A.L["Regras"])
+    local tools=page(A.L["Layouts e ferramentas"],1150)
+    local toolPage=Settings.RegisterCanvasLayoutSubcategory(category,tools,A.L["Layouts e ferramentas"])
+    self.settingsPages={general=general,categories=categories,profiles=profiles,features=features,rules=rules,tools=tools}
     self.settingsIDs={general=category:GetID(),categories=categoryPage:GetID(),profiles=profilePage:GetID(),features=featurePage:GetID()}
+    self.settingsIDs.rules,self.settingsIDs.tools=rulePage:GetID(),toolPage:GetID()
+    if not self.isBankWindow then
+        local offline=page(A.L["Histórico offline"],710)
+        local offlinePage=Settings.RegisterCanvasLayoutSubcategory(category,offline,A.L["Histórico offline"])
+        self.settingsPages.offline=offline; self.settingsIDs.offline=offlinePage:GetID()
+    end
     for _,panel in pairs(self.settingsPages) do panel:SetScript("OnShow",function() self:BuildSettingsControls(); self:RefreshSettings() end) end
 end
 
@@ -205,6 +220,7 @@ function A:BuildSettingsControls()
     text(create,A.L["Atribua itens por arraste ou escolha manual. Depois, posicione e redimensione o painel no editor. Encerre a edição antes de criar uma categoria."],20,-90,550)
     local automatic=section(c,A.L["Regra automática desta categoria"],-1005,260)
     controls.rule=input(automatic,20,-51,540); controls.rule:SetMaxLetters(256)
+    button(automatic,A.L["Abrir editor visual"],266,-86,274,function() self:OpenSettings("rules",self.settingsCategory) end)
     controls.applyRule=button(automatic,A.L["Aplicar regra"],20,-86,220,function()
         self:SetCategoryOption(self.settingsCategory,"rule",controls.rule:GetText())
     end)
@@ -258,6 +274,7 @@ function A:BuildSettingsControls()
     StaticPopupDialogs.BLOCKBAGS_DELETE_CATEGORY={text=A.L["Excluir a categoria %s? Os itens continuarão acessíveis. As regras desta categoria serão removidas."],button1=YES,button2=CANCEL,timeout=0,whileDead=true,hideOnEscape=true,preferredIndex=3,
         OnAccept=function(_,data) (data.owner or A):DeleteCategory(data.id) end}
     self:BuildFeatureSettings()
+    self:BuildRuleEditor(); self:BuildRoadmapSettings()
     self.settingsInitializing=false
 end
 
@@ -309,6 +326,7 @@ function A:RefreshSettings()
     local color=d.tint or {r=0.4,g=0.4,b=0.4}; c.swatch:SetColorTexture(color.r,color.g,color.b,1)
     for _,pageFrame in pairs(self.settingsPages) do pageFrame.content.initializing=false end
     self:RefreshFeatureSettings()
+    self:RefreshRuleEditor(); self:RefreshRoadmapSettings()
     self.settingsInitializing=false
 end
 

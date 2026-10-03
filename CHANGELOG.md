@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.9.0 — preview
+
+- Prepare secure backpack keybind, X and item-use paths for combat; defer layout and scrolling until combat ends.
+- Add exact-slot drop previews and removal of missing favorites from their faded icons.
+- Add compact/balanced/spacious presets, appearance copying and individual category reset.
+- Add a visual AND/OR rule editor with live matches, priorities and advanced text editing.
+- Add profession material-family, reagent-quality and quantity filters.
+- Sort each category by name, quality, item level, quantity or expansion in either direction.
+- Add optional visual stack grouping with access to every physical slot.
+- Add dark and ElvUI appearance options alongside the Blizzard theme.
+- Add complete Spanish/esMX and French catalogs; preserve custom names across locales.
+- Add opt-in, read-only offline history with character, item and age limits, separate from profile exports.
+- Add refresh timing and CPU/memory diagnostics; reuse pools and coalesce hidden-backpack preparation by event.
+- Expand regression, stress, locale and package checks. Native combat taint, rendering and bank transactions still need Retail validation.
+
 ## 0.8.1 — preview
 
 - Move items to chosen slots within a category, including visual swaps and automatic layouts.

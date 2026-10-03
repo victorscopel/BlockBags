@@ -31,6 +31,7 @@ function A:CreateBagMenuButton()
     end)
     b:SetScript("OnLeave", function() highlight:Hide(); GameTooltip:Hide() end)
     b:SetScript("OnClick", function(_, mouseButton)
+        if InCombatLockdown() then return end
         if mouseButton == "RightButton" then self:ToggleBagSlots(); return end
         MenuUtil.CreateContextMenu(b, function(_, root)
             root:CreateCheckbox(A.L[self.isBankWindow and "Visualização por aba física" or "Visualização por bolsa"], function()
@@ -51,6 +52,9 @@ function A:CreateBagMenuButton()
             end)
             root:CreateDivider()
             root:CreateButton(A.L["Configurações"], function() self:OpenGeneralSettings() end)
+            root:CreateButton(A.L["Layouts e ferramentas"],function() self:OpenSettings("tools") end)
+            root:CreateButton(A.L["Regras automáticas"],function() self:OpenSettings("rules") end)
+            if not self.isBankWindow then root:CreateButton(A.L["Histórico offline"],function() self:OpenOfflineInventory() end) end
             root:CreateButton(A.L["Editar layout"], function() self:StartEdit() end)
             root:CreateButton(A.L[self.isBankWindow and "Indicadores e abas" or "Moedas, indicadores e abas"], function() self:OpenSettings("features") end)
             if self.atBank and C_Bank and C_Bank.CanPurchaseBankTab then
@@ -69,6 +73,7 @@ function A:BuildBagSlots()
     if self.bagSlots then return end
     local panel = CreateFrame("Frame", nil, self.window, "BackdropTemplate")
     self.bagSlots = panel
+    if self.combatController then self.combatController:SetFrameRef("bag-slots",panel) end
     panel:SetSize(230, 72)
     panel:SetPoint("BOTTOMLEFT", self.window, "TOPLEFT", 0, 10)
     panel:SetClampedToScreen(true)
@@ -227,12 +232,17 @@ function A:RenderPhysicalBags()
                 if model.info then self:PaintItem(b,model,search)
                 else self:PaintEmpty(b,model,panel,slot) end
                 b.anchorCategory, b.anchorIndex = nil, nil
+                if b.stackBadge then b.stackBadge:Hide() end
+                if self.combatController and b:GetAttribute("combat-reveal") then b:SetAttribute("combat-reveal",false) end
                 b:Show()
             end
         end
     end
     for bag,panel in pairs(self.physicalSections) do if not drawn[bag] then panel:Hide() end end
-    for _,b in pairs(self.buttons) do if b.renderSerial ~= self.renderSerial then b:Hide(); b.currentItem=nil end end
+    for _,b in pairs(self.buttons) do if b.renderSerial ~= self.renderSerial then
+        b:Hide(); b.currentItem=nil
+        if self.combatController and b:GetAttribute("combat-reveal") then b:SetAttribute("combat-reveal",false) end
+    end end
     self.forceItemPaint=nil
     local c=self.capacity
     if c then self.status:SetText(string.format(A.L["Livres: %d/%d  |  Reagentes livres: %d/%d"],c.free,c.total,c.reagentFree,c.reagentTotal)) end

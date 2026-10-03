@@ -1,4 +1,4 @@
-# Bank review — 0.8.0
+# Bank review — 0.9.0
 
 The eight fixes addressed these areas. Offline tests verify the Lua behavior;
 protected execution and visual rendering still require the WoW client.
@@ -33,3 +33,17 @@ Offline regressions cover control delegation, permissions, tab purchase updates,
 CVar persistence, bank-specific balance and bounded frame reuse. Native popup
 acceptance, filter saving, protected execution and visual layout still need client
 validation in TESTING.md. No in-game validation is claimed by the offline suite.
+
+## Bank settings in 0.9.0
+
+Character and Warband scopes have separate rules, priorities, sorting, themes,
+presets, appearance copying and grouping. They have no backpack favorites,
+currencies, equipped-bag bar or virtual category tabs. Presets affect the current
+scope; all purchased physical tabs remain unified.
+
+Offline history is configured once from backpack settings. It records only
+visited, viewable bank scopes and keeps one shared Warband snapshot. No bank
+transaction can run from the viewer. Bank mutations stay paused during combat.
+
+Actual server acceptance, restrictions, refund dialogs, taint and visual behavior
+remain unchecked until the Retail checklist is executed.

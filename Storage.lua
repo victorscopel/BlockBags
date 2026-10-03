@@ -51,6 +51,7 @@ function A:SetStorage(storage)
     if self.physicalBagView then self:SetPhysicalBagView(false) end
     self:CloseBankTabSettings()
     if self.isBankWindow then self:CloseBankTransactions() end
+    self:CaptureOfflineSnapshot()
     self:CancelInteractions(); self.storage=storage
     if self.isBankWindow then self:BeginBankLoad() end
     self:ActivateBankScope(storage)
@@ -62,6 +63,7 @@ function A:SetStorage(storage)
     self.lastCategories=nil; self.pendingPlacements=nil
     self.searchResultIndex=0; self.focusedSearchIdentity=nil
     self:ScanInventory(); self:Reconcile(); self:ResizeCanvas(); self:Render()
+    self:CaptureOfflineSnapshot()
     if self.RefreshSettings then self:RefreshSettings() end
     return true
 end
