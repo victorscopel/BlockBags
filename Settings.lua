@@ -113,8 +113,9 @@ end
 
 function A:RegisterSettings()
     if self.settingsPages or not Settings or not Settings.RegisterCanvasLayoutCategory then return end
-    local general=page("BlockBags",780)
-    local category=Settings.RegisterCanvasLayoutCategory(general,"BlockBags")
+    local settingsName=self.isBankWindow and A.L["BlockBags — Banco"] or "BlockBags"
+    local general=page(settingsName,780)
+    local category=Settings.RegisterCanvasLayoutCategory(general,settingsName)
     Settings.RegisterAddOnCategory(category)
     local categories=page(A.L["Categorias"],1480)
     local categoryPage=Settings.RegisterCanvasLayoutSubcategory(category,categories,A.L["Categorias"])
@@ -136,7 +137,7 @@ function A:BuildSettingsControls()
     local status=section(g,A.L["Perfil e edição"],-42,106)
     controls.info=text(status,"",16,-44,560)
     text(status,A.L["As opções são salvas no perfil ativo. No editor, use Salvar ou Cancelar."],16,-72,560)
-    local layout=section(g,A.L["Layout do inventário"],-160,188)
+    local layout=section(g,self.isBankWindow and A.L["Layout do banco"] or A.L["Layout do inventário"],-160,188)
     controls.generalSpacing=self:CreateSettingSlider(layout,-91,0,16,1,function(value)
         if InCombatLockdown() then self:RefreshSettings(); return end
         if self.draft then self:PushUndo() end
@@ -178,7 +179,7 @@ function A:BuildSettingsControls()
     text(identity,A.L["Ocultar mantém os itens acessíveis em outra categoria visível."],20,-127,550)
     controls.deleteCategory=button(identity,A.L["Excluir categoria criada"],20,-158,245,function()
         if self:CanChangeProfile() and self:IsCustomCategory(self.settingsCategory) then
-            StaticPopup_Show("BLOCKBAGS_DELETE_CATEGORY",self:CategoryName(self.settingsCategory),nil,{id=self.settingsCategory})
+            StaticPopup_Show("BLOCKBAGS_DELETE_CATEGORY",self:CategoryName(self.settingsCategory),nil,{id=self.settingsCategory,owner=self})
         end
     end)
     local dimensions=section(c,A.L["Dimensões do painel"],-357,212)
@@ -209,13 +210,13 @@ function A:BuildSettingsControls()
     local active=section(p,A.L["Selecionar perfil"],-42,154)
     controls.profileTitle=text(active,"",20,-43,550)
     controls.profileSelect=dropdown(active,20,-77,330,function(_,root)
-        local keys={}; for key in pairs(BlockBagsDB.profiles) do keys[#keys+1]=key end; table.sort(keys)
+        local keys={}; for key in pairs(self:GetDatabase().profiles) do keys[#keys+1]=key end; table.sort(keys)
         for _,key in ipairs(keys) do root:CreateRadio(key,function(name) return self.settingsProfile==name end,
             function(name) self.settingsProfile=name; self:RefreshSettings() end,key) end
     end)
     button(active,A.L["Ativar"],365,-77,90,function() self:SelectProfile(self.settingsProfile) end)
     button(active,A.L["Excluir"],470,-77,90,function()
-        if self:CanChangeProfile() then StaticPopup_Show("BLOCKBAGS_DELETE_PROFILE",self.settingsProfile,nil,{name=self.settingsProfile}) end
+        if self:CanChangeProfile() then StaticPopup_Show("BLOCKBAGS_DELETE_PROFILE",self.settingsProfile,nil,{name=self.settingsProfile,owner=self}) end
     end)
     controls.profileChoice=text(active,"",20,-119,550)
     local manage=section(p,A.L["Criar ou renomear"],-208,167)
@@ -250,9 +251,9 @@ function A:BuildSettingsControls()
     text(transfer,A.L["Ctrl+C para copiar · Ctrl+V para colar. O código não contém itens físicos."],20,-331,550)
     text(p,A.L["Perfis podem ser compartilhados entre personagens. Salve ou cancele a edição antes de gerenciá-los."],32,-776,580)
     StaticPopupDialogs.BLOCKBAGS_DELETE_PROFILE={text=A.L["Excluir o perfil %s?"],button1=YES,button2=CANCEL,timeout=0,whileDead=true,hideOnEscape=true,preferredIndex=3,
-        OnAccept=function(_,data) A:DeleteProfile(data.name) end}
+        OnAccept=function(_,data) (data.owner or A):DeleteProfile(data.name) end}
     StaticPopupDialogs.BLOCKBAGS_DELETE_CATEGORY={text=A.L["Excluir a categoria %s? Os itens continuarão acessíveis. As regras desta categoria serão removidas."],button1=YES,button2=CANCEL,timeout=0,whileDead=true,hideOnEscape=true,preferredIndex=3,
-        OnAccept=function(_,data) A:DeleteCategory(data.id) end}
+        OnAccept=function(_,data) (data.owner or A):DeleteCategory(data.id) end}
     self:BuildFeatureSettings()
     self.settingsInitializing=false
 end
@@ -264,7 +265,7 @@ function A:CycleSettingsCategory(direction)
     self:RefreshSettings()
 end
 function A:CycleSettingsProfile(direction)
-    local keys={}; for key in pairs(BlockBagsDB.profiles) do keys[#keys+1]=key end; table.sort(keys)
+    local keys={}; for key in pairs(self:GetDatabase().profiles) do keys[#keys+1]=key end; table.sort(keys)
     local index=1; for i,key in ipairs(keys) do if key==self.settingsProfile then index=i end end
     self.settingsProfile=keys[(index-1+direction)%#keys+1]; self:RefreshSettings()
 end
@@ -273,7 +274,7 @@ function A:RefreshSettings()
     local c=self.settingsControls
     if not c then return end
     self.settingsCategory=self:GetLayout()[self.settingsCategory or ""] and self.settingsCategory or self.categories[1].id
-    self.settingsProfile=BlockBagsDB.profiles[self.settingsProfile or ""] and self.settingsProfile or self.profileKey
+    self.settingsProfile=self:GetDatabase().profiles[self.settingsProfile or ""] and self.settingsProfile or self.profileKey
     local d=self:GetLayout()[self.settingsCategory]
     self.settingsInitializing=true
     c.info:SetText(A.L["Perfil ativo: "]..self.profileKey..(self.draft and A.L[" — prévia de edição"] or ""))
@@ -310,8 +311,8 @@ function A:RestoreInventoryEscape()
     local index=self.settingsSpecialIndex
     self.settingsSpecialIndex=nil
     if not index then return end
-    for _,name in ipairs(UISpecialFrames) do if name=="BlockBagsWindow" then return end end
-    table.insert(UISpecialFrames,math.min(index,#UISpecialFrames+1),"BlockBagsWindow")
+    for _,name in ipairs(UISpecialFrames) do if name==(self.windowName or "BlockBagsWindow") then return end end
+    table.insert(UISpecialFrames,math.min(index,#UISpecialFrames+1),self.windowName or "BlockBagsWindow")
 end
 
 function A:ProtectInventoryDuringSettings(protectInventory)
@@ -319,7 +320,7 @@ function A:ProtectInventoryDuringSettings(protectInventory)
     if protectInventory and not self.settingsInventorySession then
         self.settingsInventorySession={}
         for i=#UISpecialFrames,1,-1 do
-            if UISpecialFrames[i]=="BlockBagsWindow" then
+            if UISpecialFrames[i]==(self.windowName or "BlockBagsWindow") then
                 self.settingsSpecialIndex=i
                 table.remove(UISpecialFrames,i)
                 break
@@ -362,6 +363,8 @@ function A:OpenSettings(section,id)
     local shown=self.window:IsShown()
     self.openingSettings=true
     self:ProtectInventoryDuringSettings(shown)
+    local other=self.inventoryController or self.bankController
+    if other then other:ProtectInventoryDuringSettings(other.window:IsShown()) end
     local ok,err=pcall(Settings.OpenToCategory,self.settingsIDs[section or "general"])
     if shown then self.window:Show() end
     self.openingSettings=nil
@@ -369,6 +372,10 @@ function A:OpenSettings(section,id)
         self.settingsMenuSession=nil
         self.settingsInventorySession=nil
         self:RestoreInventoryEscape()
+        if other then
+            other.settingsMenuSession=nil; other.settingsInventorySession=nil
+            other:RestoreInventoryEscape()
+        end
         self:Print(A.L["Não foi possível abrir as opções: "]..tostring(err))
     end
 end

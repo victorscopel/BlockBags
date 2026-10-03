@@ -80,17 +80,17 @@ function A:RefreshProfile()
 end
 
 function A:SelectProfile(name)
-    if not self:CanChangeProfile() or not BlockBagsDB.profiles[name] then return false end
-    self.profileKey, self.profile = name, BlockBagsDB.profiles[name]
+    if not self:CanChangeProfile() or not self:GetDatabase().profiles[name] then return false end
+    self.profileKey, self.profile = name, self:GetDatabase().profiles[name]
     local p=self.profile
     p.categories=p.categories or self:Copy(self.baseCategories)
     p.placements=p.placements or {}; p.favorites=p.favorites or {}; p.manualCategories=p.manualCategories or {}
-    local positions=BlockBagsDB.inventoryPositions[self.characterKey]
+    local positions=self:GetDatabase().inventoryPositions[self.characterKey]
     positions[name]=positions[name] or {}
     p.placements=positions[name]
     p.settings=p.settings or {categorySpacing=0}; p.window=p.window or {x=0,y=0,scale=0.85}
     if not p.spacingLayoutVersion then self:PackLayout(p.layout,p.settings.categorySpacing or 0); p.spacingLayoutVersion=1 end
-    BlockBagsDB.characterProfiles[self.characterKey] = name
+    self:GetDatabase().characterProfiles[self.characterKey] = name
     self:RefreshProfile()
     return true
 end
@@ -98,7 +98,7 @@ end
 function A:CreateProfile(name, duplicate)
     if not self:CanChangeProfile() then return false end
     name = (name or ""):match("^%s*(.-)%s*$")
-    if #name == 0 or #name > 60 or BlockBagsDB.profiles[name] then self:Print(A.L["Use um nome novo com até 60 caracteres."]); return false end
+    if #name == 0 or #name > 60 or self:GetDatabase().profiles[name] then self:Print(A.L["Use um nome novo com até 60 caracteres."]); return false end
     local profile
     if duplicate then profile = self:Copy(self.profile); profile.placements = {}
     else
@@ -108,31 +108,31 @@ function A:CreateProfile(name, duplicate)
             window={x=0,y=0,scale=0.85},placements={},favorites={},manualCategories={}}
         self.categories = categories
     end
-    BlockBagsDB.profiles[name] = profile
+    self:GetDatabase().profiles[name] = profile
     return self:SelectProfile(name)
 end
 
 function A:RenameProfile(name)
     if not self:CanChangeProfile() then return end
     name=(name or ""):match("^%s*(.-)%s*$")
-    if #name==0 or #name>60 or BlockBagsDB.profiles[name] then self:Print(A.L["Nome inválido ou já utilizado."]); return end
+    if #name==0 or #name>60 or self:GetDatabase().profiles[name] then self:Print(A.L["Nome inválido ou já utilizado."]); return end
     local old=self.profileKey
-    BlockBagsDB.profiles[name], BlockBagsDB.profiles[old] = self.profile, nil
-    for _,positions in pairs(BlockBagsDB.inventoryPositions) do
+    self:GetDatabase().profiles[name], self:GetDatabase().profiles[old] = self.profile, nil
+    for _,positions in pairs(self:GetDatabase().inventoryPositions) do
         positions[name],positions[old]=positions[old],nil
     end
-    for character,key in pairs(BlockBagsDB.characterProfiles) do if key==old then BlockBagsDB.characterProfiles[character]=name end end
+    for character,key in pairs(self:GetDatabase().characterProfiles) do if key==old then self:GetDatabase().characterProfiles[character]=name end end
     self.profileKey=name
     self:RefreshSettings()
 end
 
 function A:DeleteProfile(name)
     if not self:CanChangeProfile() then return false end
-    for _, key in pairs(BlockBagsDB.characterProfiles) do
+    for _, key in pairs(self:GetDatabase().characterProfiles) do
         if key==name then self:Print(A.L["Este perfil está em uso por um personagem. Troque o perfil antes de excluir."]); return false end
     end
-    BlockBagsDB.profiles[name]=nil
-    for _,positions in pairs(BlockBagsDB.inventoryPositions) do positions[name]=nil end
+    self:GetDatabase().profiles[name]=nil
+    for _,positions in pairs(self:GetDatabase().inventoryPositions) do positions[name]=nil end
     self:RefreshSettings()
     return true
 end
@@ -183,7 +183,7 @@ function A:DeleteCategory(id)
     for _,favorite in pairs(self.profile.favorites) do
         if favorite.category==id then favorite.category=self:VisibleCategory("misc"); favorite.index=1 end
     end
-    for _,characters in pairs(BlockBagsDB.inventoryPositions) do
+    for _,characters in pairs(self:GetDatabase().inventoryPositions) do
         if characters[self.profileKey] then
             characters[self.profileKey][id]=nil
             for identity,target in pairs(characters[self.profileKey].dropSlots or {}) do
@@ -355,11 +355,11 @@ end
 function A:ImportProfile(name,code)
     if not self:CanChangeProfile() then return false end
     name=(name or ""):match("^%s*(.-)%s*$")
-    if #name==0 or #name>60 or BlockBagsDB.profiles[name] then self:Print(A.L["Escolha um nome novo para importar sem substituir perfis."]); return false end
+    if #name==0 or #name>60 or self:GetDatabase().profiles[name] then self:Print(A.L["Escolha um nome novo para importar sem substituir perfis."]); return false end
     local p,err=self:DecodeProfile(code)
     if not p then self:Print(err); return false end
     p.version=nil
     p.spacingLayoutVersion=1
-    BlockBagsDB.profiles[name]=p
+    self:GetDatabase().profiles[name]=p
     return self:SelectProfile(name)
 end

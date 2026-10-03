@@ -138,7 +138,7 @@ function A:ScanInventory()
         for identity in pairs(assignments) do
             if not self.liveIdentities[identity] then assignments[identity]=nil end
         end
-        local all=BlockBagsDB.inventoryPositions[self.characterKey][self.profileKey]
+        local all=self:GetDatabase().inventoryPositions[self.characterKey][self.profileKey]
         local function pruneSlots(positions)
             for identity in pairs(positions.dropSlots or {}) do
                 if not self.liveIdentities[identity] then positions.dropSlots[identity]=nil end

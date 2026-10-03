@@ -29,6 +29,7 @@ end
 function A:StorageChoices()
     local choices={{id="bags",name=A.L["Inventário"]}}
     if not self.atBank or not Enum.BankType then return choices end
+    if self.isBankWindow then choices={} end
     if C_Bank.CanViewBank(Enum.BankType.Character) then choices[#choices+1]={id="character",name=A.L["Banco do personagem"]} end
     local names={}
     if C_Bank.FetchPurchasedBankTabData and C_Bank.CanViewBank(Enum.BankType.Account) then
@@ -46,7 +47,10 @@ function A:SetStorage(storage)
     self:CancelBulkAction()
     if self.physicalBagView then self:SetPhysicalBagView(false) end
     self:CancelInteractions(); self.storage=storage
-    if storage~="bags" then self.bankDepositTarget=storage end
+    if storage~="bags" then
+        self.bankDepositTarget=storage
+        if self.inventoryController then self.inventoryController.bankDepositTarget=storage end
+    end
     self.lastCategories=nil; self.pendingPlacements=nil
     self.searchResultIndex=0; self.focusedSearchIdentity=nil
     self:ScanInventory(); self:Reconcile(); self:ResizeCanvas(); self:Render()
@@ -65,7 +69,7 @@ function A:PaintStorageSelector()
             end
         end)
     end
-    self.storageSelector:SetShown(self.atBank==true and not self.draft)
+    self.storageSelector:SetShown(self.isBankWindow==true and self.atBank==true and not self.draft)
     local name=A.L["Inventário"]
     for _,choice in ipairs(self:StorageChoices()) do if choice.id==(self.storage or "bags") then name=choice.name end end
     self.storageSelector:OverrideText(name)
@@ -95,10 +99,20 @@ function A:BankOpened()
             BankPanel:SetBankType(kind)
         end
     end
-    if self.draft then self:FinishEdit(false) end
     self.window:Show()
-    local choices=self:StorageChoices()
-    self:SetStorage(choices[2] and choices[2].id or "bags")
+    local bank=self:EnsureBankWindow()
+    bank.atBank=true
+    local choices=bank:StorageChoices()
+    local selected=bank.storage
+    local available=false
+    for _,choice in ipairs(choices) do if choice.id==selected then available=true end end
+    selected=available and selected or (choices[1] and choices[1].id)
+    if selected then
+        bank.window:Show()
+        bank:SetStorage(selected)
+        self.bankDepositTarget=selected
+    end
+    self:QueueRefresh()
     self.openingBank=nil
 end
 
@@ -111,18 +125,19 @@ function A:PurchaseBankTab(bankType)
     StaticPopupDialogs.BLOCKBAGS_PURCHASE_BANK_TAB=StaticPopupDialogs.BLOCKBAGS_PURCHASE_BANK_TAB or {
         text="%s",button1=ACCEPT or A.L["Comprar"],button2=CANCEL,timeout=0,whileDead=true,hideOnEscape=true,
         OnAccept=function(_,info)
-            if not A.atBank or InCombatLockdown() or not C_Bank.CanPurchaseBankTab(info.bankType) then return end
+            if not (info.owner or A).atBank or InCombatLockdown() or not C_Bank.CanPurchaseBankTab(info.bankType) then return end
             local current=C_Bank.FetchNextPurchasableBankTabData(info.bankType)
             if not current or not current.canAfford then return end
             local ok,cost=pcall(GetCoinTextureString,current.tabCost)
-            if not ok or cost~=info.costText then A:PurchaseBankTab(info.bankType); return end
+            if not ok or cost~=info.costText then (info.owner or A):PurchaseBankTab(info.bankType); return end
             C_Bank.PurchaseBankTab(info.bankType)
         end}
     local message=(data.purchasePromptTitle or A.L["Comprar aba do banco"])..A.L["\nCusto: "]..costText..A.L["\nConfirmar a compra?"]
-    StaticPopup_Show("BLOCKBAGS_PURCHASE_BANK_TAB",message,nil,{bankType=bankType,costText=costText})
+    StaticPopup_Show("BLOCKBAGS_PURCHASE_BANK_TAB",message,nil,{bankType=bankType,costText=costText,owner=self})
 end
 function A:BankClosed()
     self.atBank=false; self.pendingBankOpen=nil
+    if self.bankController then self.bankController:CloseBankWindow() end
     self:CancelBulkAction()
     if BankPanel and not self.integrationBlocked then
         BankPanel:Hide()

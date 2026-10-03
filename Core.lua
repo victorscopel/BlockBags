@@ -1,7 +1,7 @@
 local _, A = ...
 BlockBags = A
 AnchorBags = A -- Compatibility for existing bindings/scripts.
-A.version = "0.5.2"
+A.version = "0.6.0"
 A.cell, A.padding, A.header, A.scrollGutter = 40, 8, 36, 0
 A.categories = {
     { id = "equipment", name = A.L["Equipamentos"], x = 0, y = 0, cols = 8, rows = 4 },
@@ -63,13 +63,15 @@ function A:VisibleCategory(id)
     return "misc"
 end
 
+function A:GetDatabase() return self.database or BlockBagsDB end
+
 function A:InitializeDatabase()
     if not BlockBagsDB and type(AnchorBagsDB)=="table" then
         BlockBagsDB = self:Copy(AnchorBagsDB)
         BlockBagsDB.migratedFromAnchorBags = true
     end
     BlockBagsDB = BlockBagsDB or {}
-    local db = BlockBagsDB
+    local db = self:GetDatabase()
     db.schema = 2
     db.profiles = db.profiles or {}
     local character = UnitName("player") .. "-" .. GetRealmName()
@@ -129,6 +131,7 @@ local events = CreateFrame("Frame")
 A.events = events
 events:RegisterEvent("ADDON_LOADED")
 events:SetScript("OnEvent", function(_, event, arg, success)
+    if A.bankController and A.bankController.ready then A.bankController:HandleBankWindowEvent(event,arg,success) end
     if event == "ADDON_LOADED" then
         if arg ~= "BlockBags" then
             if A.ready and arg=="Pawn" then A:QueueRefresh() end

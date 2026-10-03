@@ -20,12 +20,12 @@ function A:SetBaseLayout(layout)
 end
 function A:GetPositions()
     if self:ViewKey()=="bags:default" then return self.profile.placements end
-    local all=BlockBagsDB.inventoryPositions[self.characterKey][self.profileKey]
+    local all=self:GetDatabase().inventoryPositions[self.characterKey][self.profileKey]
     all.views=all.views or {}; all.views[self:ViewKey()]=all.views[self:ViewKey()] or {}
     return all.views[self:ViewKey()]
 end
 function A:GetStackCategories()
-    local all=BlockBagsDB.inventoryPositions[self.characterKey][self.profileKey]
+    local all=self:GetDatabase().inventoryPositions[self.characterKey][self.profileKey]
     all.stackCategories=all.stackCategories or {}
     local storage=self.storage or "bags"
     all.stackCategories[storage]=all.stackCategories[storage] or {}
@@ -113,7 +113,7 @@ function A:DeleteTab(id)
             end
             table.remove(self.profile.tabs,index)
             for key in pairs(self.profile.extraLayouts or {}) do if key:match(":"..id.."$") then self.profile.extraLayouts[key]=nil end end
-            local views=BlockBagsDB.inventoryPositions[self.characterKey][self.profileKey].views or {}
+            local views=self:GetDatabase().inventoryPositions[self.characterKey][self.profileKey].views or {}
             for key in pairs(views) do if key:match(":"..id.."$") then views[key]=nil end end
             if self.activeTab==id then self.activeTab="default" end
             self:ResizeCanvas(); self:Reconcile(); self:Render(); self:RefreshSettings()

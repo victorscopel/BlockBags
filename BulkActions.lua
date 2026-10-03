@@ -16,7 +16,7 @@ function A:RequestCategoryAction(category,kind,targetStorage)
     if self.bulkAction then self:Print(A.L["Uma operação já está em andamento."]); return false end
     local group=self.groups[category]
     if not group then return false end
-    local action={kind=kind,bankType=self:BankType(targetStorage or self.storage),entries={},index=1,done=0,skipped=0,viewKey=self:ViewKey()}
+    local action={kind=kind,bankType=self:BankType(targetStorage or self.storage),entries={},index=1,done=0,skipped=0,viewKey=self:ViewKey(),owner=self}
     if not self:BulkContextValid(action) then self:Print(A.L["Abra o banco ou vendedor correspondente antes desta ação."]); return false end
     if kind=="sell" and self.atBank then self:Print(A.L["Feche o banco antes de vender itens."]); return false end
     for _,item in ipairs(group.items) do
@@ -30,8 +30,8 @@ function A:RequestCategoryAction(category,kind,targetStorage)
     self.pendingBulkAction=action
     if not StaticPopupDialogs.BLOCKBAGS_CATEGORY_ACTION then
         StaticPopupDialogs.BLOCKBAGS_CATEGORY_ACTION={text="%s",button1=ACCEPT or "Confirmar",button2=CANCEL,timeout=0,whileDead=true,hideOnEscape=true,
-            OnAccept=function(_,data) A:StartBulkAction(data) end,
-            OnCancel=function() A.pendingBulkAction=nil end}
+            OnAccept=function(_,data) (data.owner or A):StartBulkAction(data) end,
+            OnCancel=function(_,data) (data and data.owner or A).pendingBulkAction=nil end}
     end
     local verb=kind=="sell" and A.L["Vender"] or kind=="withdraw" and A.L["Retirar"] or A.L["Depositar"]
     local destination=kind=="sell" and A.L["no vendedor"] or kind=="withdraw" and A.L["para o inventário"] or (action.bankType==Enum.BankType.Account and A.L["no banco da tropa"] or A.L["no banco do personagem"])

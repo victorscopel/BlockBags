@@ -11,6 +11,8 @@ end
 
 function A:RequestWindow(action)
     if not self.ready or self.integrationBlocked then return end
+    local bank=self.bankController
+    if action=="close" and bank and (bank.openingSettings or bank.settingsInventorySession) then return end
     if action=="close" and (self.openingSettings or self.settingsInventorySession or self.openingBank) then return end
     -- Combine nested bag calls into one window action.
     if action == "toggle" or self.windowIntent ~= "toggle" then self.windowIntent = action end
@@ -23,7 +25,8 @@ function A:RequestWindow(action)
         if InCombatLockdown() then return end
         if intent == "toggle" then self:Toggle()
         elseif intent == "open" then self.window:Show()
-        elseif intent == "close" and not self.openingSettings and not self.settingsInventorySession and not self.openingBank then self.window:Hide() end
+        elseif intent == "close" and not self.openingSettings and not self.settingsInventorySession and not self.openingBank
+            and not (self.bankController and (self.bankController.openingSettings or self.bankController.settingsInventorySession)) then self.window:Hide() end
     end)
 end
 

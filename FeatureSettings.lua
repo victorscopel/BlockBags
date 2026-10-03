@@ -157,13 +157,13 @@ function A:BuildFeatureSettings()
     c.deleteTab=button(tabs,A.L["Excluir aba"],376,-151,164,function()
         local id=self.settingsTab
         if id=="default" then return end
-        StaticPopup_Show("BLOCKBAGS_DELETE_TAB",nil,nil,{id=id})
+        StaticPopup_Show("BLOCKBAGS_DELETE_TAB",nil,nil,{id=id,owner=self})
     end)
     text(tabs,A.L["Mover categorias: clique direito no cabeçalho → Mover categoria para aba, ou use a página Categorias. Cada aba salva seu próprio layout. Excluir uma aba retorna suas categorias à Principal."],20,-194,550)
     StaticPopupDialogs.BLOCKBAGS_DELETE_TAB={text=A.L["Excluir esta aba? Suas categorias retornarão à Principal."],button1=YES,button2=CANCEL,timeout=0,whileDead=true,hideOnEscape=true,
-        OnAccept=function(_,data) A:DeleteTab(data.id); A.settingsTab="default"; A:RefreshSettings() end}
+        OnAccept=function(_,data) local owner=data.owner or A; owner:DeleteTab(data.id); owner.settingsTab="default"; owner:RefreshSettings() end}
     local management=section(p,A.L["Banco e ações por categoria"],-818,150)
-    text(management,A.L["Ao abrir um banco, use o seletor ao lado da busca para alternar entre inventário, banco do personagem e abas da tropa. Clique direito no cabeçalho para depositar/retirar uma categoria. No vendedor, você pode vender a categoria após confirmar. Favoritos e conjuntos são protegidos."],20,-43,550)
+    text(management,A.L["O banco abre em uma janela separada, com categorias, favoritos e perfis próprios. Use o seletor dessa janela para alternar entre banco do personagem e abas da tropa. Clique direito no cabeçalho para depositar/retirar uma categoria. No vendedor, você pode vender a categoria após confirmar. Favoritos e conjuntos são protegidos."],20,-43,550)
     text(p,A.L["Busca: expansao:tww · vinculo:boe · slot:anel · conjunto:\"Raid DPS\" · descricao:\"velocidade\" · melhoria:sim · transmog:sim"],32,-996,570)
     local category=section(self.settingsPages.categories.content,"Aba desta categoria",-1338,98)
     c.categoryTab=dropdown(category,20,-46,460,function(_,root)

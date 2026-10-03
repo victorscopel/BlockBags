@@ -40,6 +40,8 @@ function A:ResolveDropTarget()
         local frame=focus
         for _=1,16 do
             if not frame then break end
+            local owner=frame.blockOwner or frame.anchorOwner
+            if type(owner)=="table" and owner~=self then return end
             local id=frame.blockCategory or frame.anchorCategory
             if type(id)=="string" and self.panels[id] and self.panels[id]:IsShown() then
                 return id,type(frame.anchorIndex)=="number" and frame.anchorIndex or nil

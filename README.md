@@ -9,7 +9,7 @@ inventory, so you can always find things where you expect them.
 Arrange categories like blocks, choose their dimensions, and decide whether each
 category keeps item positions or automatically fills gaps.
 
-> **Early preview — 0.5.2.** Bank integration and bulk actions are still being
+> **Early preview — 0.6.0.** Bank integration and bulk actions are still being
 > tested in-game. The interface follows your WoW client language: Portuguese or English.
 
 ## Features
@@ -20,7 +20,8 @@ category keeps item positions or automatically fills gaps.
 - Per-category colors, item sizes, spacing, and optional compaction.
 - Favorites and a visual highlight for newly acquired items.
 - Category tabs with independent layouts.
-- Character and Warband bank views with separate layouts.
+- Separate bank window with its own categories, favorites, settings and profiles.
+- Character bank and Warband tabs with independent layouts.
 - Temporary physical-bag view and equipped-bag controls.
 - Item levels, potential upgrade indicators, equipment-set markers, and
   uncollected appearance markers. Optional Pawn integration.
@@ -52,6 +53,15 @@ currently supported.
 - Right-click the bag button to switch temporarily to physical bags.
 - Right-click a category header for tab assignments and available bulk actions.
 - Use `/bb config` for settings or `/bb edit` for layout editing.
+
+Opening a bank shows a second window while your inventory stays available.
+Use the bank window selector to switch between the character bank and Warband
+tabs. Its bag button opens its own settings, including categories and profiles.
+Closing the inventory keeps the bank open; closing the bank ends the banking
+interaction. Existing bank layouts are migrated on first opening.
+
+Inventory and bank profiles are exported and imported separately from their
+respective settings pages.
 
 Closing settings keeps your inventory open. New items stay in their assigned
 categories instead of moving into a separate recent-items section.

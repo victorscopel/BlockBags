@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.0 — preview
+
+- Open the character bank and Warband tabs in a separate window alongside the inventory.
+- Give the bank its own categories, favorites, manual assignments, settings and profiles.
+- Preserve existing bank layouts and positions when migrating to separate bank data.
+- Keep the inventory open when the bank closes, and keep the banking interaction open when only the inventory closes.
+- Reuse bank frames and isolate refresh queues across repeated openings.
+
 ## 0.5.2 — preview
 
 - Fix the profile code field calling an unsupported EditBox height method.

@@ -50,7 +50,8 @@ function A:BuildUI()
     self:InstallInteractionHooks()
     self.canvasWidth, self.canvasHeight = 880, 600
     self.panels, self.buttons = {}, {}
-    local w = CreateFrame("Frame", "BlockBagsWindow", UIParent, "BackdropTemplate")
+    self.windowName=self.windowName or "BlockBagsWindow"
+    local w = CreateFrame("Frame", self.windowName, UIParent, "BackdropTemplate")
     self.window = w
     w:SetSize(self.profile.window.width or 912, self.profile.window.height or 716)
     w:SetFrameStrata("HIGH")
@@ -68,7 +69,7 @@ function A:BuildUI()
     w:SetScale(self.profile.window.scale)
     w:SetPoint("CENTER", UIParent, "CENTER", self.profile.window.x, self.profile.window.y)
     w:Hide()
-    UISpecialFrames[#UISpecialFrames + 1] = "BlockBagsWindow"
+    UISpecialFrames[#UISpecialFrames + 1] = self.windowName
     self:CreateBagMenuButton()
     local move = CreateFrame("Frame", nil, w)
     self.titleDrag=move
@@ -204,7 +205,7 @@ function A:BuildUI()
         self:CancelBulkAction()
         if self.physicalBagView and not InCombatLockdown() then self:SetPhysicalBagView(false) end
         if self.bagSlots then self.bagSlots:Hide() end
-        if self.atBank and not self.closingBank and C_Bank and C_Bank.CloseBankFrame then
+        if self.isBankWindow and self.atBank and not self.closingBank and C_Bank and C_Bank.CloseBankFrame then
             self.closingBank=true; C_Bank.CloseBankFrame(); self.closingBank=nil
         end
         self:CancelInteractions()
@@ -276,7 +277,7 @@ function A:LayoutToolbar()
     self.undoButton:ClearAllPoints(); self.undoButton:SetPoint("RIGHT",self.cancelButton,"LEFT",-6,0)
     self.seenButton:ClearAllPoints(); self.seenButton:SetPoint("TOPRIGHT",self.window,"TOPRIGHT",-26,-50)
     local toolbarWidth=self.draft and 200 or 50
-    if self.storageSelector then self.storageSelector:SetShown(self.atBank==true and not self.draft); if self.atBank then toolbarWidth=toolbarWidth+150 end end
+    if self.storageSelector then self.storageSelector:SetShown(self.isBankWindow==true and self.atBank==true and not self.draft); if self.isBankWindow and self.atBank then toolbarWidth=toolbarWidth+150 end end
     self.search:SetWidth(math.max(150,self.window:GetWidth()-toolbarWidth-140))
 end
 
@@ -292,6 +293,7 @@ function A:CreatePanel(category)
     panel.id = category.id
     panel.blockCategory=category.id
     panel.offset = 0
+    panel.blockOwner=self
     panel.cells, panel.bagParents = {}, {}
     box(panel, 0.8, 0.8, 0.8)
     panel.tintBackground=panel:CreateTexture(nil,"BACKGROUND",nil,1)
@@ -618,7 +620,7 @@ function A:GetItemButton(item, panel)
     end
     local parent = panel.bagParents[item.bag]
     if not b then
-        b = CreateFrame("ItemButton", "BlockBagsItem" .. item.bag .. "_" .. item.slot, parent, "ContainerFrameItemButtonTemplate,SecureActionButtonTemplate")
+        b = CreateFrame("ItemButton", (self.itemButtonPrefix or "BlockBagsItem") .. item.bag .. "_" .. item.slot, parent, "ContainerFrameItemButtonTemplate,SecureActionButtonTemplate")
         self.buttons[item.slotKey] = b
         b:Initialize(item.bag, item.slot)
         b:RegisterForClicks("LeftButtonUp","RightButtonUp")
@@ -694,6 +696,7 @@ function A:GetItemButton(item, panel)
         b.focusBorder:SetBackdropBorderColor(1,0.82,0,1)
         b.focusBorder:Hide()
     end
+    b.anchorOwner=self
     if b.anchorParent~=parent then b:SetParent(parent); b.anchorParent=parent end
     if b.anchorWheel~=panel.wheel then b:SetScript("OnMouseWheel",panel.wheel); b.anchorWheel=panel.wheel end
     return b
@@ -846,7 +849,8 @@ function A:Render()
         self.status:SetText(A.L["EDIÇÃO — arraste, redimensione ou use a engrenagem."])
         self.money:SetText("")
     elseif c then
-        self.status:SetText(string.format(A.L["Livres: %d/%d  |  Reagentes livres: %d/%d"], c.free, c.total, c.reagentFree, c.reagentTotal))
+        if self.isBankWindow then self.status:SetText(string.format(A.L["Livres: %d/%d"],c.free,c.total))
+        else self.status:SetText(string.format(A.L["Livres: %d/%d  |  Reagentes livres: %d/%d"], c.free, c.total, c.reagentFree, c.reagentTotal)) end
         self.money:SetText(self:FormatMoney(GetMoney()))
     end
 end

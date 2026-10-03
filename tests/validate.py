@@ -26,7 +26,7 @@ GetLocale = function() return TEST_LOCALE end
 A = {}
 ''')
 addon = lua.globals().A
-for name in ["Locale.lua", "Core.lua", "Query.lua", "Views.lua", "Storage.lua", "ItemFeatures.lua", "BulkActions.lua", "Inventory.lua", "Placement.lua", "Features.lua", "Profiles.lua", "Interaction.lua", "Integration.lua", "BagTools.lua", "FeatureSettings.lua"]:
+for name in ["Locale.lua", "Core.lua", "Query.lua", "Views.lua", "Storage.lua", "ItemFeatures.lua", "BulkActions.lua", "Inventory.lua", "Placement.lua", "Features.lua", "Profiles.lua", "Interaction.lua", "BankWindow.lua", "Integration.lua", "BagTools.lua", "FeatureSettings.lua"]:
     sources[name]("BlockBags", addon)
 lua.execute('''
 A:InitializeDatabase()
@@ -1151,3 +1151,5 @@ for n=1,100 do code.scripts.OnTextChanged(code) end
 assert(createdFrames==frames and not measure:IsShown())
 print("Profile text OK: hidden FontString measures height, empty text preserves minimum, repeated edits reuse one measure")
 ''')
+
+lua.execute((root / "tests" / "bank_window.lua").read_text(encoding="utf-8"))
