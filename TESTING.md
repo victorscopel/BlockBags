@@ -10,12 +10,14 @@ python tools/package.py
 ```
 
 Os testes usam Lua 5.1 através do lupa. Compilam todos os módulos e exercitam
-classificação, posições, editor, importação, integração e os recursos da 0.6.0
+classificação, posições, editor, importação, integração e os recursos da 0.6.1
 com APIs simuladas. Incluem limites de cache, crescimento retido após GC,
 reutilização de frames e cancelamento de operações. Não substituem o cliente.
 
 ## No WoW Retail, antes de publicar como estável
 
+- [ ] Confirmar título Backpack/Mochila conforme o cliente e sons ao abrir/fechar.
+- [ ] Barra nativa de bolsas oculta por padrão; alternar pelo menu, trocar perfil e dar reload.
 - [ ] Conferir menus e mensagens em clientes ptBR e enUS; testar `/bb help`.
 - [ ] Confirmar que o X aparece e fecha o inventário em ambos os modos de bolsas.
 

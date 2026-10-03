@@ -1,7 +1,7 @@
 local _, A = ...
 BlockBags = A
 AnchorBags = A -- Compatibility for existing bindings/scripts.
-A.version = "0.6.0"
+A.version = "0.6.1"
 A.cell, A.padding, A.header, A.scrollGutter = 40, 8, 36, 0
 A.categories = {
     { id = "equipment", name = A.L["Equipamentos"], x = 0, y = 0, cols = 8, rows = 4 },
@@ -135,6 +135,7 @@ events:SetScript("OnEvent", function(_, event, arg, success)
     if event == "ADDON_LOADED" then
         if arg ~= "BlockBags" then
             if A.ready and arg=="Pawn" then A:QueueRefresh() end
+            if A.ready and arg=="Blizzard_MainMenuBarBagButtons" then A:ApplyBlizzardBagBarVisibility() end
             return
         end
         A:InitializeDatabase()
@@ -159,6 +160,7 @@ events:SetScript("OnEvent", function(_, event, arg, success)
         A.combatOverlay:Show()
     elseif event == "PLAYER_REGEN_ENABLED" then
         A.forceItemPaint=true
+        A:ApplyBlizzardBagBarVisibility()
         A.combatOverlay:Hide()
         if A.pendingStorageReset then A.pendingStorageReset=nil; A:SetStorage("bags") end
         if A.pendingBankOpen and A.atBank then A:BankOpened() end

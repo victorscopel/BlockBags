@@ -57,6 +57,7 @@ function A:CanChangeProfile()
 end
 
 function A:RefreshProfile()
+    self:ApplyBlizzardBagBarVisibility()
     self.activeTab="default"
     self:CancelBulkAction()
     self.physicalBagView=false
@@ -294,6 +295,7 @@ function A:ValidateProfile(p)
     for id in pairs(p.layout) do assert(ids[id],A.L["layout desconhecido"]) end
     number(p.settings.categorySpacing,0,16)
     assert(p.settings.layoutLocked==nil or type(p.settings.layoutLocked)=="boolean",A.L["bloqueio de layout"])
+    assert(p.settings.showBlizzardBagBar==nil or type(p.settings.showBlizzardBagBar)=="boolean",A.L["Bolsas"])
     assert(p.settings.showItemLevel==nil or type(p.settings.showItemLevel)=="boolean",A.L["nível dos equipamentos"])
     for _,key in ipairs({"showUpgrade","showEquipmentSets","showTransmog"}) do assert(p.settings[key]==nil or type(p.settings[key])=="boolean",A.L["indicador"]) end
     assert(p.settings.upgradeProvider==nil or p.settings.upgradeProvider=="ilvl" or p.settings.upgradeProvider=="pawn",A.L["avaliação de equipamento"])

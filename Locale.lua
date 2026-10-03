@@ -146,6 +146,8 @@ local english = {
     ["Memória atribuída: %.2f MB; botões: %d; painéis: %d; metadados: %d; cargas pendentes: %d; histórico: %d."] = "Allocated memory: %.2f MB; buttons: %d; panels: %d; metadata: %d; pending loads: %d; history: %d.",
     ["Missões"] = "Quest items",
     ["Mochila"] = "Backpack",
+    ["Mostrar barra de bolsas do WoW"] = "Show WoW bag bar",
+    ["Visualização por bolsa"] = "Physical bag view",
     ["Moeda indisponível ou limite de 7 moedas atingido."] = "Currency unavailable or the 7-currency limit has been reached.",
     ["Moedas no rodapé"] = "Footer currencies",
     ["Moedas, indicadores e abas"] = "Currencies, indicators and tabs",
@@ -305,4 +307,8 @@ end
 function A:TabName(tab)
     if tab.id == "default" and (tab.name == "Principal" or tab.name == "Main") then return self.L["Principal"] end
     return tab.name
+end
+
+function A:BackpackTitle()
+    return BAG_NAME_BACKPACK or self.L["Mochila"]
 end

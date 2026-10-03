@@ -6,7 +6,7 @@ local sectionBackdrop={bgFile="Interface\\Buttons\\WHITE8X8",edgeFile="Interface
 
 function A:DecorateInventory()
     local frame=self.window
-    local decoration=CreateFrame("Frame","BlockBagsModernDecoration",frame,"DefaultPanelTemplate")
+    local decoration=CreateFrame("Frame",nil,frame,"DefaultPanelTemplate")
     decoration:SetAllPoints(frame)
     decoration:SetFrameLevel(math.max(0,frame:GetFrameLevel()-1))
     decoration:EnableMouse(false)
@@ -28,7 +28,7 @@ function A:DecorateInventory()
     caption:EnableMouse(false)
     self.windowTitle=caption:CreateFontString(nil,"OVERLAY","GameFontNormalSmall")
     self.windowTitle:SetPoint("CENTER")
-    self.windowTitle:SetText(A.L["Inventário"])
+    self.windowTitle:SetText(self:BackpackTitle())
 end
 
 function A:StyleCategory(panel,data)

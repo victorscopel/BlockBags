@@ -27,7 +27,7 @@ function A:GetScannedBags()
     return {}
 end
 function A:StorageChoices()
-    local choices={{id="bags",name=A.L["Inventário"]}}
+    local choices={{id="bags",name=self:BackpackTitle()}}
     if not self.atBank or not Enum.BankType then return choices end
     if self.isBankWindow then choices={} end
     if C_Bank.CanViewBank(Enum.BankType.Character) then choices[#choices+1]={id="character",name=A.L["Banco do personagem"]} end
@@ -70,7 +70,7 @@ function A:PaintStorageSelector()
         end)
     end
     self.storageSelector:SetShown(self.isBankWindow==true and self.atBank==true and not self.draft)
-    local name=A.L["Inventário"]
+    local name=self:BackpackTitle()
     for _,choice in ipairs(self:StorageChoices()) do if choice.id==(self.storage or "bags") then name=choice.name end end
     self.storageSelector:OverrideText(name)
     self.windowTitle:SetText(name)

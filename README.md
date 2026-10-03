@@ -9,7 +9,7 @@ inventory, so you can always find things where you expect them.
 Arrange categories like blocks, choose their dimensions, and decide whether each
 category keeps item positions or automatically fills gaps.
 
-> **Early preview — 0.6.0.** Bank integration and bulk actions are still being
+> **Early preview — 0.6.1.** Bank integration and bulk actions are still being
 > tested in-game. The interface follows your WoW client language: Portuguese or English.
 
 ## Features
@@ -51,6 +51,8 @@ currently supported.
 - Enter layout editing to resize categories and the inventory window.
 - Drag an item onto another category to assign it manually.
 - Right-click the bag button to switch temporarily to physical bags.
+- The Blizzard bag bar is hidden by default; use **Show WoW bag bar** in the
+  bag button menu to display it.
 - Right-click a category header for tab assignments and available bulk actions.
 - Use `/bb config` for settings or `/bb edit` for layout editing.
 

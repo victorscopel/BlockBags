@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.1 — preview
+
+- Use the WoW client's localized Backpack title.
+- Hide the Blizzard bag bar by default and add a toggle in the bag button menu.
+- Keep physical bag view as a separate menu option.
+- Play native backpack sounds when opening and closing the window.
+- Avoid duplicate decoration frame names across backpack and bank windows.
+
 ## 0.6.0 — preview
 
 - Open the character bank and Warband tabs in a separate window alongside the inventory.

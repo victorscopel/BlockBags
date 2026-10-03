@@ -199,9 +199,10 @@ function A:BuildUI()
     self.combatOverlay:SetBackdropColor(0.04, 0.05, 0.06, 0.85)
     label(self.combatOverlay, A.L["Inventário pausado durante o combate.\nAs atualizações serão aplicadas ao sair de combate."], 14):SetPoint("CENTER")
     self.combatOverlay:Hide()
-    w:SetScript("OnShow", function() self.forceItemPaint=true; self:QueueRefresh() end)
+    w:SetScript("OnShow", function() self:PlayBackpackSound(true); self.forceItemPaint=true; self:QueueRefresh() end)
     w:SetScript("OnHide", function()
         if self.openingSettings then w:Show(); return end
+        self:PlayBackpackSound(false)
         self:CancelBulkAction()
         if self.physicalBagView and not InCombatLockdown() then self:SetPhysicalBagView(false) end
         if self.bagSlots then self.bagSlots:Hide() end

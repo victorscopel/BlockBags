@@ -48,6 +48,7 @@ function A:InstallIntegration()
     end
     if InCombatLockdown() then return end
     self.integrationInstalled=true
+    self:ApplyBlizzardBagBarVisibility()
     self.hiddenBags = CreateFrame("Frame")
     self.hiddenBags:Hide()
     if ContainerFrameCombinedBags then ContainerFrameCombinedBags:SetParent(self.hiddenBags) end

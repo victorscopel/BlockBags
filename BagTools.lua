@@ -32,9 +32,13 @@ function A:CreateBagMenuButton()
     b:SetScript("OnClick", function(_, mouseButton)
         if mouseButton == "RightButton" then self:ToggleBagSlots(); return end
         MenuUtil.CreateContextMenu(b, function(_, root)
-            root:CreateCheckbox(A.L["Mostrar bolsas equipadas"], function()
+            root:CreateCheckbox(A.L["Visualização por bolsa"], function()
                 return self.physicalBagView == true
             end, function() self:ToggleBagSlots() end)
+            local inventory=self.inventoryController or self
+            root:CreateCheckbox(A.L["Mostrar barra de bolsas do WoW"], function()
+                return inventory.profile.settings.showBlizzardBagBar==true
+            end, function() inventory:ToggleBlizzardBagBar() end)
             root:CreateCheckbox(A.L["Mostrar nível dos equipamentos"], function()
                 return self:GetSettings().showItemLevel ~= false
             end, function()
@@ -230,4 +234,34 @@ function A:RenderPhysicalBags()
     local c=self.capacity
     if c then self.status:SetText(string.format(A.L["Livres: %d/%d  |  Reagentes livres: %d/%d"],c.free,c.total,c.reagentFree,c.reagentTotal)) end
     self.money:SetText(GetCoinTextureString(GetMoney()))
+end
+
+-- Use a secure visibility driver so Blizzard cannot reveal the bar in combat.
+function A:ApplyBlizzardBagBarVisibility()
+    if self.isBankWindow or not self.integrationInstalled or self.integrationBlocked or not BagsBar then return end
+    if InCombatLockdown() then self.pendingBagBarVisibility=true; return end
+    self.pendingBagBarVisibility=nil
+    if self.profile.settings.showBlizzardBagBar==true then
+        if self.bagBarVisibilityManaged then
+            UnregisterStateDriver(BagsBar,"visibility")
+            self.bagBarVisibilityManaged=nil
+            BagsBar:Show()
+        end
+    elseif not self.bagBarVisibilityManaged then
+        RegisterStateDriver(BagsBar,"visibility","hide")
+        self.bagBarVisibilityManaged=true
+    end
+end
+
+function A:ToggleBlizzardBagBar()
+    if InCombatLockdown() then self:Print(A.L["Aguarde o fim do combate."]); return end
+    self.profile.settings.showBlizzardBagBar=not (self.profile.settings.showBlizzardBagBar==true)
+    self:ApplyBlizzardBagBarVisibility()
+end
+
+function A:PlayBackpackSound(open)
+    if self.isBankWindow or self.openingSettings or self.settingsInventorySession then return end
+    if not PlaySound or not SOUNDKIT then return end
+    local sound=open and SOUNDKIT.IG_BACKPACK_OPEN or SOUNDKIT.IG_BACKPACK_CLOSE
+    if sound then PlaySound(sound) end
 end

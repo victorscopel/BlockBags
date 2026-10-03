@@ -991,7 +991,7 @@ PickupBagFromSlot=function(id) pickup=id end
 C_Container.GetContainerNumSlots=function(bag) return bag==5 and 40 or 32 end
 C_Container.GetContainerNumFreeSlots=function(bag) return bag==5 and 40 or 12 end
 local layout=A:ExportProfile()
-entries[A.L["Mostrar bolsas equipadas"]]()
+entries[A.L["Visualização por bolsa"]]()
 assert(A.bagSlots:IsShown() and #A.bagSlots.buttons==5)
 assert(A.bagSlots.buttons[1].capacityLabel:GetText()=="20/32")
 assert(A.bagSlots.buttons[5].capacityLabel:GetText()=="0/40")
@@ -1061,7 +1061,7 @@ print("Physical view OK: all native slots grouped by bag, no virtual category dr
 lua.execute('''
 -- Settings close (including Escape's global bag-close hooks) must preserve the
 -- inventory, then restore ordinary Escape handling exactly once.
-assert(A.windowTitle:GetText()==A.L["Inventário"])
+assert(A.windowTitle:GetText()==A:BackpackTitle())
 local jobs={}
 C_Timer.After=function(_,fn) jobs[#jobs+1]=fn end
 local function flush()
@@ -1107,7 +1107,7 @@ assert(not A.settingsInventorySession and not A.settingsSpecialIndex)
 assert(not A.settingsMenuSession)
 count=0; for _,name in ipairs(UISpecialFrames) do if name=="BlockBagsWindow" then count=count+1 end end
 assert(count==1)
-print("Settings close OK: Escape/global bag close and queued closes preserve inventory, normal close resumes, rapid reopening and failed opens restore one Escape registration, hidden inventory stays hidden; window title is Inventário")
+print("Settings close OK: Escape/global bag close and queued closes preserve inventory, normal close resumes, rapid reopening and failed opens restore one Escape registration, hidden inventory stays hidden; window title uses the native backpack label")
 ''')
 
 lua.execute((root / "tests" / "expanded.lua").read_text(encoding="utf-8"))
@@ -1153,3 +1153,5 @@ print("Profile text OK: hidden FontString measures height, empty text preserves 
 ''')
 
 lua.execute((root / "tests" / "bank_window.lua").read_text(encoding="utf-8"))
+
+lua.execute((root / "tests" / "backpack_controls.lua").read_text(encoding="utf-8"))
