@@ -75,6 +75,36 @@ GetMouseFoci=function() return {bank.buttons["6:1"]} end
 assert(not A:ResolveDropTarget())
 -- Native options have their own category controls and profile store.
 bank:BuildSettingsControls(); bank:RefreshSettings()
+assert(not bank.settingsControls.tabPicker and not bank.settingsControls.categoryTab)
+assert(not bank.tabBar and #bank:GetTabs()==1)
+assert(not bank:CreateTab("Unneeded") and not bank:AssignCategoryTab("quest","default"))
+-- Previously hidden bank categories and their saved slots migrate to the unified view.
+bank.profile.tabs={{id="default",name="Main"},{id="tab1",name="Legacy"}}
+bank.profile.categoryTabs={quest="tab1"}
+bank.profile.extraLayouts["character:tab1"]=bank:Copy(bank:GetBaseLayout())
+bank.profile.extraLayouts["character:tab1"].quest.tint={r=0.21,g=0.32,b=0.43}
+local bankPositions=bank:GetDatabase().inventoryPositions[bank.characterKey][bank.profileKey]
+bankPositions.views["character:tab1"]={quest={["legacy-bank-item"]=4},dropSlots={
+    ["legacy-bank-item"]={category="quest",index=4}}}
+bank:CollapseBankCategoryTabs()
+assert(not bank.profile.tabs and not bank.profile.categoryTabs)
+assert(bank:IsCategoryOnTab("quest") and bank:CategoryDisplayed("quest"))
+assert(bank:GetBaseLayout().quest.tint.r==0.21)
+assert(bankPositions.views["character:default"].quest["legacy-bank-item"]==4)
+assert(bankPositions.views["character:default"].dropSlots["legacy-bank-item"].index==4)
+assert(not bankPositions.views["character:tab1"] and not bank.profile.extraLayouts["character:tab1"])
+local migrated=bank:ExportProfile(); bank:CollapseBankCategoryTabs(); assert(bank:ExportProfile()==migrated)
+for _,cat in ipairs(bank.categories) do
+    if not bank:GetLayout()[cat.id].hidden then
+        for _,other in ipairs(bank.categories) do
+            if other.id~=cat.id and not bank:GetLayout()[other.id].hidden then
+                local x,y,w,h=bank:PanelRect(bank:GetLayout()[cat.id])
+                local ox,oy,ow,oh=bank:PanelRect(bank:GetLayout()[other.id])
+                assert(not (x<ox+ow and x+w>ox and y<oy+oh and y+h>oy))
+            end
+        end
+    end
+end
 local before=A.profileKey
 assert(bank:CreateProfile("Bank profile",true))
 assert(bank.profileKey=="Bank profile" and A.profileKey==before and not BlockBagsDB.profiles["Bank profile"])

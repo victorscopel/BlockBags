@@ -57,7 +57,13 @@ function A:Reconcile()
                     if item.identity==favorite.identity then chosen=item; break end
                 end
             end
-            if chosen then nextPositions[chosen.identity],claimed[index]=index,chosen end
+            if chosen then
+                favorite.identity=chosen.identity
+                favorite.iconFileID=chosen.info.iconFileID or favorite.iconFileID
+                favorite.hyperlink=chosen.info.hyperlink or favorite.hyperlink
+                if not chosen.pending then favorite.name=chosen.name end
+                nextPositions[chosen.identity],claimed[index]=index,chosen
+            end
         end
         local modeLayout=self.draft and self:GetBaseLayout() or self:GetLayout()
         local compact = modeLayout[cat.id].compact or self.organizeCategory == cat.id

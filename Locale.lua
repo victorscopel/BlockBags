@@ -3,6 +3,10 @@ local _, A = ...
 local locale = GetLocale and GetLocale() or "enUS"
 local portuguese = locale == "ptBR" or locale == "ptPT"
 local english = {
+    ["Favorito ausente da mochila."] = "Favorite missing from your backpack.",
+    ["Este slot permanece reservado para este item."] = "This slot stays reserved for this item.",
+    ["Aba desta categoria"] = "Category tab",
+    ["Indicadores e ações"] = "Indicators and actions",
     ["Depositar reagentes"] = "Deposit reagents",
     ["Usa o depósito automático do WoW e os filtros configurados nas abas físicas."] = "Uses WoW's automatic deposit and the filters configured on physical tabs.",
     ["Abas: %d"] = "Tabs: %d",

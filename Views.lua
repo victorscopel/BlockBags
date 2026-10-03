@@ -1,8 +1,8 @@
 local _, A = ...
 local defaultTabs={{id="default",name=A.L["Principal"]}}
 
-function A:GetTabs() return self.profile.tabs or defaultTabs end
-function A:ViewKey() return (self.storage or "bags")..":"..(self.activeTab or "default") end
+function A:GetTabs() return not self.isBankWindow and self.profile.tabs or defaultTabs end
+function A:ViewKey() return (self.storage or "bags")..":"..(not self.isBankWindow and self.activeTab or "default") end
 function A:GetBaseLayout()
     if self:ViewKey()=="bags:default" then return self.profile.layout end
     self.profile.extraLayouts=self.profile.extraLayouts or {}
@@ -39,6 +39,7 @@ function A:GetDropSlots()
 end
 
 function A:IsCategoryOnTab(id)
+    if self.isBankWindow then return true end
     return ((self.profile.categoryTabs or {})[id] or "default")== (self.activeTab or "default")
 end
 function A:CategoryDisplayed(id)
@@ -60,6 +61,7 @@ function A:SelectTab(id)
     return true
 end
 function A:CreateTab(name)
+    if self.isBankWindow then return false end
     if not self:CanChangeProfile() then return false end
     name=(name or ""):match("^%s*(.-)%s*$")
     if #name==0 or #name>40 or #self:GetTabs()>=8 then self:Print(A.L["Use um nome de até 40 caracteres; limite de 8 abas."]); return false end
@@ -71,6 +73,7 @@ function A:CreateTab(name)
     return id
 end
 function A:RenameTab(id,name)
+    if self.isBankWindow then return false end
     if not self:CanChangeProfile() then return false end
     name=(name or ""):match("^%s*(.-)%s*$")
     if #name==0 or #name>40 then return false end
@@ -79,6 +82,7 @@ function A:RenameTab(id,name)
     return false
 end
 function A:AssignCategoryTab(id,tabID)
+    if self.isBankWindow then return false end
     if not self:CanChangeProfile() or not self.profile.layout[id] then return false end
     local found=false; for _,tab in ipairs(self:GetTabs()) do if tab.id==tabID then found=true end end
     if not found then return false end
@@ -105,6 +109,7 @@ function A:RepairTabPlacement(id,tabID)
     for key,layout in pairs(self.profile.extraLayouts or {}) do if key:match(":"..tabID.."$") then repair(layout) end end
 end
 function A:DeleteTab(id)
+    if self.isBankWindow then return false end
     if id=="default" or not self:CanChangeProfile() then return false end
     for index,tab in ipairs(self:GetTabs()) do
         if tab.id==id then
@@ -124,6 +129,10 @@ function A:DeleteTab(id)
 end
 
 function A:PaintTabs()
+    if self.isBankWindow then
+        if self.tabBar then self.tabBar:Hide() end
+        return
+    end
     if not self.tabBar then
         self.tabBar=CreateFrame("Frame",nil,self.window); self.tabBar.buttons={}
         self.tabBar:SetHeight(24)

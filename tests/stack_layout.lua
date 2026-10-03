@@ -21,14 +21,49 @@ A:ScanInventory(); A:Reconcile(); A:Render()
 local original=A.slotModels["0:1"]
 A:ToggleFavorite(original)
 assert(A.profile.favorites[91001].index==1)
--- Releasing a whole stack in its own category cancels instead of reassigning.
-for _,index in ipairs({false,1,7}) do
+-- Background drops and dropping onto the source slot preserve its position.
+for _,index in ipairs({false,1}) do
     A:CaptureItemSource(A.buttons["0:1"]); cursor=91001
     assert(A:TryVirtualDrop("consumables",index or nil))
     assert(not cursor and not A.itemDrag and not A.pendingPlacements)
     assert(A:GetPositions().consumables[original.identity]==1)
     assert(A.profile.favorites[91001].index==1 and not A:GetStackCategories()[original.identity])
 end
+-- Explicit slots remain movable even with automatic positions and favorites.
+for _,index in ipairs({7,1}) do
+    A:CaptureItemSource(A.buttons["0:1"]); cursor=91001
+    assert(A:TryVirtualDrop("consumables",index))
+    assert(not cursor and not A.itemDrag)
+    A:ScanInventory(); A:Reconcile(); A:Render()
+    assert(A:GetPositions().consumables[original.identity]==index)
+    assert(A.profile.favorites[91001].index==index)
+    assert(not A:GetStackCategories()[original.identity] and slots[1].count==20)
+end
+-- Occupied slots swap visually; physical inventory and stack amounts stay intact.
+slots[3]={id=91002,count=1,guid="second-consumable"}
+A.itemCache[91002]={name="Second",classID=Enum.ItemClass.Consumable}
+A:ScanInventory(); A:Reconcile(); A:Render()
+local other=A.slotModels["0:3"]
+local otherIndex=A:GetPositions().consumables[other.identity]
+A:ToggleFavorite(other)
+A:CaptureItemSource(A.buttons["0:1"]); cursor=91001
+assert(A:TryVirtualDrop("consumables",otherIndex))
+assert(A:GetPositions().consumables[original.identity]==otherIndex)
+assert(A:GetPositions().consumables[other.identity]==1)
+assert(A.profile.favorites[91001].index==otherIndex and A.profile.favorites[91002].index==1)
+assert(slots[1].id==91001 and slots[3].id==91002 and slots[1].count==20)
+A:CaptureItemSource(A.buttons["0:1"]); cursor=91001
+assert(A:TryVirtualDrop("consumables",1))
+A:RemoveFavorite(91002); slots[3]=nil
+A:ScanInventory(); A:Reconcile(); A:Render()
+-- An absent favorite's reservation cannot be displaced by another item.
+A.profile.favorites[91003]={category="consumables",index=7,iconFileID=91003}
+A:Reconcile(); A:Render()
+A:CaptureItemSource(A.buttons["0:1"]); cursor=91001
+assert(A:TryVirtualDrop("consumables",7))
+assert(not cursor and A:GetPositions().consumables[original.identity]==1)
+assert(A.profile.favorites[91003].index==7)
+A:RemoveFavorite(91003)
 -- Native splitting creates a new GUID in the chosen physical empty slot.
 slots[1].count=5; slots[2]={id=91001,count=15,guid="potion-split"}
 cursor=91001

@@ -118,11 +118,11 @@ function A:RegisterSettings()
     local general=page(settingsName,780)
     local category=Settings.RegisterCanvasLayoutCategory(general,settingsName)
     Settings.RegisterAddOnCategory(category)
-    local categories=page(A.L["Categorias"],1480)
+    local categories=page(A.L["Categorias"],self.isBankWindow and 1360 or 1480)
     local categoryPage=Settings.RegisterCanvasLayoutSubcategory(category,categories,A.L["Categorias"])
     local profiles=page(A.L["Perfis"],840)
     local profilePage=Settings.RegisterCanvasLayoutSubcategory(category,profiles,A.L["Perfis"])
-    local features=page(A.L[self.isBankWindow and "Indicadores e abas" or "Moedas, indicadores e abas"],self.isBankWindow and 835 or 1080)
+    local features=page(A.L[self.isBankWindow and "Indicadores e ações" or "Moedas, indicadores e abas"],self.isBankWindow and 530 or 1080)
     local featurePage=Settings.RegisterCanvasLayoutSubcategory(category,features,A.L["Recursos"])
     self.settingsPages={general=general,categories=categories,profiles=profiles,features=features}
     self.settingsIDs={general=category:GetID(),categories=categoryPage:GetID(),profiles=profilePage:GetID(),features=featurePage:GetID()}

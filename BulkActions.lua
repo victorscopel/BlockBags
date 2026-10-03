@@ -89,8 +89,10 @@ function A:StartBulkAction(action)
 end
 function A:AddCategoryActions(root,id)
     if self.draft then return end
-    local tabs=root:CreateButton(A.L["Mover categoria para aba"])
-    if tabs then for _,tab in ipairs(self:GetTabs()) do tabs:CreateButton(self:TabName(tab),function() self:AssignCategoryTab(id,tab.id) end) end end
+    if not self.isBankWindow then
+        local tabs=root:CreateButton(A.L["Mover categoria para aba"])
+        if tabs then for _,tab in ipairs(self:GetTabs()) do tabs:CreateButton(self:TabName(tab),function() self:AssignCategoryTab(id,tab.id) end) end end
+    end
     if self.atBank then
         if (self.storage or "bags")=="bags" then
             if C_Bank.CanUseBank(Enum.BankType.Character) then root:CreateButton(A.L["Depositar categoria no banco"],function() self:RequestCategoryAction(id,"deposit","character") end) end

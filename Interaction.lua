@@ -71,9 +71,28 @@ function A:TryVirtualDrop(category,index)
         return false
     end
     if category==source.category then
+        local sourceIndex=self:GetPositions()[category][model.identity]
+        local reserved=group.reserved[index]
+        if not index or target==model or (reserved and not target) then
+            self.itemDrag=nil
+            ClearCursor()
+            return not CursorHasItem()
+        end
+        if source.bag==Enum.BagIndex.ReagentBag or category=="reagentbag" then return false end
+        if not sourceIndex then return false end
         self.itemDrag=nil
         ClearCursor()
-        return not CursorHasItem()
+        if CursorHasItem() then return false end
+        -- Change visual positions without moving the physical stacks.
+        local positions=self:GetDropSlots()
+        positions[model.identity]={category=category,index=index}
+        if group.reserved[sourceIndex]==id then self.profile.favorites[id].index=index end
+        if target then
+            positions[target.identity]={category=category,index=sourceIndex}
+            if reserved==target.info.itemID then self.profile.favorites[reserved].index=sourceIndex end
+        end
+        self:Reconcile(); self:Render()
+        return true
     end
     -- Reagent-bag transfers must move the physical item.
     if source.bag==Enum.BagIndex.ReagentBag or category=="reagentbag" then return false end

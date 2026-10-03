@@ -322,7 +322,7 @@ function A:CreatePanel(category)
     panel.tintBackground:SetPoint("TOPLEFT",5,-5)
     panel.tintBackground:SetPoint("BOTTOMRIGHT",-5,5)
     panel.tintBackground:Hide()
-    panel.reservedMarkers={}
+    panel.favoriteGhosts={}
     panel.dropGlow=CreateFrame("Frame",nil,panel,"BackdropTemplate")
     panel.dropGlow:SetAllPoints(panel)
     panel.dropGlow:SetFrameLevel(panel:GetFrameLevel()+10)
@@ -841,6 +841,60 @@ function A:PaintEmpty(b,slot,panel,index)
     b:SetAlpha(1); b:EnableMouse(not self.draft)
 end
 
+function A:PaintFavoriteGhost(panel,ordinal,id,index,size,x,y)
+    local favorite=self.profile.favorites[id]
+    if not favorite or self.isBankWindow then return end
+    local ghost=panel.favoriteGhosts[ordinal]
+    if not ghost then
+        ghost=CreateFrame("Button",nil,panel.content)
+        panel.favoriteGhosts[ordinal]=ghost
+        ghost.anchorOwner=self
+        ghost.icon=ghost:CreateTexture(nil,"ARTWORK")
+        ghost.icon:SetAllPoints(ghost)
+        ghost.icon:SetDesaturated(true)
+        ghost.icon:SetAlpha(0.35)
+        ghost.border=ghost:CreateTexture(nil,"OVERLAY")
+        ghost.border:SetTexture("Interface\\Buttons\\UI-Quickslot2")
+        ghost.border:SetPoint("CENTER",ghost,"CENTER",0,0)
+        ghost.border:SetVertexColor(0.65,0.65,0.65,0.55)
+        ghost.star=label(ghost,"*",16)
+        ghost.star:SetPoint("TOPRIGHT",-1,-1)
+        ghost.star:SetTextColor(1,0.82,0)
+        ghost:EnableMouseWheel(true)
+        ghost:SetScript("OnMouseWheel",panel.wheel)
+        ghost:SetScript("OnMouseDown",function() self:FocusWindow() end)
+        local receive=function()
+            if CursorHasItem() then self:TryVirtualDrop(ghost.anchorCategory,ghost.anchorIndex) end
+        end
+        ghost:SetScript("OnReceiveDrag",receive)
+        ghost:RegisterForClicks("LeftButtonUp")
+        ghost:SetScript("OnClick",receive)
+        ghost:SetScript("OnEnter",function()
+            if CursorHasItem() then return end
+            GameTooltip:SetOwner(ghost,"ANCHOR_RIGHT")
+            if ghost.hyperlink then GameTooltip:SetHyperlink(ghost.hyperlink)
+            else GameTooltip:SetItemByID(ghost.favoriteID) end
+            GameTooltip:AddLine(self.L["Favorito ausente da mochila."],0.7,0.7,0.7,true)
+            GameTooltip:AddLine(self.L["Este slot permanece reservado para este item."],1,0.82,0,true)
+            GameTooltip:Show()
+        end)
+        ghost:SetScript("OnLeave",function() GameTooltip:Hide() end)
+        ghost:SetScript("OnHide",function()
+            if GameTooltip.IsOwned and GameTooltip:IsOwned(ghost) then GameTooltip:Hide() end
+        end)
+    end
+    if not favorite.iconFileID and C_Item.GetItemIconByID then favorite.iconFileID=C_Item.GetItemIconByID(id) end
+    ghost.favoriteID,ghost.hyperlink=id,favorite.hyperlink
+    ghost.anchorCategory,ghost.anchorIndex=panel.id,index
+    local icon=favorite.iconFileID or 134400
+    if ghost.iconFileID~=icon then ghost.icon:SetTexture(icon); ghost.iconFileID=icon end
+    ghost:SetSize(size,size)
+    ghost.border:SetSize(64*size/37,64*size/37)
+    ghost:ClearAllPoints(); ghost:SetPoint("TOPLEFT",panel.content,"TOPLEFT",x,-y)
+    ghost:EnableMouse(not self.draft)
+    ghost:Show()
+end
+
 function A:Render()
     if InCombatLockdown() then self.pendingRefresh = true; return end
     if self.ready and not self.window:IsShown() then self.inventoryDirty=true; return end
@@ -874,7 +928,7 @@ function A:Render()
         panel.bar:SetValue(math.min(panel.offset, maxScroll))
         panel.bar:SetShown(maxScroll > 0)
         local slots = self.displayMax[cat.id]
-        for _,marker in pairs(panel.reservedMarkers) do marker:Hide() end
+        for _,ghost in pairs(panel.favoriteGhosts) do ghost:Hide() end
         for _, cell in ipairs(panel.cells) do cell:Hide() end
         local matches = 0
         local markerIndex=0
@@ -901,9 +955,7 @@ function A:Render()
                 elseif b:IsShown() then b:Hide() end
             elseif group.reserved and group.reserved[index] then
                 markerIndex=markerIndex+1
-                local marker=panel.reservedMarkers[markerIndex]
-                if not marker then marker=label(panel.content,"*",18); marker:SetTextColor(1,0.82,0); panel.reservedMarkers[markerIndex]=marker end
-                marker:ClearAllPoints(); marker:SetPoint("TOPLEFT",panel.content,"TOPLEFT",x+metrics.size/2-4,-y-8); marker:Show()
+                self:PaintFavoriteGhost(panel,markerIndex,group.reserved[index],index,metrics.size,x,y)
             end
         end
         if cat.id == "reagentbag" and self.capacity then

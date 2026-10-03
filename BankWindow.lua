@@ -91,6 +91,65 @@ function A:MigrateUnifiedWarband(database)
     end
 end
 
+function A:CollapseBankCategoryTabs()
+    if not self.isBankWindow then return end
+    local profile=self.profile
+    local assignments=profile.categoryTabs or {}
+    local layouts=profile.extraLayouts or {}
+    local oldKeys={}
+    for key in pairs(layouts) do
+        if key:match(":tab%d+$") then oldKeys[#oldKeys+1]=key end
+    end
+    if #oldKeys==0 and not next(assignments) and not (profile.tabs and #profile.tabs>1) then return end
+    -- Merge each category's active layout before retiring the virtual tabs.
+    for _,storage in ipairs({"character","account"}) do
+        local key=storage..":default"
+        local destination=layouts[key]
+        for _,cat in ipairs(profile.categories) do
+            local tab=assignments[cat.id]
+            local source=tab and layouts[storage..":"..tab]
+            if source and source[cat.id] then
+                destination=destination or self:Copy(profile.layout)
+                destination[cat.id]=self:Copy(source[cat.id])
+            end
+        end
+        if destination then layouts[key]=destination end
+    end
+    for _,key in ipairs(oldKeys) do layouts[key]=nil end
+    local function merge(target,source)
+        for key,value in pairs(source) do
+            if target[key]==nil then target[key]=type(value)=="table" and self:Copy(value) or value
+            elseif type(target[key])=="table" and type(value)=="table" then merge(target[key],value) end
+        end
+    end
+    for _,profiles in pairs(self:GetDatabase().inventoryPositions or {}) do
+        local positions=profiles[self.profileKey]
+        if positions then
+            local views=positions.views or {}
+            local keys={}
+            for key in pairs(views) do if key:match(":tab%d+$") then keys[#keys+1]=key end end
+            table.sort(keys)
+            for _,key in ipairs(keys) do
+                local storage,tab=key:match("^(.+):(tab%d+)$")
+                local source=views[key]
+                local destination=views[storage..":default"] or {}
+                merge(destination,source)
+                for cat,assigned in pairs(assignments) do
+                    if assigned==tab and source[cat] then destination[cat]=self:Copy(source[cat]) end
+                end
+                for identity,target in pairs(source.dropSlots or {}) do
+                    if assignments[target.category]==tab then destination.dropSlots[identity]=self:Copy(target) end
+                end
+                views[storage..":default"]=destination
+                views[key]=nil
+            end
+        end
+    end
+    profile.tabs,profile.categoryTabs=nil,nil
+    self.activeTab="default"
+    for _,cat in ipairs(profile.categories) do self:RepairTabPlacement(cat.id,"default") end
+end
+
 function A:EnsureBankWindow()
     if self.isBankWindow then return self end
     if self.bankController then return self.bankController end
@@ -126,6 +185,7 @@ function A:EnsureBankWindow()
         return layout
     end
     bank:InitializeDatabase()
+    bank:CollapseBankCategoryTabs()
     bank:BuildUI(); bank:RegisterSettings()
     bank.ready=true
     self.bankController=bank

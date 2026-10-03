@@ -145,36 +145,40 @@ function A:BuildFeatureSettings()
         end)
         button(currencies,A.L["Limpar seleção"],380,-174,170,function() self:SetFeatureOption("currencies",{}) end)
     end
-    local offset=self.isBankWindow and 245 or 0
-    local tabs=section(p,A.L["Abas de categorias"],-543+offset,263)
-    c.tabPicker=dropdown(tabs,20,-43,330,function(_,root)
-        for _,tab in ipairs(self:GetTabs()) do
-            root:CreateRadio(self:TabName(tab),function() return (self.settingsTab or "default")==tab.id end,
-                function() self.settingsTab=tab.id; self:RefreshSettings() end)
-        end
-    end)
-    text(tabs,A.L["Nome da aba"],20,-84)
-    c.tabName=input(tabs,20,-110,520)
-    button(tabs,A.L["Criar aba"],20,-151,160,function() local id=self:CreateTab(c.tabName:GetText()); if id then self.settingsTab=id; self:RefreshSettings() end end)
-    button(tabs,A.L["Renomear"],198,-151,160,function() self:RenameTab(self.settingsTab or "default",c.tabName:GetText()) end)
-    c.deleteTab=button(tabs,A.L["Excluir aba"],376,-151,164,function()
-        local id=self.settingsTab
-        if id=="default" then return end
-        StaticPopup_Show("BLOCKBAGS_DELETE_TAB",nil,nil,{id=id,owner=self})
-    end)
-    text(tabs,A.L["Mover categorias: clique direito no cabeçalho → Mover categoria para aba, ou use a página Categorias. Cada aba salva seu próprio layout. Excluir uma aba retorna suas categorias à Principal."],20,-194,550)
-    StaticPopupDialogs.BLOCKBAGS_DELETE_TAB={text=A.L["Excluir esta aba? Suas categorias retornarão à Principal."],button1=YES,button2=CANCEL,timeout=0,whileDead=true,hideOnEscape=true,
-        OnAccept=function(_,data) local owner=data.owner or A; owner:DeleteTab(data.id); owner.settingsTab="default"; owner:RefreshSettings() end}
+    local offset=self.isBankWindow and 520 or 0
+    if not self.isBankWindow then
+        local tabs=section(p,A.L["Abas de categorias"],-543+offset,263)
+        c.tabPicker=dropdown(tabs,20,-43,330,function(_,root)
+            for _,tab in ipairs(self:GetTabs()) do
+                root:CreateRadio(self:TabName(tab),function() return (self.settingsTab or "default")==tab.id end,
+                    function() self.settingsTab=tab.id; self:RefreshSettings() end)
+            end
+        end)
+        text(tabs,A.L["Nome da aba"],20,-84)
+        c.tabName=input(tabs,20,-110,520)
+        button(tabs,A.L["Criar aba"],20,-151,160,function() local id=self:CreateTab(c.tabName:GetText()); if id then self.settingsTab=id; self:RefreshSettings() end end)
+        button(tabs,A.L["Renomear"],198,-151,160,function() self:RenameTab(self.settingsTab or "default",c.tabName:GetText()) end)
+        c.deleteTab=button(tabs,A.L["Excluir aba"],376,-151,164,function()
+            local id=self.settingsTab
+            if id=="default" then return end
+            StaticPopup_Show("BLOCKBAGS_DELETE_TAB",nil,nil,{id=id,owner=self})
+        end)
+        text(tabs,A.L["Mover categorias: clique direito no cabeçalho → Mover categoria para aba, ou use a página Categorias. Cada aba salva seu próprio layout. Excluir uma aba retorna suas categorias à Principal."],20,-194,550)
+        StaticPopupDialogs.BLOCKBAGS_DELETE_TAB={text=A.L["Excluir esta aba? Suas categorias retornarão à Principal."],button1=YES,button2=CANCEL,timeout=0,whileDead=true,hideOnEscape=true,
+            OnAccept=function(_,data) local owner=data.owner or A; owner:DeleteTab(data.id); owner.settingsTab="default"; owner:RefreshSettings() end}
+    end
     local management=section(p,A.L["Banco e ações por categoria"],-818+offset,150)
     text(management,A.L[self.isBankWindow and "Este banco tem categorias, layout e perfis próprios. Use o seletor para alternar entre banco do personagem e banco da tropa. Clique direito em um item para retirar ou no cabeçalho para retirar a categoria. Peças de conjuntos são protegidas nas ações por categoria. Favoritos estão disponíveis apenas na mochila." or "O banco abre em uma janela separada. Banco do personagem e banco da tropa têm categorias e perfis independentes. Use o seletor dessa janela para alternar entre banco do personagem e abas da tropa. Clique direito no cabeçalho para depositar/retirar uma categoria. No vendedor, você pode vender a categoria após confirmar. Favoritos e conjuntos são protegidos."],20,-43,550)
     text(p,A.L["Busca: expansao:tww · vinculo:boe · slot:anel · conjunto:\"Raid DPS\" · descricao:\"velocidade\" · melhoria:sim · transmog:sim"],32,-996+offset,570)
-    local category=section(self.settingsPages.categories.content,"Aba desta categoria",-1338,98)
-    c.categoryTab=dropdown(category,20,-46,460,function(_,root)
-        for _,tab in ipairs(self:GetTabs()) do
-            root:CreateRadio(self:TabName(tab),function() return ((self.profile.categoryTabs or {})[self.settingsCategory] or "default")==tab.id end,
-                function() self:AssignCategoryTab(self.settingsCategory,tab.id) end)
-        end
-    end)
+    if not self.isBankWindow then
+        local category=section(self.settingsPages.categories.content,A.L["Aba desta categoria"],-1338,98)
+        c.categoryTab=dropdown(category,20,-46,460,function(_,root)
+            for _,tab in ipairs(self:GetTabs()) do
+                root:CreateRadio(self:TabName(tab),function() return ((self.profile.categoryTabs or {})[self.settingsCategory] or "default")==tab.id end,
+                    function() self:AssignCategoryTab(self.settingsCategory,tab.id) end)
+            end
+        end)
+    end
 end
 
 function A:RefreshFeatureSettings()
@@ -189,12 +193,14 @@ function A:RefreshFeatureSettings()
     end
     self:RefreshCurrencyPicker()
     if c.currencyNames then c.currencyNames:SetText(#names>0 and table.concat(names," · ") or A.L["Nenhuma moeda selecionada."]) end
-    local choice="default"
-    for _,tab in ipairs(self:GetTabs()) do if tab.id==self.settingsTab then choice=tab.id end end
-    self.settingsTab=choice
-    for _,tab in ipairs(self:GetTabs()) do
-        if tab.id==choice then c.tabPicker:OverrideText(self:TabName(tab)); c.tabName:SetText(self:TabName(tab)) end
-        if tab.id==((self.profile.categoryTabs or {})[self.settingsCategory] or "default") then c.categoryTab:OverrideText(self:TabName(tab)) end
+    if c.tabPicker then
+        local choice="default"
+        for _,tab in ipairs(self:GetTabs()) do if tab.id==self.settingsTab then choice=tab.id end end
+        self.settingsTab=choice
+        for _,tab in ipairs(self:GetTabs()) do
+            if tab.id==choice then c.tabPicker:OverrideText(self:TabName(tab)); c.tabName:SetText(self:TabName(tab)) end
+            if tab.id==((self.profile.categoryTabs or {})[self.settingsCategory] or "default") then c.categoryTab:OverrideText(self:TabName(tab)) end
+        end
+        c.deleteTab:SetEnabled(choice~="default" and not self.draft)
     end
-    c.deleteTab:SetEnabled(choice~="default" and not self.draft)
 end

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.8.1 — preview
+
+- Move items to chosen slots within a category, including visual swaps and automatic layouts.
+- Keep background drops within the same category from changing item positions.
+- Show faded item icons in reserved slots for absent favorites and restore them when reacquired.
+- Remove virtual category tabs from bank settings and merge existing bank tab layouts and placements.
+- Translate the category-tab caption and missing-favorite tooltips.
+
 ## 0.8.0 — preview
 
 - Add a bank toolbar with purchased-tab count, numbered icons and a purchase button.

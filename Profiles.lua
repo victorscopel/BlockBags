@@ -77,6 +77,7 @@ function A:RefreshProfile()
         self.profile.settings.showBlizzardBagBar=nil
         if self.profile.layout.reagentbag then self.profile.layout.reagentbag.hidden=true end
         for _,layout in pairs(self.profile.extraLayouts or {}) do if layout.reagentbag then layout.reagentbag.hidden=true end end
+        self:CollapseBankCategoryTabs()
     end
     self.categories = self.profile.categories
     self.panelPool=self.panelPool or {}
@@ -343,6 +344,8 @@ function A:ValidateProfile(p)
         number(id,1,10000000); assert(id%1==0 and type(f)=="table" and ids[f.category],A.L["favorito inválido"])
         number(f.index,1,4096); assert(f.index%1==0)
         assert(f.name==nil or (type(f.name)=="string" and #f.name<=512),A.L["nome de favorito"])
+        if f.iconFileID then number(f.iconFileID,1,10000000); assert(f.iconFileID%1==0) end
+        assert(f.hyperlink==nil or (type(f.hyperlink)=="string" and #f.hyperlink<=4096),A.L["favorito inválido"])
         f.identity=nil -- GUIDs and physical inventory positions are never shared.
     end
     for id,a in pairs(p.layout) do

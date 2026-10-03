@@ -9,7 +9,7 @@ inventory, so you can always find things where you expect them.
 Arrange categories like blocks, choose their dimensions, and decide whether each
 category keeps item positions or automatically fills gaps.
 
-> **Early preview — 0.8.0.** Bank integration and bulk actions are still being
+> **Early preview — 0.8.1.** Bank integration and bulk actions are still being
 > tested in-game. The interface follows your WoW client language: Portuguese or English.
 
 ## Features
@@ -18,14 +18,13 @@ category keeps item positions or automatically fills gaps.
 - Automatic categories, custom rules, and manual assignments per item stack.
 - Persistent category layouts with free resizing, alignment guides, and snapping.
 - Per-category colors, item sizes, spacing, and optional compaction.
-- Favorites and a visual highlight for newly acquired items.
-- Category tabs with independent layouts.
+- Favorites with reserved slots and faded icons when absent; new-item highlights.
+- Backpack category tabs with independent layouts.
 - Unified Warband inventory covering every purchased physical tab.
 - Visible bank tab count, numbered tab icons and purchase control.
 - Warband gold balance and native gold deposit/withdraw dialogs.
 - Native automatic deposits, optional Warband reagent inclusion and physical-tab deposit filters.
 - Separate bank window; character and Warband banks have independent categories, settings and profiles. Favorites are backpack-only.
-- Character bank and Warband tabs with independent layouts.
 - Temporary physical-bag view and equipped-bag controls.
 - Item levels, potential upgrade indicators, equipment-set markers, and
   uncollected appearance markers. Optional Pawn integration.

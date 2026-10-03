@@ -3,6 +3,8 @@ local pt=A.locale=="ptBR" or A.locale=="ptPT"
 assert(SLASH_BLOCKBAGS1=="/bb" and SLASH_BLOCKBAGS2=="/blockbags")
 assert(A.L["Configurações"]==(pt and "Configurações" or "Settings"))
 assert(A.L["Inventário"]==(pt and "Inventário" or "Inventory"))
+assert(A.L["Aba desta categoria"]==(pt and "Aba desta categoria" or "Category tab"))
+assert(A.L["Favorito ausente da mochila."]==(pt and "Favorito ausente da mochila." or "Favorite missing from your backpack."))
 assert(A:DefaultCategoryName("equipment","Equipamentos")==A.L["Equipamentos"])
 assert(A:DefaultCategoryName("equipment","Equipment")==A.L["Equipamentos"])
 assert(A:DefaultCategoryName("equipment","My raid gear")=="My raid gear")

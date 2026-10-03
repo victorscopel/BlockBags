@@ -67,7 +67,8 @@ function A:ToggleFavorite(item)
     else
         self.profile.favorites[id] = { category=item.category,
             index=self:GetPositions()[item.category][item.identity] or 1,
-            identity=item.identity, name=item.name }
+            identity=item.identity, name=item.name,
+            iconFileID=item.info.iconFileID, hyperlink=item.info.hyperlink }
     end
     self:Reconcile(); self:Render()
 end
