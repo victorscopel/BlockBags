@@ -331,8 +331,7 @@ function A:CreatePanel(category)
     panel.scroll:SetPoint("TOPLEFT", 8, -(self.header + self.padding))
     panel.content = CreateFrame("Frame", nil, panel.scroll)
     panel.scroll:SetScrollChild(panel.content)
-    -- The entire scrollbar fits inside the existing 8px right border, outside
-    -- the item viewport. Showing it never changes the persistent grid columns.
+    -- Place the scrollbar in the 8px border to preserve the item grid width.
     panel.bar = CreateFrame("Slider", nil, panel, "BackdropTemplate")
     panel.bar:SetOrientation("VERTICAL")
     panel.bar:SetWidth(8)
@@ -370,9 +369,8 @@ function A:CreatePanel(category)
     panel.move:SetScript("OnDragStop", function() self:EndQuickMove(panel) end)
     local receive=function() self:DropIntoCategory(panel.id) end
     local click=function(_,button) if button=="LeftButton" and CursorHasItem() then receive() end end
-    -- A real Button receives both held-cursor clicks and drag releases. Keep it
-    -- below the item buttons/controls and make the transparent container frames
-    -- pass clicks through, so unused space has one unambiguous drop target.
+    -- Receive drops on unused category space, below item buttons and controls.
+    -- Container frames pass clicks through to this button.
     panel.dropTarget=CreateFrame("Button",nil,panel)
     panel.dropTarget:SetAllPoints(panel)
     panel.dropTarget:SetFrameLevel(panel:GetFrameLevel())
@@ -485,7 +483,7 @@ function A:CreateEditorDialog(title, height)
 end
 
 function A:CreateSettingSlider(parent, y, minimum, maximum, step, onChange)
-    -- Numeric stepper: keeps SetValue/GetValue for settings and tests, no slider.
+    -- Keep the slider value API for existing settings controls.
     local slider = CreateFrame("Frame", nil, parent)
     slider:SetPoint("TOPLEFT", 20, y)
     slider:SetSize(290, 18)

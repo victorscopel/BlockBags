@@ -4,7 +4,7 @@ A.loading = {}
 A.itemRequests = {}
 
 function A:AutomaticCategory(item)
-    -- A physical reagent bag stays entirely in its own panel.
+    -- Group reagent-bag slots in their own category.
     if item.bag == Enum.BagIndex.ReagentBag then return "reagentbag" end
     local id = item.info.itemID
     local favorite = self.profile and self.profile.favorites and self.profile.favorites[id]
@@ -51,8 +51,7 @@ function A:ItemDataResult(id,success)
     self.loading[id]=nil
     self.itemRequests[id]=success and "ready" or "failed"
     if success then self:QueueRefresh() end
-    -- No timer-based retry loop. GetItemInfo may be queried again on external
-    -- inventory events, but a failed request is not sent repeatedly.
+    -- Retry missing metadata on inventory events, rather than on a timer.
 end
 
 function A:ScanInventory()
@@ -96,7 +95,7 @@ function A:ScanInventory()
                 item.classID,item.reagent=data and data.classID,data and data.reagent
                 item.itemLevel=data and data.itemLevel
                 if item.classID == Enum.ItemClass.Weapon or item.classID == Enum.ItemClass.Armor then
-                    -- The item ID's base level misses upgrades and different bonus lists.
+                    -- Use the instance level to include upgrades and bonus lists.
                     local level = C_Item.GetCurrentItemLevel and C_Item.GetCurrentItemLevel(location)
                     if not level and info.hyperlink and C_Item.GetDetailedItemLevelInfo then
                         level = C_Item.GetDetailedItemLevelInfo(info.hyperlink)
@@ -111,7 +110,7 @@ function A:ScanInventory()
                     local favorite = self.profile.favorites[info.itemID]
                     if favorite then favorite.category, favorite.index = target.category, target.index end
                 end
-                -- Pending items remain in their last category where possible.
+                -- Keep the previous category while metadata is loading.
                 item.category = item.pending and not target and not self.profile.manualCategories[info.itemID] and self.lastCategories and self.lastCategories[identity] or nil
                 item.category = item.category or self:Classify(item)
                 item.category = self:VisibleCategory(item.category)
@@ -125,8 +124,7 @@ function A:ScanInventory()
     end
     self.lastCategories = self:ClearTable(self.lastCategories or {})
     for _, item in ipairs(items) do self.lastCategories[item.identity] = item.category end
-    -- Keep metadata only for the current inventory. A session of looting/selling
-    -- must not grow this cache indefinitely.
+    -- Remove cached metadata for items no longer in this inventory.
     for id in pairs(self.itemCache) do if not present[id] then self.itemCache[id]=nil end end
     for id in pairs(self.itemRequests) do if not present[id] then self.itemRequests[id],self.loading[id]=nil,nil end end
     self.items = items

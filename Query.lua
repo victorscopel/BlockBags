@@ -1,6 +1,6 @@
 local _, A = ...
 
--- Data-only filters. No loadstring, arbitrary Lua or eager tooltip scans.
+-- Parse attribute filters; fetch tooltip text only when needed.
 local aliases={nome="name",tipo="type",qualidade="quality",nivel="ilvl",categoria="category",
     favorito="favorite",novo="new",reagente="reagent",expansao="expansion",vinculo="binding",slot="slot",
     conjunto="set",equipmentset="set",descricao="tooltip",subtipo="subtype",melhoria="upgrade",transmog="uncollected"}
@@ -23,9 +23,9 @@ function A:CompileQuery(query)
     if #query>256 then return nil,"Use no máximo 256 caracteres." end
     local compiled={}
     if query=="" then return compiled end
-    -- Plain text retains phrase search. Attribute queries combine terms with AND.
+    -- Match plain text as a phrase; combine attribute filters with AND.
     if not query:find(":",1,true) then return {{field="name",value=query}} end
-    -- Quoted field values support set/tooltip names containing spaces.
+    -- Quoted values may contain spaces.
     local tokens,at={},1
     while at<=#query do
         local start=at

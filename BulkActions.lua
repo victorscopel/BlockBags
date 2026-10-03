@@ -26,8 +26,7 @@ function A:RequestCategoryAction(category,kind,targetStorage)
         end
     end
     if #action.entries==0 then self:Print("Não há itens elegíveis: favoritos e conjuntos são protegidos."); return false end
-    -- The native confirmation makes the concrete list/count reviewable before
-    -- selling. Deposits and withdrawals also show their intended destination.
+    -- Confirm the item count and destination before starting.
     self.pendingBulkAction=action
     if not StaticPopupDialogs.BLOCKBAGS_CATEGORY_ACTION then
         StaticPopupDialogs.BLOCKBAGS_CATEGORY_ACTION={text="%s",button1=ACCEPT or "Confirmar",button2=CANCEL,timeout=0,whileDead=true,hideOnEscape=true,
@@ -68,8 +67,7 @@ function A:StartBulkAction(action)
         elseif action.kind=="deposit" and C_Bank.IsItemAllowedInBankType and not C_Bank.IsItemAllowedInBankType(action.bankType,entry.location) then
             action.skipped=action.skipped+1; action.index=action.index+1; C_Timer.After(0.12,step); return
         end
-        -- Exactly one server operation in flight. Verify that this source changed
-        -- before advancing, so full bags/banks or server rejection cannot loop.
+        -- Wait for the source slot to change before processing the next item.
         C_Container.UseContainerItem(entry.bag,entry.slot,nil,action.kind~="sell" and action.bankType or nil)
         C_Timer.After(0.3,function()
             if self.bulkAction~=action then return end

@@ -8,7 +8,7 @@ end
 
 -- Source tracking, focused-frame ancestry and virtual reassignment adapted from
 -- MyBags/dragndrop.lua. Copyright (c) 2026 MyGamesDevelopmentAcc. MIT.
--- Native slots remain responsible for use/equip/split and physical bag transfers.
+-- Item use, equipment, stack splitting and bag transfers use native slots.
 function A:CaptureItemSource(button)
     self.itemDrag=nil
     if self.draft or self.physicalBagView or InCombatLockdown() then return end
@@ -22,7 +22,7 @@ function A:CaptureItemSource(button)
 end
 
 function A:ResolveDropTarget()
-    -- Following ancestors also handles fonts, overlays and native slot children.
+    -- Walk parent frames to resolve drops over item overlays.
     for _,focus in ipairs(GetMouseFoci and GetMouseFoci() or {}) do
         local frame=focus
         for _=1,16 do
@@ -42,7 +42,7 @@ function A:TryVirtualDrop(category,index)
     local kind,id=GetCursorInfo()
     local layout=self:GetLayout()[category]
     if kind~="item" or id~=source.itemID or not layout or layout.hidden then return false end
-    -- Reagent membership is physical, so transfers involving it stay native.
+    -- Reagent-bag transfers must move the physical item.
     if source.bag==Enum.BagIndex.ReagentBag or category=="reagentbag" then return false end
     local info=C_Container.GetContainerItemInfo(source.bag,source.slot)
     if not info or info.itemID~=source.itemID then self.itemDrag=nil; return false end
@@ -54,8 +54,7 @@ function A:TryVirtualDrop(category,index)
         targetIndex=1
         while group.positions[targetIndex] or group.reserved[targetIndex] do targetIndex=targetIndex+1 end
     end
-    -- ClearCursor returns the held item to its original physical slot. Only the
-    -- presentation/category changes, including when the physical bags are full.
+    -- Return the item to its physical slot, then change its category.
     self.itemDrag=nil
     ClearCursor()
     if CursorHasItem() then return false end
@@ -98,8 +97,7 @@ function A:BeginQuickMove(panel)
         candidate.y=math.max(0,candidate.y+dy/self.cell)
         if free then drag.snap.x,drag.snap.y=nil,nil else self:SnapPanel(panel.id,candidate,drag.snap) end
         drag.candidate,drag.valid=candidate,self:CanPlace(panel.id,candidate)
-        -- A same-size-compatible swap is considered only when free movement
-        -- collides with a panel. Both new rectangles must fit before committing.
+        -- Try a swap on collision; validate both resulting rectangles.
         drag.swap=nil
         if not drag.valid then
             for _,cat in ipairs(self.categories) do

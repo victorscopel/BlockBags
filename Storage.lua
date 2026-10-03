@@ -72,8 +72,8 @@ function A:PaintStorageSelector()
     self.windowTitle:SetText(name)
 end
 
--- BankFrame suppression and BankPanel lifetime follow BetterBags' MIT Retail
--- bank integration. BankPanel is only initialized in BANKFRAME_OPENED context.
+-- Bank integration adapted from BetterBags (MIT).
+-- Initialize BankPanel during BANKFRAME_OPENED.
 function A:BankOpened()
     if self.integrationBlocked then return end
     self.atBank=true

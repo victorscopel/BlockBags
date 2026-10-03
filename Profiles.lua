@@ -27,8 +27,7 @@ function A:DropIntoCategory(category)
         local info=C_Container.GetContainerItemInfo(slot.bag,slot.slot)
         return not info or not info.itemID
     end
-    -- Prefer this category's existing empty button. Check the physical slot
-    -- again because the last scan can predate the item picked up by the cursor.
+    -- Recheck the empty slot: picking up an item may have made the scan stale.
     for position,slot in pairs(self.emptyPositions[category] or {}) do
         if (not index or position<index) and available(slot) then chosen,index=slot,position end
     end
@@ -42,7 +41,7 @@ function A:DropIntoCategory(category)
     if not chosen then self:Print("Não há um slot físico livre compatível para receber este item."); return false end
     self:RememberDrop({anchorCategory=category,anchorIndex=index,anchorSlotKey=chosen.slotKey})
     C_Container.PickupContainerItem(chosen.bag,chosen.slot)
-    -- A rejected physical transfer must never leave a category override pending.
+    -- Clear the pending category assignment when a transfer fails.
     if CursorHasItem() then
         if self.pendingPlacements then self.pendingPlacements[chosen.slotKey]=nil end
         return false
@@ -195,7 +194,7 @@ function A:DeleteCategory(id)
     return true
 end
 
--- Length-prefixed data, never executable Lua. Bounded parser for pasted codes.
+-- Parse length-prefixed profile data with size and depth limits.
 local function encode(value)
     local t=type(value)
     if t=="string" then return "s"..#value..":"..value end

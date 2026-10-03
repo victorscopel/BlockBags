@@ -54,8 +54,7 @@ function A:IsUpgrade(item)
             if equippedType=="INVTYPE_2HWEAPON" then return false end
         end
     end
-    -- Rings/trinkets compare with either equipped slot. An arrow indicates an
-    -- item-level candidate, not a simulation or a promise of better DPS.
+    -- Compare rings and trinkets against both equipped slots.
     for _,slot in ipairs(equipmentSlots[item.equipLoc]) do
         local level=self.equippedLevels and self.equippedLevels[slot]
         if type(level)=="number" and item.itemLevel>level then return true end
@@ -84,8 +83,7 @@ function A:EnrichItem(item,data,location)
             item.uncollected=not C_TransmogCollection.PlayerHasTransmog(item.info.itemID,modified)
         end
     end
-    -- Tooltip indexing is on-demand and invalidated by identity/link/count and
-    -- external equipment/collection updates. It never runs on every Render.
+    -- Invalidate cached tooltip text when the item or collection data changes.
     local signature=item.identity..":"..(item.info.hyperlink or "")..":"..(item.info.stackCount or 1)
     if item.tooltipSignature~=signature or self.invalidateTooltips then item.tooltipText=nil; item.tooltipSignature=signature end
 end

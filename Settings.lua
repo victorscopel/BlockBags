@@ -318,8 +318,7 @@ function A:ProtectInventoryDuringSettings(protectInventory)
     end
     if not self.settingsCloseHookInstalled then
         self.settingsCloseHookInstalled=true
-        -- Blizzard returns to GameMenu after OnHide even when an addon opened
-        -- Settings directly. Suppress that return only during our own session.
+        -- Suppress Blizzard's return to GameMenu for settings opened by BlockBags.
         hooksecurefunc(SettingsPanel,"TransitionBackOpeningPanel",function()
             if self.settingsMenuSession and GameMenuFrame and GameMenuFrame:IsShown() then
                 HideUIPanel(GameMenuFrame)
@@ -328,8 +327,7 @@ function A:ProtectInventoryDuringSettings(protectInventory)
         SettingsPanel:HookScript("OnHide",function()
             local session=self.settingsInventorySession
             local menuSession=self.settingsMenuSession
-            -- Escape may call CloseSpecialWindows/CloseAllBags after Settings
-            -- has hidden. Keep the guard for the rest of that same UI action.
+            -- Keep the close guard until Escape's remaining handlers have run.
             C_Timer.After(0,function()
                 if SettingsPanel:IsShown() then return end
                 if self.settingsMenuSession==menuSession then self.settingsMenuSession=nil end

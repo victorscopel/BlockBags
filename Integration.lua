@@ -12,7 +12,7 @@ end
 function A:RequestWindow(action)
     if not self.ready or self.integrationBlocked then return end
     if action=="close" and (self.openingSettings or self.settingsInventorySession or self.openingBank) then return end
-    -- Blizzard's bag functions call one another. Coalesce their hooks into one intent.
+    -- Combine nested bag calls into one window action.
     if action == "toggle" or self.windowIntent ~= "toggle" then self.windowIntent = action end
     if self.intentQueued then return end
     self.intentQueued = true
@@ -29,7 +29,7 @@ end
 
 function A:InstallIntegration()
     if self.integrationInstalled then return end
-    -- Do not let two replacements fight over Blizzard frames.
+    -- Skip integration when another bag replacement is active.
     for _, name in ipairs({ "BetterBags", "MyBags", "ArkInventory", "Baganator", "Bagnon" }) do
         if C_AddOns.IsAddOnLoaded(name) then
             self.integrationBlocked = true
@@ -48,8 +48,7 @@ function A:InstallIntegration()
     self.hiddenBags = CreateFrame("Frame")
     self.hiddenBags:Hide()
     if ContainerFrameCombinedBags then ContainerFrameCombinedBags:SetParent(self.hiddenBags) end
-    -- There is one frame for the backpack in addition to equipped bags.
-    -- NUM_TOTAL_BAG_FRAMES omits that extra frame: the last one was leaking on screen.
+    -- Include the backpack frame, which NUM_TOTAL_BAG_FRAMES omits.
     for i = 1, NUM_CONTAINER_FRAMES or ((NUM_TOTAL_BAG_FRAMES or 5) + 1) do
         local frame = _G["ContainerFrame" .. i]
         if frame then frame:SetParent(self.hiddenBags) end

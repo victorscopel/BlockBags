@@ -6,8 +6,7 @@ function A:CreateBagMenuButton()
     self.bagMenuButton = b
     b:SetSize(40, 40)
     b:SetPoint("TOPLEFT", self.window, "TOPLEFT", -4, 7)
-    -- DefaultPanelTemplate's NineSlice uses elevated strata: the portrait must
-    -- be above that border, not merely above the inventory's own child frames.
+    -- Keep the bag button above the NineSlice border.
     b:SetFrameStrata("DIALOG")
     b:SetFrameLevel(self.window:GetFrameLevel() + 150)
     b:RegisterForClicks("LeftButtonUp", "RightButtonUp")
@@ -132,8 +131,7 @@ function A:ToggleBagSlots()
     self:SetPhysicalBagView(not self.physicalBagView)
 end
 
--- This layout is transient. Category rectangles, rules and item positions are
--- never packed or overwritten when entering/leaving the physical-bag view.
+-- Physical-bag view leaves the saved category layout untouched.
 function A:PhysicalBagGeometry()
     local width = math.max(280, (self.window:GetWidth() - 60) / 2)
     local cols = math.max(1, math.floor(width / 34))

@@ -59,7 +59,7 @@ function A:Reconcile()
                 end
             end
         end
-        -- Keep surviving identities; release removed items without shifting their neighbours.
+        -- Preserve occupied positions when items are removed.
         if not compact then
             for _, item in ipairs(group.items) do
                 local index = previous[item.identity]
@@ -86,9 +86,8 @@ function A:Reconcile()
 end
 
 function A:AssignEmptySlots()
-    -- Every clickable empty button represents ONE distinct physical free slot.
-    -- Reserve reagent-bag empties for that panel; share ordinary empties among
-    -- visible vacancies, then expose the rest in Diversos (scrolling if necessary).
+    -- Assign each physical free slot once. Keep reagent slots in their panel;
+    -- distribute ordinary slots across categories and put the surplus in Diversos.
     self.emptyPools=self.emptyPools or {common={},reagents={},specialty={}}
     local pools=self.emptyPools
     for _,pool in pairs(pools) do self:ClearTable(pool) end
@@ -119,8 +118,7 @@ function A:AssignEmptySlots()
         assign(target, index, slot)
     end
     local commonIndex = 1
-    -- Give every visible category with room a real drop destination before
-    -- earlier categories consume the remaining ordinary free slots.
+    -- Reserve one free slot per visible category before distributing the rest.
     for _, cat in ipairs(self.categories) do
         local data = self:GetLayout()[cat.id]
         if cat.id ~= "reagentbag" and self:CategoryDisplayed(cat.id) and pools.common[commonIndex] then
@@ -168,8 +166,7 @@ function A:MinimumPanelSize(layout)
     return math.max(96,size+self.padding*2),self.header+self.padding*2+size
 end
 
--- Pick the nearest VALID combination of edge alignments. A wider capture band
--- plus a release band prevents jitter without turning snap into a hard boundary.
+-- Snap to nearby edges without overlaps. A wider release threshold prevents jitter.
 function A:MagneticSnap(id,candidate,resize,state)
     local capture,release=18,30
     local gap=self:GetSettings().categorySpacing or 0
@@ -251,8 +248,7 @@ function A:SnapResize(id,candidate,state)
     return self:MagneticSnap(id,candidate,true,state)
 end
 
--- Run only when spacing is explicitly changed or an old layout is migrated.
--- Keep the panels' relative order; inventory events never move their anchors.
+-- Repack on spacing changes or migration, preserving category order.
 function A:PackLayout(layout, gap)
     local entries={}
     for id,data in pairs(layout) do if not data.hidden and self:IsCategoryOnTab(id) then entries[#entries+1]={id=id,data=data} end end
