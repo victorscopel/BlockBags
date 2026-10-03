@@ -1133,3 +1133,21 @@ lua.execute((root / "tests" / "favorite_restore.lua").read_text(encoding="utf-8"
 lua.execute((root / "tests" / "position_modes.lua").read_text(encoding="utf-8"))
 
 lua.execute((root / "tests" / "resize_slots.lua").read_text(encoding="utf-8"))
+
+lua.execute('''
+-- EditBox has no GetStringHeight; profile text is measured with a FontString.
+local code=A.settingsControls.code
+local measure=A.settingsControls.codeMeasure
+code.GetStringHeight=function() error("EditBox cannot measure string height") end
+local height=1000
+measure.GetStringHeight=function() return height end
+code:SetText("BB1:profile-code")
+code.scripts.OnTextChanged(code)
+assert(code.height==1024 and measure:GetText()==code:GetText())
+height=0; code:SetText(""); code.scripts.OnTextChanged(code)
+assert(code.height==155 and measure:GetText()=="")
+local frames=createdFrames
+for n=1,100 do code.scripts.OnTextChanged(code) end
+assert(createdFrames==frames and not measure:IsShown())
+print("Profile text OK: hidden FontString measures height, empty text preserves minimum, repeated edits reuse one measure")
+''')

@@ -236,8 +236,12 @@ function A:BuildSettingsControls()
     controls.code:SetMultiLine(true); controls.code:SetFontObject("ChatFontNormal"); controls.code:SetAutoFocus(false)
     controls.code:SetSize(495,155); controls.code:SetMaxLetters(1048576); codeScroll:SetScrollChild(controls.code)
     controls.code:SetScript("OnEscapePressed",function(f) f:ClearFocus() end)
+    controls.codeMeasure=codeBox:CreateFontString(nil,"ARTWORK","ChatFontNormal")
+    controls.codeMeasure:SetWidth(495); controls.codeMeasure:SetWordWrap(true); controls.codeMeasure:Hide()
     controls.code:SetScript("OnTextChanged",function(f)
-        local height=f:GetStringHeight(); if type(height)=="number" then f:SetHeight(math.max(155,height+24)) end
+        controls.codeMeasure:SetText(f:GetText() or "")
+        local height=controls.codeMeasure:GetStringHeight()
+        if type(height)=="number" then f:SetHeight(math.max(155,height+24)) end
     end)
     button(transfer,A.L["Exportar ativo"],20,-285,210,function()
         controls.code:SetText(self:ExportProfile()); controls.code:SetFocus(); controls.code:HighlightText()

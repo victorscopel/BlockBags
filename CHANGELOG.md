@@ -2,6 +2,8 @@
 
 ## 0.5.2 — preview
 
+- Fix the profile code field calling an unsupported EditBox height method.
+
 - Show individual item slots during category resizing and snap dimensions to whole slots; hold Shift for free pixel sizing.
 
 - Keep whole stacks in their original slot when dropped within the same category; matching stacks still use native merging.
