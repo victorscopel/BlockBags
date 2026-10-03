@@ -151,7 +151,7 @@ function A:BuildSettingsControls()
     button(actions,A.L["Editar layout"],16,-48,180,function() SettingsPanel:Hide(); self.window:Show(); self:StartEdit() end)
     if not self.isBankWindow then button(actions,A.L["Gerenciar favoritos"],212,-48,190,function() SettingsPanel:Hide(); self.window:Show(); self:OpenFavorites() end) end
     local help=section(g,A.L["Organização dos itens"],-466,146)
-    text(help,A.L[self.isBankWindow and "Arraste entre categorias para organizar os itens deste banco. Clique direito em um item para retirar para a mochila. O destino dos depósitos é o banco ou a aba da tropa selecionada." or "Arraste entre categorias ou use Alt + clique direito para atribuir um item. Missões reúne itens que o WoW associa a uma missão. A bolsa física de reagentes mantém suas restrições."],16,-44,560)
+    text(help,A.L[self.isBankWindow and "Arraste entre categorias para organizar os itens deste banco. Clique direito em um item para retirar para a mochila. Os depósitos usam o espaço disponível no banco selecionado, incluindo todas as abas físicas da tropa." or "Arraste entre categorias ou use Alt + clique direito para atribuir um item. Missões reúne itens que o WoW associa a uma missão. A bolsa física de reagentes mantém suas restrições."],16,-44,560)
     button(help,A.L["Diagnóstico de memória"],16,-105,210,function() self:ReportMemory() end)
     local direct=section(g,A.L["Movimento direto das categorias"],-624,110)
     controls.layoutLock=button(direct,"",16,-40,255,function() self:ToggleLayoutLock() end)
@@ -322,6 +322,16 @@ end
 
 function A:ProtectInventoryDuringSettings(protectInventory)
     self.settingsMenuSession={}
+    local inventory=self.inventoryController or self
+    if not inventory.settingsFocusInstalled then
+        inventory.settingsFocusInstalled=true
+        local function focusSettings()
+            if not InCombatLockdown() then SettingsPanel:SetFrameStrata("DIALOG") end
+        end
+        SettingsPanel:HookScript("OnShow",focusSettings)
+        SettingsPanel:HookScript("OnMouseDown",focusSettings)
+    end
+    if not InCombatLockdown() then SettingsPanel:SetFrameStrata("DIALOG") end
     if protectInventory and not self.settingsInventorySession then
         self.settingsInventorySession={}
         for i=#UISpecialFrames,1,-1 do

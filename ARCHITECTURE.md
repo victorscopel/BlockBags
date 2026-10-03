@@ -16,7 +16,7 @@ resize or move panels. Layout changes occur only through user interaction.
 - Views: category tabs and independent layouts keyed by storage + tab. Main
   inventory/default-tab layout keeps its original schema for existing profiles.
 - Storage/BankAccess/BankWindow: purchased containers, native bank context, exact
-  selected-tab routing, access guards and independent bank controllers.
+  unified bank routing, access guards and independent bank controllers.
 - Placement: surviving GUID positions, favorite reservations, optional compaction,
   physical empty destinations and collision-aware persistent geometry.
 - Theme/BagTools/UI: pooled Blizzard decoration and native slot buttons. Physical
@@ -42,7 +42,9 @@ settings and overlap within a category group, with bounded parsing and no Lua ev
 
 Bank profiles live under `BlockBagsDB.bank.scopes.character` and
 `BlockBagsDB.bank.scopes.account`, each with its own profiles, categories and
-position maps. Existing shared bank profiles seed both scopes once. Bank
+position maps. Physical Warband tabs share the account storage view; legacy
+per-tab layouts and positions migrate to it. Existing shared bank profiles seed
+both scopes once. Bank
 favorites are removed during migration/selection; favorites remain a backpack
 feature. Bank settings omit character currencies and equipped-bag controls.
 
@@ -69,7 +71,7 @@ callbacks cannot restart a cancelled queue. A rejected operation attempts once.
 
 The backpack and bank have separate windows and button pools. The focused window
 uses a higher frame level, while bag and close controls share its strata. Native
-BankPanel context follows the selected bank/tab. Purchases are user-triggered through
+BankPanel context follows the selected bank type. Purchases are user-triggered through
 native confirmation. Exact protected-frame behavior remains subject to in-game
 validation in TESTING.md; offline Lua mocks cannot certify freedom from taint.
 

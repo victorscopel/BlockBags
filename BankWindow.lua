@@ -48,6 +48,49 @@ local function migrateBankDatabase(inventory)
     return bank
 end
 
+function A:MigrateUnifiedWarband(database)
+    local function keysWithTabs(source)
+        local keys={}
+        for key in pairs(source or {}) do if key:match("^account_%d+") then keys[#keys+1]=key end end
+        table.sort(keys)
+        return keys
+    end
+    for _,profile in pairs(database.profiles or {}) do
+        local layouts=profile.extraLayouts or {}
+        for _,key in ipairs(keysWithTabs(layouts)) do
+            local tab=key:match("^account_%d+:(.+)$")
+            if tab then
+                local destination="account:"..tab
+                if not layouts[destination] then layouts[destination]=self:Copy(layouts[key]) end
+                layouts[key]=nil
+            end
+        end
+    end
+    local function merge(target,source)
+        for key,value in pairs(source) do
+            if target[key]==nil then target[key]=type(value)=="table" and self:Copy(value) or value
+            elseif type(target[key])=="table" and type(value)=="table" then merge(target[key],value) end
+        end
+    end
+    for _,profiles in pairs(database.inventoryPositions or {}) do
+        for _,positions in pairs(profiles) do
+            local views=positions.views or {}
+            for _,key in ipairs(keysWithTabs(views)) do
+                local tab=key:match("^account_%d+:(.+)$")
+                if tab then
+                    local destination="account:"..tab
+                    views[destination]=views[destination] or {}
+                    merge(views[destination],views[key]); views[key]=nil
+                end
+            end
+            local rules=positions.stackCategories or {}
+            for _,key in ipairs(keysWithTabs(rules)) do
+                rules.account=rules.account or {}; merge(rules.account,rules[key]); rules[key]=nil
+            end
+        end
+    end
+end
+
 function A:EnsureBankWindow()
     if self.isBankWindow then return self end
     if self.bankController then return self.bankController end
@@ -73,6 +116,7 @@ function A:EnsureBankWindow()
     for _,database in pairs(bank.bankRoot.scopes) do
         for _,profile in pairs(database.profiles) do profile.favorites={} end
     end
+    bank:MigrateUnifiedWarband(bank.bankRoot.scopes.account)
     bank.database=bank.bankRoot.scopes.character
     bank.bankScope="character"
     bank.storage="character"; bank.activeTab="default"

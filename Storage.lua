@@ -32,6 +32,7 @@ function A:StorageChoices()
     if self.isBankWindow then choices={} end
     choices[#choices+1]={id="character",name=A.L["Banco do personagem"]}
     choices[#choices+1]={id="account",name=A.L["Banco da tropa"]}
+    if self.isBankWindow then return choices end
     local names={}
     if C_Bank.FetchPurchasedBankTabData and C_Bank.CanViewBank(Enum.BankType.Account) then
         for _,tab in ipairs(C_Bank.FetchPurchasedBankTabData(Enum.BankType.Account) or {}) do names[tab.ID]=tab.name end
@@ -42,6 +43,7 @@ function A:StorageChoices()
     return choices
 end
 function A:SetStorage(storage)
+    if self.isBankWindow and storage:match("^account_") then storage="account" end
     if self.draft or InCombatLockdown() then self:Print(A.L["Salve ou cancele a edição antes de trocar de armazenamento."]); return false end
     local found=false; for _,choice in ipairs(self:StorageChoices()) do if choice.id==storage then found=true end end
     if not found then return false end

@@ -52,8 +52,9 @@ function A:FocusWindow()
     if InCombatLockdown() or not self.window then return end
     local inventory=self.inventoryController or self
     local other=self.isBankWindow and inventory or inventory.bankController
-    if other and other.window then other.window:SetFrameLevel(100) end
+    if other and other.window then other.window:SetFrameLevel(100); other:UpdateHeaderLayers() end
     self.window:SetFrameLevel(1200)
+    self:UpdateHeaderLayers()
 end
 
 function A:BuildUI()
@@ -231,6 +232,7 @@ function A:BuildUI()
     end)
     self:ResizeCanvas()
     self:ApplyLayout()
+    self:UpdateHeaderLayers()
 end
 
 function A:CreateWindowScrollBar(vertical)

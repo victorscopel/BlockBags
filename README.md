@@ -20,6 +20,7 @@ category keeps item positions or automatically fills gaps.
 - Per-category colors, item sizes, spacing, and optional compaction.
 - Favorites and a visual highlight for newly acquired items.
 - Category tabs with independent layouts.
+- Unified Warband inventory covering every purchased physical tab.
 - Separate bank window; character and Warband banks have independent categories, settings and profiles. Favorites are backpack-only.
 - Character bank and Warband tabs with independent layouts.
 - Temporary physical-bag view and equipped-bag controls.

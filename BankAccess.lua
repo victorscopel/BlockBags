@@ -64,7 +64,7 @@ function A:UpdateBankEligibility(button,item)
     button.bankRestriction:SetShown(blocked)
 end
 
--- Selected Warband tabs are exact destinations. The unified character bank uses the first compatible space.
+-- Unified banks use the first compatible space; legacy explicit destinations remain supported.
 function A:TransferBankItem(item,targetStorage,confirmed)
     local sourceBank=self.isBankWindow or (self.storage or "bags")~="bags"
     local storage=sourceBank and self.storage or targetStorage or self.bankDepositTarget or "character"

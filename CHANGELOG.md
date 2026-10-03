@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.7.1 — preview
+
+- Keep native Settings above backpack and bank windows.
+- Place title text, bag menu and close controls above Blizzard frame decoration.
+- Show all Warband tabs in one inventory and remove physical tabs from the storage selector.
+- Merge legacy Warband tab layouts and item assignments into the unified view.
+- Route Warband deposits to available space across all purchased tabs.
+
 ## 0.7.0 — preview
 
 - Separate character-bank and Warband categories, layouts and profiles.

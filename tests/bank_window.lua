@@ -50,7 +50,7 @@ assert(bank.panels~=A.panels and bank.buttons~=A.buttons and bank.settingsIDs~=A
 assert(bank:GetBaseLayout().consumables.tint.r==0.11)
 assert(not A.profile.extraLayouts["character:default"])
 assert(not A.storageSelector:IsShown() and bank.storageSelector:IsShown())
-assert(#bank:StorageChoices()==3)
+assert(#bank:StorageChoices()==2)
 assert(bank.windowName=="BlockBagsBankWindow" and bank:GetDatabase()==BlockBagsDB.bank.scopes.character)
 -- Renaming/recoloring bank categories never changes inventory categories.
 local originalName=A:CategoryName("consumables")
@@ -66,8 +66,8 @@ assert(bank:DeleteCategory(extra) and not A:GetLayout()[extra])
 -- Warband selection leaves inventory and character-bank layouts alone.
 assert(bank:SetStorage("account_12") and bank.items[1].bag==12)
 assert(A.storage=="bags" and #A.items==2 and A.buttons["0:1"]==inventoryButton)
-assert(A.bankDepositTarget=="account_12")
-assert(bank.windowTitle:GetText()==A.L["Tropa: "].."Shared")
+assert(A.bankDepositTarget=="account")
+assert(bank.windowTitle:GetText()==A.L["Banco da tropa"])
 bank:SetCategoryOption("consumables","name","Warband potions")
 assert(bank:SetStorage("character") and bank:CategoryName("consumables")=="Bank potions")
 -- Controller ownership prevents virtual assignments across physical storages.

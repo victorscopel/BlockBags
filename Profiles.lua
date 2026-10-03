@@ -71,6 +71,7 @@ function A:RefreshProfile()
     if self.physicalSections then for _,panel in pairs(self.physicalSections) do panel:Hide() end end
     if self.CancelInteractions then self:CancelInteractions() end
     if self.isBankWindow then
+        if self.bankScope=="account" then self:MigrateUnifiedWarband(self:GetDatabase()) end
         self.profile.favorites={}
         self.profile.settings.currencies=nil
         self.profile.settings.showBlizzardBagBar=nil
@@ -359,7 +360,7 @@ function A:ValidateProfile(p)
         for key,layout in pairs(p.extraLayouts) do
             count=count+1; assert(count<=64 and type(key)=="string" and #key<=60,A.L["limite de layouts"])
             local storage,tab=key:match("^([%w_]+):([%w_]+)$")
-            assert((storage=="bags" or storage=="character" or storage and storage:match("^account_%d+$")) and tabIDs[tab],A.L["área/aba desconhecida"])
+            assert((storage=="bags" or storage=="character" or storage=="account" or storage and storage:match("^account_%d+$")) and tabIDs[tab],A.L["área/aba desconhecida"])
             self:ValidateProfile({version=1,categories=self:Copy(p.categories),layout=layout,settings=p.settings,window=p.window,
                 tabs=p.tabs,categoryTabs=p.categoryTabs,manualCategories={},favorites={}})
         end

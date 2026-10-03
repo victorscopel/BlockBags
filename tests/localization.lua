@@ -20,6 +20,6 @@ d.name="My equipment"; assert(A:CategoryName(id)=="My equipment"); d.name=previo
 assert(A:ExportProfile()==exported)
 local help=A.L["/bb — abrir; /bb edit — editar; /bb config — opções; /bb memory — diagnóstico; /bb reset — restaurar layout; /bb scale 0.85."]
 assert(help:find("/bb config",1,true) and not help:find("/ab",1,true))
-assert(A.closeButton:IsShown() and A.closeButton.level==A.window:GetFrameLevel()+150)
+assert(A.closeButton:IsShown() and A.closeButton.level>A.decoration:GetFrameLevel() and A.closeButton.level>A.titleCaptionFrame:GetFrameLevel())
 A.window:Show(); A.closeButton.scripts.OnClick(); assert(not A.window:IsShown())
 print("Localization/close OK: "..A.locale..", /bb, translated defaults, custom names and exported data preserved, English/Portuguese filters, visible close button above border")

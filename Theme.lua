@@ -26,6 +26,7 @@ function A:DecorateInventory()
     caption:SetHeight(24)
     caption:SetFrameLevel(frame:GetFrameLevel()+5)
     caption:EnableMouse(false)
+    self.titleCaptionFrame=caption
     self.windowTitle=caption:CreateFontString(nil,"OVERLAY","GameFontNormalSmall")
     self.windowTitle:SetPoint("CENTER")
     self.windowTitle:SetText(self:BackpackTitle())
@@ -62,4 +63,19 @@ function A:StyleCommand(button,title)
     button:SetHighlightFontObject("GameFontNormalSmall")
     button:SetText(title)
     button:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square","ADD")
+end
+
+function A:UpdateHeaderLayers()
+    local level=self.window:GetFrameLevel()
+    if self.decoration then
+        self.decoration:SetFrameLevel(math.max(0,level-1))
+        for _,key in ipairs({"NineSlice","TitleContainer","PortraitContainer"}) do
+            local child=self.decoration[key]
+            if type(child)=="table" or type(child)=="userdata" then child:SetFrameLevel(level+10); child:EnableMouse(false) end
+        end
+    end
+    if self.titleCaptionFrame then self.titleCaptionFrame:SetFrameLevel(level+20) end
+    if self.titleDrag then self.titleDrag:SetFrameLevel(level+21) end
+    if self.bagMenuButton then self.bagMenuButton:SetFrameLevel(level+30) end
+    if self.closeButton then self.closeButton:SetFrameLevel(level+30) end
 end

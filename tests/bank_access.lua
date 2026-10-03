@@ -61,21 +61,32 @@ local nativeType,selectedTab,contextEvents
 BankPanel.SetBankType=function(_,kind) nativeType=kind end
 BankPanel.SelectTab=function(_,id) selectedTab=id end
 ItemButtonUtil={Event={ItemContextChanged=1},TriggerEvent=function() contextEvents=(contextEvents or 0)+1 end}
--- Both native bank context and exact target change on tab selection.
+-- Warband storage always includes all physical tabs.
 assert(bank:SetStorage("account_15")); drain()
-assert(nativeType==Enum.BankType.Account and selectedTab==15 and contextEvents>0 and A.bankDepositTarget=="account_15")
+assert(nativeType==Enum.BankType.Account and contextEvents>0 and A.bankDepositTarget=="account" and bank.storage=="account" and #bank:GetScannedBags()==2)
 A:ScanInventory(); A:Reconcile(); A:Render()
 assert(A.buttons["0:2"].bankBlocked and A.buttons["0:2"].bankRestriction:IsShown())
 assert(not A.buttons["0:1"].bankBlocked)
 assert(not A:TransferBankItem(A.slotModels["0:2"]) and pickups==0)
 assert(A:TransferBankItem(A.slotModels["0:1"])); drain()
-assert(not data[0][1] and data[15][1].guid=="source-one" and not next(data[14]))
--- A full selected tab must never fall back to another tab with free space.
-for slot=1,3 do data[15][slot]={id=96000+slot,count=20,guid="full"..slot} end
+assert(not data[0][1] and data[14][1].guid=="source-one" and not next(data[15]))
+-- Items on both physical tabs appear in one category view and survive export.
+data[15][2]={id=95004,count=1,guid="other-tab"}
+bank:ScanInventory(); bank:Reconcile(); bank:Render()
+assert(#bank.items==2 and bank.items[1].bag==14 and bank.items[2].bag==15 and bank.capacity.total==6)
+assert(bank:DecodeProfile(bank:ExportProfile()))
+assert(#bank:StorageChoices()==2)
+-- A full first tab redirects to another tab without changing the visible storage.
+for slot=1,3 do data[14][slot]={id=97000+slot,count=20,guid="first-full"..slot} end
+data[0][1]={id=95001,count=3,guid="source-fallback"}; A:ScanInventory(); A:Reconcile(); A:Render()
+assert(A:TransferBankItem(A.slotModels["0:1"])); drain()
+assert(data[15][1].guid=="source-fallback" and bank.storage=="account")
+-- Deposits use free space across tabs, then stop when the whole bank is full.
+for _,bag in ipairs({14,15}) do for slot=1,3 do data[bag][slot]={id=96000+slot,count=20,guid="full"..bag..slot} end end
 data[0][1]={id=95001,count=3,guid="source-two"}; A:ScanInventory(); A:Reconcile(); A:Render()
 local before=pickups
-assert(not A:TransferBankItem(A.slotModels["0:1"]) and pickups==before and not next(data[14]))
-data[15]={}
+assert(not A:TransferBankItem(A.slotModels["0:1"]) and pickups==before)
+data[14]={}; data[15]={}
 -- Character bank right-click withdraws via the native bank template, no item-use call.
 local originalCreateFrame=CreateFrame
 local modifiedClicks=0
@@ -165,7 +176,7 @@ assert(scanCount==before and not bank.bankLoadRetryQueued)
 bank.ScanInventory=scan
 -- Refundable deposits use Blizzard's native confirmation with an exact target.
 bank.atBank=true; bank.window:Show(); assert(bank:SetStorage("account_15")); drain()
-data[0][1]={id=95001,count=1,guid="refundable"}; data[15]={}; A:ScanInventory(); A:Reconcile(); A:Render()
+data[0][1]={id=95001,count=1,guid="refundable"}; data[14]={}; data[15]={}; A:ScanInventory(); A:Reconcile(); A:Render()
 C_Item.CanBeRefunded=function() return true end
 Item={CreateFromItemGUID=function(_,guid) return {guid=guid} end}
 StaticPopupDialogs.ACCOUNT_BANK_DEPOSIT_NO_REFUND_CONFIRM={}
@@ -173,9 +184,40 @@ local popupName,popupData
 StaticPopup_Show=function(name,_,_,value) popupName,popupData=name,value end
 assert(not A:TransferBankItem(A.slotModels["0:1"]))
 assert(held and popupName=="ACCOUNT_BANK_DEPOSIT_NO_REFUND_CONFIRM" and popupData.itemToDeposit.guid=="refundable")
-assert(popupData.targetItemLocation.bag==15 and popupData.targetItemLocation.slot==1 and nativeType==Enum.BankType.Account)
-C_Container.PickupContainerItem(15,1)
-assert(not held and data[15][1].guid=="refundable")
+assert(popupData.targetItemLocation.bag==14 and popupData.targetItemLocation.slot==1 and nativeType==Enum.BankType.Account)
+C_Container.PickupContainerItem(14,1)
+assert(not held and data[14][1].guid=="refundable")
 C_Item.CanBeRefunded=function() return false end
 A:BankClosed(); drain()
-print("Bank access OK: exact selected-tab routing/full-tab refusal, native context/template/modified clicks/refund popup, incompatible item markers, read-only guards, separate scoped profiles/categories, bank-only settings, selective/coalesced reads, late-data recovery and bounded/cancelled retries")
+print("Bank access OK: unified Warband routing/full-bank refusal, native context/template/modified clicks/refund popup, incompatible item markers, read-only guards, separate scoped profiles/categories, bank-only settings, selective/coalesced reads, late-data recovery and bounded/cancelled retries")
+
+-- Reproduce Blizzard's high NineSlice levels and ensure title controls stay above them.
+for _,owner in ipairs({A,bank}) do
+    owner.decoration.NineSlice=CreateFrame("Frame",nil,owner.decoration)
+    owner.decoration.TitleContainer=CreateFrame("Frame",nil,owner.decoration)
+    owner.decoration.NineSlice:SetFrameLevel(owner.window:GetFrameLevel()+500)
+    owner.decoration.TitleContainer:SetFrameLevel(owner.window:GetFrameLevel()+510)
+    owner:FocusWindow()
+    assert(owner.titleCaptionFrame:GetFrameLevel()>owner.decoration.NineSlice:GetFrameLevel())
+    assert(owner.bagMenuButton:GetFrameLevel()>owner.decoration.NineSlice:GetFrameLevel())
+    assert(owner.closeButton:GetFrameLevel()>owner.decoration.NineSlice:GetFrameLevel())
+end
+hooksecurefunc=function() end
+A:OpenGeneralSettings()
+assert(SettingsPanel:GetFrameStrata()=="DIALOG" and A.window:GetFrameStrata()=="HIGH")
+A:FocusWindow(); bank:FocusWindow()
+SettingsPanel.scripts.OnMouseDown(SettingsPanel)
+assert(SettingsPanel:GetFrameStrata()=="DIALOG")
+-- Merge legacy tab maps, retaining manual category assignments from every tab.
+local migration={profiles={old={extraLayouts={["account_14:default"]={misc={name="Old layout"}}}}},
+    inventoryPositions={Tester={old={views={["account_14:default"]={misc={one=1},dropSlots={one={category="misc",index=1}}},
+    ["account_15:default"]={misc={two=2},dropSlots={two={category="misc",index=2}}}},
+    stackCategories={account_14={one="misc"},account_15={two="consumables"}}}}}}
+bank:MigrateUnifiedWarband(migration)
+local merged=migration.inventoryPositions.Tester.old
+assert(migration.profiles.old.extraLayouts["account:default"].misc.name=="Old layout")
+assert(not migration.profiles.old.extraLayouts["account_14:default"])
+assert(merged.views["account:default"].misc.one==1 and merged.views["account:default"].misc.two==2)
+assert(merged.views["account:default"].dropSlots.one and merged.views["account:default"].dropSlots.two)
+assert(merged.stackCategories.account.one=="misc" and merged.stackCategories.account.two=="consumables")
+print("Header/settings/unified bank OK: title controls above native NineSlice, Settings dialog above both windows, combined multi-tab inventory/capacity/export, full-tab routing and legacy map migration")

@@ -138,8 +138,10 @@ function methods:SetParent(parent) self.parent=parent end
 function methods:SetSize(w,h) self.width=w; self.height=h end
 function methods:SetWidth(w) self.width=w end
 function methods:SetHeight(h) self.height=h end
-function methods:GetFrameLevel() return 1 end
+function methods:GetFrameLevel() return rawget(self,"level") or 1 end
 function methods:SetFrameLevel(value) self.level=value end
+function methods:SetFrameStrata(value) self.strata=value end
+function methods:GetFrameStrata() return rawget(self,"strata") or "MEDIUM" end
 function methods:SetResizable(value) self.resizable=value end
 function methods:GetWidth() return self.width or 912 end
 function methods:GetHeight() return self.height or 716 end

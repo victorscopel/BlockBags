@@ -72,3 +72,11 @@ Offline tests cover tab routing, access guards, native button template selection
 - [ ] Bank settings omit currencies, the equipped-bag bar and favorites. Backpack favorites still work.
 - [ ] Overlap both windows, click/drag each title and click items; the active window and its controls stay together.
 - [ ] Open bank with slow data arrival, switch storage and close while loading. Check recovery and that retries stop.
+
+### Window focus and unified Warband (0.7.1)
+
+- [ ] Open Settings and backpack/bank together. Settings stays above both while typing/clicking controls.
+- [ ] Overlap, reopen and drag both inventory windows; bag button, title and close button remain visible.
+- [ ] Warband storage shows items and total capacity from every purchased tab, in categorized and physical views.
+- [ ] Storage selector offers only character bank and Warband bank. Fill one physical tab and verify deposits use another.
+- [ ] Existing per-tab manual assignments survive migration into the unified bank.
