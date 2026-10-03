@@ -55,8 +55,6 @@ function A:TryVirtualDrop(category,index)
     local kind,id=GetCursorInfo()
     local layout=self:GetLayout()[category]
     if kind~="item" or id~=source.itemID or not layout or layout.hidden then return false end
-    -- Reagent-bag transfers must move the physical item.
-    if source.bag==Enum.BagIndex.ReagentBag or category=="reagentbag" then return false end
     local info=C_Container.GetContainerItemInfo(source.bag,source.slot)
     if not info or info.itemID~=source.itemID then self.itemDrag=nil; return false end
     local model=self.slotModels and self.slotModels[source.slotKey]
@@ -64,11 +62,18 @@ function A:TryVirtualDrop(category,index)
     local group=self.groups[category]
     if not group then return false end
     local target=index and group.positions[index]
-    if target and target.info.itemID==id then
+    if target and target.info.itemID==id and target.identity~=source.identity then
         -- Native slots handle merging, full stacks and incompatible variants.
         self.itemDrag=nil
         return false
     end
+    if category==source.category then
+        self.itemDrag=nil
+        ClearCursor()
+        return not CursorHasItem()
+    end
+    -- Reagent-bag transfers must move the physical item.
+    if source.bag==Enum.BagIndex.ReagentBag or category=="reagentbag" then return false end
     local targetIndex=index
     if not targetIndex or group.positions[targetIndex] or group.reserved[targetIndex] then
         targetIndex=1

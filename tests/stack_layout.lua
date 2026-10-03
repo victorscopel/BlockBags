@@ -21,6 +21,14 @@ A:ScanInventory(); A:Reconcile(); A:Render()
 local original=A.slotModels["0:1"]
 A:ToggleFavorite(original)
 assert(A.profile.favorites[91001].index==1)
+-- Releasing a whole stack in its own category cancels instead of reassigning.
+for _,index in ipairs({false,1,7}) do
+    A:CaptureItemSource(A.buttons["0:1"]); cursor=91001
+    assert(A:TryVirtualDrop("consumables",index or nil))
+    assert(not cursor and not A.itemDrag and not A.pendingPlacements)
+    assert(A:GetPositions().consumables[original.identity]==1)
+    assert(A.profile.favorites[91001].index==1 and not A:GetStackCategories()[original.identity])
+end
 -- Native splitting creates a new GUID in the chosen physical empty slot.
 slots[1].count=5; slots[2]={id=91001,count=15,guid="potion-split"}
 cursor=91001
@@ -31,6 +39,10 @@ local split=A.slotModels["0:2"]
 assert(original.category=="consumables" and split.category=="consumables")
 assert(A:GetPositions().consumables[split.identity]==6)
 assert(A:GetPositions().consumables[original.identity]==1)
+-- A separate matching stack still goes to the native merge handler.
+A:CaptureItemSource(A.buttons["0:2"]); cursor=91001
+assert(not A:TryVirtualDrop("consumables",1) and cursor==91001 and not A.itemDrag)
+cursor=nil
 A:Reconcile(); assert(A:GetPositions().consumables[split.identity]==6)
 -- Only the dragged stack changes category; the favorite remains in its slot.
 A:CaptureItemSource(A.buttons["0:2"]); cursor=91001

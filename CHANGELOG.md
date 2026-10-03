@@ -2,6 +2,8 @@
 
 ## 0.5.2 — preview
 
+- Keep whole stacks in their original slot when dropped within the same category; matching stacks still use native merging.
+
 - Switching to automatic positions releases manual slot placements and sorts consistently across the header, settings and saved edits; favorites remain reserved.
 
 - Restore favorites to a free slot in their automatic category without displacing existing items.
