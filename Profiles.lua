@@ -11,6 +11,11 @@ function A:RememberDrop(frame)
 end
 
 function A:DropIntoCategory(category)
+    if self.isBankWindow then
+        if not self:CanMutateBank(nil,true) then return false end
+        local cursorLocation=C_Cursor and C_Cursor.GetCursorItem and C_Cursor.GetCursorItem()
+        if cursorLocation and C_Bank.IsItemAllowedInBankType and not C_Bank.IsItemAllowedInBankType(self:BankType(self.storage),cursorLocation) then return false end
+    end
     if self.draft or InCombatLockdown() then return false end
     if self.TryVirtualDrop and self:TryVirtualDrop(category) then return true end
     local layout=self:GetLayout()[category]
@@ -65,6 +70,13 @@ function A:RefreshProfile()
     if self.bagSlots then self.bagSlots:Hide() end
     if self.physicalSections then for _,panel in pairs(self.physicalSections) do panel:Hide() end end
     if self.CancelInteractions then self:CancelInteractions() end
+    if self.isBankWindow then
+        self.profile.favorites={}
+        self.profile.settings.currencies=nil
+        self.profile.settings.showBlizzardBagBar=nil
+        if self.profile.layout.reagentbag then self.profile.layout.reagentbag.hidden=true end
+        for _,layout in pairs(self.profile.extraLayouts or {}) do if layout.reagentbag then layout.reagentbag.hidden=true end end
+    end
     self.categories = self.profile.categories
     self.panelPool=self.panelPool or {}
     for _, panel in pairs(self.panels) do panel:Hide(); self.panelPool[#self.panelPool+1]=panel end

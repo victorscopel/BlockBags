@@ -114,36 +114,39 @@ function A:BuildFeatureSettings()
         root:CreateRadio(A.L["Pawn (se instalado)"],function() return self:GetSettings().upgradeProvider=="pawn" end,function() self:SetFeatureOption("upgradeProvider","pawn") end)
     end)
     text(indicators,A.L["A comparação por ilvl sinaliza candidatos; o Pawn usa sua avaliação. Sem Pawn, a comparação por ilvl continua disponível."],236,-183,345)
-    local currencies=section(p,A.L["Moedas no rodapé"],-298,233)
-    text(currencies,A.L["Buscar:"],20,-49,58)
-    c.currencySearch=input(currencies,82,-43,338)
-    c.currencySearch:SetScript("OnTextChanged",function() c.currencyPage=1; self:RefreshCurrencyPicker() end)
-    c.currencyPicker=dropdown(currencies,20,-80,400,function(_,root)
-        local choices=self:CurrencyChoices(c.currencySearch:GetText())
-        local page=math.min(c.currencyPage or 1,math.max(1,math.ceil(#choices/8)))
-        if #choices==0 then root:CreateTitle(A.L["Nenhuma moeda encontrada."]) end
-        for index=(page-1)*8+1,math.min(page*8,#choices) do
-            local choice=choices[index]
-            root:CreateCheckbox(choice.name,function()
-                for _,value in ipairs(self:GetSettings().currencies or {}) do if value==choice.id then return true end end
-                return false
-            end,function() self:ToggleCurrency(choice.id) end)
-        end
-    end)
-    c.currencyPageText=text(currencies,"",438,-49,145)
-    c.currencyPrevious=button(currencies,"<",438,-80,60,function() c.currencyPage=math.max(1,(c.currencyPage or 1)-1); self:RefreshCurrencyPicker() end)
-    c.currencyNext=button(currencies,">",508,-80,60,function() c.currencyPage=(c.currencyPage or 1)+1; self:RefreshCurrencyPicker() end)
-    c.currencyNames=text(currencies,"",20,-114,550)
-    c.currencyNames:SetHeight(32)
-    text(currencies,A.L["Ou digite o ID de uma moeda para adicionar/remover:"],20,-148,550)
-    c.currencyID=input(currencies,20,-174,140)
-    button(currencies,A.L["Alternar moeda"],182,-174,180,function()
-        local id=tonumber(c.currencyID:GetText())
-        if not id or id%1~=0 or id<1 then self:Print(A.L["Digite um ID numérico válido."]); return end
-        if not self:ToggleCurrency(id) then self:Print(A.L["Moeda indisponível ou limite de 7 moedas atingido."]) end
-    end)
-    button(currencies,A.L["Limpar seleção"],380,-174,170,function() self:SetFeatureOption("currencies",{}) end)
-    local tabs=section(p,A.L["Abas de categorias"],-543,263)
+    if not self.isBankWindow then
+        local currencies=section(p,A.L["Moedas no rodapé"],-298,233)
+        text(currencies,A.L["Buscar:"],20,-49,58)
+        c.currencySearch=input(currencies,82,-43,338)
+        c.currencySearch:SetScript("OnTextChanged",function() c.currencyPage=1; self:RefreshCurrencyPicker() end)
+        c.currencyPicker=dropdown(currencies,20,-80,400,function(_,root)
+            local choices=self:CurrencyChoices(c.currencySearch:GetText())
+            local page=math.min(c.currencyPage or 1,math.max(1,math.ceil(#choices/8)))
+            if #choices==0 then root:CreateTitle(A.L["Nenhuma moeda encontrada."]) end
+            for index=(page-1)*8+1,math.min(page*8,#choices) do
+                local choice=choices[index]
+                root:CreateCheckbox(choice.name,function()
+                    for _,value in ipairs(self:GetSettings().currencies or {}) do if value==choice.id then return true end end
+                    return false
+                end,function() self:ToggleCurrency(choice.id) end)
+            end
+        end)
+        c.currencyPageText=text(currencies,"",438,-49,145)
+        c.currencyPrevious=button(currencies,"<",438,-80,60,function() c.currencyPage=math.max(1,(c.currencyPage or 1)-1); self:RefreshCurrencyPicker() end)
+        c.currencyNext=button(currencies,">",508,-80,60,function() c.currencyPage=(c.currencyPage or 1)+1; self:RefreshCurrencyPicker() end)
+        c.currencyNames=text(currencies,"",20,-114,550)
+        c.currencyNames:SetHeight(32)
+        text(currencies,A.L["Ou digite o ID de uma moeda para adicionar/remover:"],20,-148,550)
+        c.currencyID=input(currencies,20,-174,140)
+        button(currencies,A.L["Alternar moeda"],182,-174,180,function()
+            local id=tonumber(c.currencyID:GetText())
+            if not id or id%1~=0 or id<1 then self:Print(A.L["Digite um ID numérico válido."]); return end
+            if not self:ToggleCurrency(id) then self:Print(A.L["Moeda indisponível ou limite de 7 moedas atingido."]) end
+        end)
+        button(currencies,A.L["Limpar seleção"],380,-174,170,function() self:SetFeatureOption("currencies",{}) end)
+    end
+    local offset=self.isBankWindow and 245 or 0
+    local tabs=section(p,A.L["Abas de categorias"],-543+offset,263)
     c.tabPicker=dropdown(tabs,20,-43,330,function(_,root)
         for _,tab in ipairs(self:GetTabs()) do
             root:CreateRadio(self:TabName(tab),function() return (self.settingsTab or "default")==tab.id end,
@@ -162,9 +165,9 @@ function A:BuildFeatureSettings()
     text(tabs,A.L["Mover categorias: clique direito no cabeçalho → Mover categoria para aba, ou use a página Categorias. Cada aba salva seu próprio layout. Excluir uma aba retorna suas categorias à Principal."],20,-194,550)
     StaticPopupDialogs.BLOCKBAGS_DELETE_TAB={text=A.L["Excluir esta aba? Suas categorias retornarão à Principal."],button1=YES,button2=CANCEL,timeout=0,whileDead=true,hideOnEscape=true,
         OnAccept=function(_,data) local owner=data.owner or A; owner:DeleteTab(data.id); owner.settingsTab="default"; owner:RefreshSettings() end}
-    local management=section(p,A.L["Banco e ações por categoria"],-818,150)
-    text(management,A.L["O banco abre em uma janela separada, com categorias, favoritos e perfis próprios. Use o seletor dessa janela para alternar entre banco do personagem e abas da tropa. Clique direito no cabeçalho para depositar/retirar uma categoria. No vendedor, você pode vender a categoria após confirmar. Favoritos e conjuntos são protegidos."],20,-43,550)
-    text(p,A.L["Busca: expansao:tww · vinculo:boe · slot:anel · conjunto:\"Raid DPS\" · descricao:\"velocidade\" · melhoria:sim · transmog:sim"],32,-996,570)
+    local management=section(p,A.L["Banco e ações por categoria"],-818+offset,150)
+    text(management,A.L[self.isBankWindow and "Este banco tem categorias, layout e perfis próprios. Use o seletor para alternar entre banco do personagem e banco da tropa. Clique direito em um item para retirar ou no cabeçalho para retirar a categoria. Peças de conjuntos são protegidas nas ações por categoria. Favoritos estão disponíveis apenas na mochila." or "O banco abre em uma janela separada. Banco do personagem e banco da tropa têm categorias e perfis independentes. Use o seletor dessa janela para alternar entre banco do personagem e abas da tropa. Clique direito no cabeçalho para depositar/retirar uma categoria. No vendedor, você pode vender a categoria após confirmar. Favoritos e conjuntos são protegidos."],20,-43,550)
+    text(p,A.L["Busca: expansao:tww · vinculo:boe · slot:anel · conjunto:\"Raid DPS\" · descricao:\"velocidade\" · melhoria:sim · transmog:sim"],32,-996+offset,570)
     local category=section(self.settingsPages.categories.content,"Aba desta categoria",-1338,98)
     c.categoryTab=dropdown(category,20,-46,460,function(_,root)
         for _,tab in ipairs(self:GetTabs()) do
@@ -185,7 +188,7 @@ function A:RefreshFeatureSettings()
         names[#names+1]=info and info.name or tostring(id)
     end
     self:RefreshCurrencyPicker()
-    c.currencyNames:SetText(#names>0 and table.concat(names," · ") or A.L["Nenhuma moeda selecionada."])
+    if c.currencyNames then c.currencyNames:SetText(#names>0 and table.concat(names," · ") or A.L["Nenhuma moeda selecionada."]) end
     local choice="default"
     for _,tab in ipairs(self:GetTabs()) do if tab.id==self.settingsTab then choice=tab.id end end
     self.settingsTab=choice

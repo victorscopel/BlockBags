@@ -1,7 +1,7 @@
 local _, A = ...
 BlockBags = A
 AnchorBags = A -- Compatibility for existing bindings/scripts.
-A.version = "0.6.2"
+A.version = "0.7.0"
 A.cell, A.padding, A.header, A.scrollGutter = 40, 8, 36, 0
 A.categories = {
     { id = "equipment", name = A.L["Equipamentos"], x = 0, y = 0, cols = 8, rows = 4 },
@@ -110,7 +110,11 @@ function A:InitializeDatabase()
     end
 end
 
-function A:QueueRefresh()
+function A:QueueRefresh(changedBags)
+    if changedBags then
+        self.scanDirtyBags=self.scanDirtyBags or {}
+        for bag in pairs(changedBags) do self.scanDirtyBags[bag]=true end
+    else self.fullInventoryScan=true end
     if not self.ready or self.refreshQueued then return end
     if self.window and not self.window:IsShown() then self.inventoryDirty=true; return end
     self.refreshQueued = true
@@ -121,7 +125,9 @@ function A:QueueRefresh()
         if InCombatLockdown() then self.pendingRefresh = true; return end
         self.pendingRefresh = nil
         self.inventoryDirty = nil
-        self:ScanInventory()
+        local changed=not self.fullInventoryScan and self.scanDirtyBags or nil
+        self.fullInventoryScan=nil; self.scanDirtyBags=nil
+        self:ScanInventory(changed)
         self:Reconcile()
         self:Render()
     end)
@@ -146,7 +152,7 @@ events:SetScript("OnEvent", function(_, event, arg, success)
             "BAG_UPDATE_COOLDOWN", "GET_ITEM_INFO_RECEIVED", "ITEM_DATA_LOAD_RESULT", "PLAYER_MONEY", "PLAYER_REGEN_ENABLED",
             "PLAYER_REGEN_DISABLED", "MERCHANT_SHOW", "MERCHANT_CLOSED", "CURSOR_CHANGED",
             "PLAYER_EQUIPMENT_CHANGED", "EQUIPMENT_SETS_CHANGED", "TRANSMOG_COLLECTION_UPDATED", "CURRENCY_DISPLAY_UPDATE",
-            "BANKFRAME_OPENED", "BANKFRAME_CLOSED", "PLAYERBANKSLOTS_CHANGED", "PLAYER_ACCOUNT_BANK_TAB_SLOTS_CHANGED",
+            "BANKFRAME_OPENED", "BANKFRAME_CLOSED", "BAG_UPDATE", "PLAYERBANKSLOTS_CHANGED", "PLAYER_ACCOUNT_BANK_TAB_SLOTS_CHANGED",
             "BANK_TABS_CHANGED", "BANK_TAB_SETTINGS_UPDATED" }) do events:RegisterEvent(name) end
         A:QueueRefresh()
     elseif event == "PLAYER_LOGIN" then
@@ -181,10 +187,18 @@ events:SetScript("OnEvent", function(_, event, arg, success)
         if A.window:IsShown() then A:PaintCurrencyBar() end
     elseif event == "CURSOR_CHANGED" then
         if not CursorHasItem() then A.itemDrag=nil; A:HideCategoryDropHint() end
+    elseif event == "BAG_UPDATE" then
+        A.bagUpdateBatch=true
+        if type(arg)=="number" and arg>=0 and arg<=Enum.BagIndex.ReagentBag then A:QueueRefresh({[arg]=true}) end
     elseif event == "BAG_UPDATE_COOLDOWN" then
         if not InCombatLockdown() and A.window:IsShown() then
             for _,button in pairs(A.buttons) do if button.currentItem and button:IsShown() then button:UpdateCooldown(true) end end
         end
+    elseif event == "BAG_UPDATE_DELAYED" then
+        if not A.bagUpdateBatch then A:QueueRefresh() end
+        A.bagUpdateBatch=nil
+    elseif event=="PLAYERBANKSLOTS_CHANGED" or event=="PLAYER_ACCOUNT_BANK_TAB_SLOTS_CHANGED" or event=="BANK_TABS_CHANGED" then
+        -- Bank slot events are handled by the bank controller.
     else
         if event=="MERCHANT_CLOSED" then A:CancelBulkAction() end
         if event=="PLAYER_EQUIPMENT_CHANGED" or event=="EQUIPMENT_SETS_CHANGED" or event=="TRANSMOG_COLLECTION_UPDATED" then A.invalidateTooltips=true end

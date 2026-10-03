@@ -132,6 +132,7 @@ function A:PaintItemIndicators(b,item)
 end
 
 function A:PaintCurrencyBar()
+    if self.isBankWindow then if self.currencyBar then self.currencyBar:Hide() end; return end
     if not self.currencyBar then
         self.currencyBar=CreateFrame("Frame",nil,self.window)
         self.currencyBar:SetPoint("BOTTOMLEFT",16,35); self.currencyBar:SetHeight(20)

@@ -62,7 +62,7 @@ function A:ItemDataResult(id,success)
     -- Retry missing metadata on inventory events, rather than on a timer.
 end
 
-function A:ScanInventory()
+function A:ScanInventory(changedBags)
     self:RefreshEquipmentData()
     self.slotModels=self.slotModels or {}
     self.slotLocations=self.slotLocations or {}
@@ -72,6 +72,7 @@ function A:ScanInventory()
     local occurrences=self:ClearTable(self.occurrences)
     local present=self:ClearTable(self.presentIDs)
     local items, free, reagentFree, total, reagentTotal = self.items, 0, 0, 0, 0
+    self.scannedContainers=self.scannedContainers or {}
     -- Scan only the selected storage; bank containers are available while at the bank.
     for _,bag in ipairs(self:GetScannedBags()) do
         local count = C_Container.GetContainerNumSlots(bag)
@@ -82,27 +83,30 @@ function A:ScanInventory()
         else
             free, total = free + empty, total + count
         end
+        local reuse=changedBags and not changedBags[bag] and self.scannedContainers[bag]==count
+        self.scannedContainers[bag]=count
         for slot = 1, count do
-            local info = C_Container.GetContainerItemInfo(bag, slot)
             local slotKey = bag .. ":" .. slot
             local model=self.slotModels[slotKey]
+            local info
+            if reuse and model then info=model.info else info=C_Container.GetContainerItemInfo(bag,slot) end
             if not model then model={bag=bag,slot=slot,slotKey=slotKey}; self.slotModels[slotKey]=model end
             if info and info.itemID then
                 local data = self:LoadMetadata(info.itemID)
                 local location = self.slotLocations[slotKey]
                 if not location then location=ItemLocation:CreateFromBagAndSlot(bag,slot); self.slotLocations[slotKey]=location end
-                local guid = C_Item.GetItemGUID(location)
+                local guid = not reuse and C_Item.GetItemGUID(location) or nil
                 local signature = info.hyperlink or tostring(info.itemID)
                 occurrences[signature] = (occurrences[signature] or 0) + 1
-                local identity = guid and ("guid:" .. guid) or ("link:" .. signature .. ":" .. occurrences[signature])
+                local identity = reuse and model.identity or guid and ("guid:" .. guid) or ("link:" .. signature .. ":" .. occurrences[signature])
                 local item=model
                 item.identity,item.info=identity,info
-                item.quest=C_Container.GetContainerItemQuestInfo(bag,slot)
+                if not reuse then item.quest=C_Container.GetContainerItemQuestInfo(bag,slot) end
                 item.name,item.pending=data and data.name or "Carregando…",not data
                 item.sortName=item.name:lower()
                 item.classID,item.reagent=data and data.classID,data and data.reagent
-                item.itemLevel=data and data.itemLevel
-                if item.classID == Enum.ItemClass.Weapon or item.classID == Enum.ItemClass.Armor then
+                if not reuse then item.itemLevel=data and data.itemLevel end
+                if not reuse and (item.classID == Enum.ItemClass.Weapon or item.classID == Enum.ItemClass.Armor) then
                     -- Use the instance level to include upgrades and bonus lists.
                     local level = C_Item.GetCurrentItemLevel and C_Item.GetCurrentItemLevel(location)
                     if not level and info.hyperlink and C_Item.GetDetailedItemLevelInfo then
@@ -110,7 +114,7 @@ function A:ScanInventory()
                     end
                     if type(level) == "number" then item.itemLevel = level end
                 end
-                self:EnrichItem(item,data,location)
+                if not reuse or self.invalidateTooltips then self:EnrichItem(item,data,location) end
                 present[info.itemID]=true
                 local target = self.pendingPlacements and self.pendingPlacements[slotKey]
                 if target and target.itemID == info.itemID and target.category ~= "reagentbag" and bag ~= Enum.BagIndex.ReagentBag then
@@ -131,7 +135,13 @@ function A:ScanInventory()
     for _,item in ipairs(items) do
         item.category=self:VisibleCategory(item.category or self:Classify(item))
     end
-    if not CursorHasItem() and ((self.storage or "bags")=="bags" or self.atBank) then
+    local loading=false
+    if self.isBankWindow and self.atBank and (self.bankLoadRetryCount or 0)<6 then
+        loading=#items==0
+        for _,bag in ipairs(self:GetScannedBags()) do if C_Container.GetContainerNumSlots(bag)==0 then loading=true; break end end
+        for _,item in ipairs(items) do if item.pending then loading=true; break end end
+    end
+    if not loading and not CursorHasItem() and ((self.storage or "bags")=="bags" or self.atBank) then
         local assignments=self:GetStackCategories()
         self.liveIdentities=self:ClearTable(self.liveIdentities or {})
         for _,item in ipairs(items) do self.liveIdentities[item.identity]=true end
@@ -160,4 +170,5 @@ function A:ScanInventory()
     self.capacity.free,self.capacity.total=free,total
     self.capacity.reagentFree,self.capacity.reagentTotal=reagentFree,reagentTotal
     self.invalidateTooltips=nil
+    if self.isBankWindow then self:ScheduleBankLoadRetry() end
 end

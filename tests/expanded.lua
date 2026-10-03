@@ -121,7 +121,7 @@ print("Currencies/tabs OK: seven-currency limit, pooled widgets, independent sav
 -- Banking respects purchased IDs rather than hardcoded capacities. The same
 -- physical slots can be regrouped without touching the inventory layout/maps.
 A.atBank=true
-assert(#A:StorageChoices()==4)
+assert(#A:StorageChoices()==5)
 local bagPositions=A.profile.placements
 assert(A:SetStorage("character") and #A:GetScannedBags()==2)
 assert(#A.items==2 and A.capacity.total==8 and A.windowTitle:GetText()==A.L["Banco do personagem"])
@@ -185,22 +185,34 @@ assert(A:RequestCategoryAction("equipment","sell"))
 assert(A:StartBulkAction(popup)); A:CancelBulkAction(); local done=#operations; drain(); assert(#operations==done)
 MerchantFrame:Hide(); data[0][3]=103; A:ScanInventory(); A:Reconcile(); A:Render()
 assert(not A:RequestCategoryAction("equipment","sell"))
-A.atBank=true
+local savedCursorHasItem,savedGetCursorInfo=CursorHasItem,GetCursorInfo
+local held,reject
+CursorHasItem=function() return held~=nil end
+GetCursorInfo=function() if held then return "item",held end end
+C_Container.PickupContainerItem=function(bag,slot)
+    data[bag]=data[bag] or {}
+    if held and reject and bag>=6 then operations[#operations+1]={rejected=true}; return end
+    if held then operations[#operations+1]={bag=bag,slot=slot,deposited=held} end
+    held,data[bag][slot]=data[bag][slot],held
+end
+A.atBank=true; A.bankDepositTarget="account_12"
 assert(A:RequestCategoryAction("materials","deposit","account"))
 assert(A:StartBulkAction(popup)); drain()
-assert(operations[#operations].bankType==Enum.BankType.Account)
+assert(operations[#operations].bag==12 and operations[#operations].deposited==104)
 -- Rejected native transfer has one attempt and no endless retry chain.
 data[1][1]=104; A:ScanInventory(); A:Reconcile(); A:Render()
-C_Container.UseContainerItem=function() operations[#operations+1]={rejected=true} end
+reject=true
 assert(A:RequestCategoryAction("materials","deposit","character"))
 done=#operations; assert(A:StartBulkAction(popup)); drain()
-assert(#operations==done+1 and not A.bulkAction and #jobs==0)
+assert(#operations==done+2 and operations[done+1].rejected and not A.bulkAction and #jobs==0 and not held)
+reject=false
 assert(A:SetStorage("character"))
 A.profile.favorites={}; C_EquipmentSet.GetEquipmentSetIDs=function() return {} end
 A:ScanInventory(); A:Reconcile(); A:Render()
 C_Container.UseContainerItem=function(bag,slot,_,kind) operations[#operations+1]={bankType=kind}; data[bag][slot]=nil end
 assert(A:RequestCategoryAction("equipment","withdraw","character"))
 assert(A:StartBulkAction(popup)); drain()
-assert(not A.bulkAction and operations[#operations].bankType==Enum.BankType.Character)
+assert(not A.bulkAction and operations[#operations].bag<5 and operations[#operations].deposited)
+CursorHasItem,GetCursorInfo=savedCursorHasItem,savedGetCursorInfo
 A:BankClosed(); A:Render()
 print("Bulk actions OK: concrete native confirmation, favorites/sets protected, changed sources skipped, cancellation/context checks, explicit account/character bank type, rejected transfer attempts once, withdrawals complete")

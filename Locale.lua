@@ -3,6 +3,11 @@ local _, A = ...
 local locale = GetLocale and GetLocale() or "enUS"
 local portuguese = locale == "ptBR" or locale == "ptPT"
 local english = {
+    ["F: mantém posições fixas. A: ordena por nome e fecha espaços automaticamente nesta categoria. Itens soltos manualmente mantêm o slot até organizar ou alternar novamente."] = "F: keep fixed positions. A: sort by name and fill gaps automatically in this category. Manually dropped items keep their slot until you organize or toggle the mode again.",
+    ["Este banco tem categorias, layout e perfis próprios. Use o seletor para alternar entre banco do personagem e banco da tropa. Clique direito em um item para retirar ou no cabeçalho para retirar a categoria. Peças de conjuntos são protegidas nas ações por categoria. Favoritos estão disponíveis apenas na mochila."] = "This bank has its own categories, layout and profiles. Use the selector to switch between character and Warband bank. Right-click an item to withdraw it, or the header to withdraw a category. Equipment-set items are protected in category actions. Favorites are available only in the backpack.",
+    ["Indicadores e abas"] = "Indicators and tabs",
+    ["Visualização por aba física"] = "Physical bank tab view",
+    ["Arraste entre categorias para organizar os itens deste banco. Clique direito em um item para retirar para a mochila. O destino dos depósitos é o banco ou a aba da tropa selecionada."] = "Drag between categories to organize this bank. Right-click an item to withdraw it to your backpack. Deposits go to the selected bank or Warband tab.",
     ["BlockBags — Banco"] = "BlockBags — Bank",
     ["Layout do banco"] = "Bank layout",
     ["Livres: %d/%d"] = "Free: %d/%d",
@@ -36,7 +41,7 @@ local english = {
     ["Ajuste o tamanho e o espaçamento dos itens. As alterações só são persistidas ao salvar o layout."] = "Adjust item size and spacing. Save the layout to keep your changes.",
     ["Alternar moeda"] = "Toggle currency",
     ["Altura do painel: "] = "Panel height: ",
-    ["O banco abre em uma janela separada, com categorias, favoritos e perfis próprios. Use o seletor dessa janela para alternar entre banco do personagem e abas da tropa. Clique direito no cabeçalho para depositar/retirar uma categoria. No vendedor, você pode vender a categoria após confirmar. Favoritos e conjuntos são protegidos."] = "The bank opens in a separate window with its own categories, favorites and profiles. Use its selector to switch between the character bank and Warband tabs. Right-click a category header to deposit or withdraw it. At a merchant, you can sell a category after confirmation. Favorites and equipment sets are protected.",
+    ["O banco abre em uma janela separada. Banco do personagem e banco da tropa têm categorias e perfis independentes. Use o seletor dessa janela para alternar entre banco do personagem e abas da tropa. Clique direito no cabeçalho para depositar/retirar uma categoria. No vendedor, você pode vender a categoria após confirmar. Favoritos e conjuntos são protegidos."] = "The bank opens in a separate window. Character and Warband banks have independent categories, favorites and profiles. Use its selector to switch between the character bank and Warband tabs. Right-click a category header to deposit or withdraw it. At a merchant, you can sell a category after confirmation. Favorites and equipment sets are protected.",
     ["Aparência desta categoria"] = "Category appearance",
     ["Aplicar regra"] = "Apply rule",
     ["Arraste entre categorias ou use Alt + clique direito para atribuir um item. Missões reúne itens que o WoW associa a uma missão. A bolsa física de reagentes mantém suas restrições."] = "Drag between categories or use Alt + right-click to assign an item. Quest items contains items marked as quest-related by WoW. The reagent bag retains its restrictions.",
@@ -280,6 +285,14 @@ local english = {
     ["Compactar automaticamente"] = "Compact automatically",
     ["Redimensionar no editor"] = "Resize in editor",
     ["Bloquear movimento das categorias"] = "Lock category movement",
+    ["Banco da tropa"] = "Warband bank",
+    ["Carregando dados do banco…"] = "Loading bank data…",
+    ["Banco somente para consulta."] = "Bank is read-only.",
+    ["Nenhuma aba comprada. Compre uma aba pelo menu da bolsa."] = "No tabs purchased. Buy a tab from the bag menu.",
+    ["Banco indisponível."] = "Bank unavailable.",
+    ["Este item não pode ser depositado nesse banco."] = "This item cannot be deposited in this bank.",
+    ["Não há espaço compatível no destino selecionado."] = "No compatible space in the selected destination.",
+    ["O depósito remove o direito de reembolso. Use o arraste nativo para confirmar."] = "Depositing removes refund eligibility. Use native drag to confirm.",
 }
 
 -- Portuguese strings are the keys; other clients use English.

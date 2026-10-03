@@ -60,6 +60,7 @@ function A:SetManualCategory(item, category, index)
 end
 
 function A:ToggleFavorite(item)
+    if self.isBankWindow then return end
     if InCombatLockdown() or self.draft then return end
     local id = item.info.itemID
     if self.profile.favorites[id] then self.profile.favorites[id]=nil
@@ -88,10 +89,10 @@ function A:OpenItemActions(item)
             b:SetSize(300,24); b:SetPoint("TOPLEFT",20,y); b:SetText(value); b:SetScript("OnClick",callback)
             return b
         end
-        f.favorite=action("",-42,function() if f.item then self:ToggleFavorite(f.item) end; f:Hide() end)
-        action(A.L["Restaurar categoria automática"],-72,function() if f.item then self:SetManualCategory(f.item,nil) end; f:Hide() end)
+        if not self.isBankWindow then f.favorite=action("",-42,function() if f.item then self:ToggleFavorite(f.item) end; f:Hide() end) end
+        action(A.L["Restaurar categoria automática"],self.isBankWindow and -42 or -72,function() if f.item then self:SetManualCategory(f.item,nil) end; f:Hide() end)
         for i=1,6 do
-            local b=action("",-110-(i-1)*29,function()
+            local b=action("",(self.isBankWindow and -80 or -110)-(i-1)*29,function()
                 local cat=f.choices and f.choices[(f.page-1)*6+i]
                 if f.item and cat then self:SetManualCategory(f.item,cat.id) end
                 f:Hide()
@@ -112,11 +113,12 @@ function A:OpenItemActions(item)
     f.item=self:Copy(item); f.page=1; f.choices={}
     for _,cat in ipairs(self.categories) do if cat.id~="reagentbag" and not self:GetLayout()[cat.id].hidden then f.choices[#f.choices+1]=cat end end
     f.title:SetText(item.name)
-    f.favorite:SetText(self.profile.favorites[item.info.itemID] and A.L["Remover favorito"] or A.L["Favoritar e fixar neste slot"])
+    if not self.isBankWindow then f.favorite:SetText(self.profile.favorites[item.info.itemID] and A.L["Remover favorito"] or A.L["Favoritar e fixar neste slot"]) end
     f.next:SetShown(#f.choices>6); f.Draw(); f:Show()
 end
 
 function A:OpenFavorites()
+    if self.isBankWindow then return end
     if InCombatLockdown() then return end
     local f=self.favoriteDialog
     if not f then

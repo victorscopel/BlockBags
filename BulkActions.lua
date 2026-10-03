@@ -11,12 +11,14 @@ function A:BulkContextValid(action)
     if action.viewKey and action.viewKey~=self:ViewKey() then return false end
     if action.kind=="sell" then return MerchantFrame and MerchantFrame:IsShown() and (self.storage or "bags")=="bags" end
     return self.atBank and C_Bank and C_Bank.CanUseBank(action.bankType)
+        and (action.kind=="sell" or self:CanMutateBank(action.targetStorage or self.storage,true))
 end
 function A:RequestCategoryAction(category,kind,targetStorage)
     if self.bulkAction then self:Print(A.L["Uma operação já está em andamento."]); return false end
+    if targetStorage=="account" and (self.bankDepositTarget or ""):match("^account_") then targetStorage=self.bankDepositTarget end
     local group=self.groups[category]
     if not group then return false end
-    local action={kind=kind,bankType=self:BankType(targetStorage or self.storage),entries={},index=1,done=0,skipped=0,viewKey=self:ViewKey(),owner=self}
+    local action={targetStorage=targetStorage,kind=kind,bankType=self:BankType(targetStorage or self.storage),entries={},index=1,done=0,skipped=0,viewKey=self:ViewKey(),owner=self}
     if not self:BulkContextValid(action) then self:Print(A.L["Abra o banco ou vendedor correspondente antes desta ação."]); return false end
     if kind=="sell" and self.atBank then self:Print(A.L["Feche o banco antes de vender itens."]); return false end
     for _,item in ipairs(group.items) do
@@ -68,7 +70,11 @@ function A:StartBulkAction(action)
             action.skipped=action.skipped+1; action.index=action.index+1; C_Timer.After(0.12,step); return
         end
         -- Wait for the source slot to change before processing the next item.
-        C_Container.UseContainerItem(entry.bag,entry.slot,nil,action.kind~="sell" and action.bankType or nil)
+        if action.kind=="sell" then C_Container.UseContainerItem(entry.bag,entry.slot)
+        else
+            local item={bag=entry.bag,slot=entry.slot,slotKey=entry.bag..":"..entry.slot,info=info}
+            if not self:TransferBankItem(item,action.targetStorage) then self:CancelBulkAction(); return end
+        end
         C_Timer.After(0.3,function()
             if self.bulkAction~=action then return end
             local after=C_Container.GetContainerItemInfo(entry.bag,entry.slot)

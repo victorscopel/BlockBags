@@ -21,7 +21,7 @@ function A:GetScannedBags()
     local storage=self.storage or "bags"
     if storage=="bags" then return backpack end
     if not self.atBank then return {} end
-    if storage=="character" then return self:GetBankContainers(self:BankType(storage)) end
+    if storage=="character" or storage=="account" then return self:GetBankContainers(self:BankType(storage)) end
     local id=tonumber(storage:match("^account_(%d+)$"))
     for _,available in ipairs(self:GetBankContainers(self:BankType(storage))) do if available==id then return {id} end end
     return {}
@@ -30,7 +30,8 @@ function A:StorageChoices()
     local choices={{id="bags",name=self:BackpackTitle()}}
     if not self.atBank or not Enum.BankType then return choices end
     if self.isBankWindow then choices={} end
-    if C_Bank.CanViewBank(Enum.BankType.Character) then choices[#choices+1]={id="character",name=A.L["Banco do personagem"]} end
+    choices[#choices+1]={id="character",name=A.L["Banco do personagem"]}
+    choices[#choices+1]={id="account",name=A.L["Banco da tropa"]}
     local names={}
     if C_Bank.FetchPurchasedBankTabData and C_Bank.CanViewBank(Enum.BankType.Account) then
         for _,tab in ipairs(C_Bank.FetchPurchasedBankTabData(Enum.BankType.Account) or {}) do names[tab.ID]=tab.name end
@@ -47,10 +48,13 @@ function A:SetStorage(storage)
     self:CancelBulkAction()
     if self.physicalBagView then self:SetPhysicalBagView(false) end
     self:CancelInteractions(); self.storage=storage
+    if self.isBankWindow then self:BeginBankLoad() end
+    self:ActivateBankScope(storage)
     if storage~="bags" then
         self.bankDepositTarget=storage
         if self.inventoryController then self.inventoryController.bankDepositTarget=storage end
     end
+    if self.isBankWindow then self:SyncBankContext() end
     self.lastCategories=nil; self.pendingPlacements=nil
     self.searchResultIndex=0; self.focusedSearchIdentity=nil
     self:ScanInventory(); self:Reconcile(); self:ResizeCanvas(); self:Render()
@@ -70,10 +74,15 @@ function A:PaintStorageSelector()
         end)
     end
     self.storageSelector:SetShown(self.isBankWindow==true and self.atBank==true and not self.draft)
-    local name=self:BackpackTitle()
+    local name=self.isBankWindow and (self:BankType(self.storage)==Enum.BankType.Account and A.L["Banco da tropa"] or A.L["Banco do personagem"]) or self:BackpackTitle()
     for _,choice in ipairs(self:StorageChoices()) do if choice.id==(self.storage or "bags") then name=choice.name end end
     self.storageSelector:OverrideText(name)
     self.windowTitle:SetText(name)
+    if self.isBankWindow then
+        local state=self:BankState()
+        self.bankAccessState=state
+        self.storageSelector:SetEnabled(not self.draft and not InCombatLockdown())
+    end
 end
 
 -- Bank integration adapted from BetterBags (MIT).

@@ -60,7 +60,21 @@ function A:EnsureBankWindow()
     bank.cell,bank.padding,bank.header,bank.scrollGutter=self.cell,self.padding,self.header,self.scrollGutter
     bank.categories=self:Copy(self.baseCategories)
     bank.itemCache,bank.loading,bank.itemRequests={},{},{}
-    bank.database=migrateBankDatabase(self)
+    bank.bankRoot=migrateBankDatabase(self)
+    bank.bankRoot.scopes=bank.bankRoot.scopes or {}
+    for _,scope in ipairs({"character","account"}) do
+        if not bank.bankRoot.scopes[scope] then
+            bank.bankRoot.scopes[scope]={profiles=self:Copy(bank.bankRoot.profiles or {}),
+                characterProfiles=self:Copy(bank.bankRoot.characterProfiles or {}),
+                inventoryPositions=self:Copy(bank.bankRoot.inventoryPositions or {})}
+        end
+    end
+    bank.bankRoot.profiles=nil; bank.bankRoot.characterProfiles=nil; bank.bankRoot.inventoryPositions=nil
+    for _,database in pairs(bank.bankRoot.scopes) do
+        for _,profile in pairs(database.profiles) do profile.favorites={} end
+    end
+    bank.database=bank.bankRoot.scopes.character
+    bank.bankScope="character"
     bank.storage="character"; bank.activeTab="default"
     bank.DefaultLayout=function(controller)
         local layout=A.DefaultLayout(controller)
@@ -75,7 +89,8 @@ function A:EnsureBankWindow()
 end
 
 function A:CloseBankWindow()
-    self.atBank=false; self:CancelBulkAction(); self:CancelInteractions()
+    self.atBank=false; self.bankLoadGeneration=(self.bankLoadGeneration or 0)+1; self.bankLoadRetryQueued=nil; self.bankLoading=nil
+    self:CancelBulkAction(); self:CancelInteractions()
     if InCombatLockdown() then self.pendingBankWindowClose=true; return end
     if self.draft then self:FinishEdit(false) end
     self.closingBank=true; self.window:Hide(); self.closingBank=nil
@@ -98,9 +113,67 @@ function A:HandleBankWindowEvent(event,arg,success)
     elseif event=="PLAYER_MONEY" then
         if self.window:IsShown() then self.money:SetText(self:FormatMoney(GetMoney())) end
     elseif event=="CURRENCY_DISPLAY_UPDATE" then
-        if self.window:IsShown() then self:PaintCurrencyBar() end
-    elseif self.atBank and event~="BANKFRAME_OPENED" and event~="BANKFRAME_CLOSED" then
+        -- Character currencies are displayed only in the backpack.
+    elseif self.atBank and event=="BAG_UPDATE" then
+        self.bagUpdateBatch=true
+        for _,bag in ipairs(self:GetScannedBags()) do
+            if bag==arg then self:QueueRefresh({[bag]=true}); break end
+        end
+    elseif self.atBank and event=="BAG_UPDATE_DELAYED" then
+        if not self.bagUpdateBatch then self:QueueRefresh() end
+        self.bagUpdateBatch=nil
+    elseif self.atBank and event=="BAG_UPDATE_COOLDOWN" then
+        if not InCombatLockdown() and self.window:IsShown() then
+            for _,button in pairs(self.buttons) do if button.currentItem and button:IsShown() then button:UpdateCooldown() end end
+        end
+    elseif self.atBank and (event=="PLAYERBANKSLOTS_CHANGED" or event=="PLAYER_ACCOUNT_BANK_TAB_SLOTS_CHANGED") then
+        local kind=self:BankType(self.storage)
+        if (event=="PLAYERBANKSLOTS_CHANGED" and kind==Enum.BankType.Character)
+            or (event=="PLAYER_ACCOUNT_BANK_TAB_SLOTS_CHANGED" and kind==Enum.BankType.Account) then
+            local changed={}
+            for _,bag in ipairs(self:GetScannedBags()) do if not arg or event=="PLAYERBANKSLOTS_CHANGED" or arg==bag then changed[bag]=true end end
+            if next(changed) then self:QueueRefresh(changed) end
+        end
+    elseif self.atBank and (event=="PLAYER_EQUIPMENT_CHANGED" or event=="EQUIPMENT_SETS_CHANGED" or event=="TRANSMOG_COLLECTION_UPDATED" or event=="BANK_TABS_CHANGED" or event=="PLAYER_ENTERING_WORLD") then
         if event=="PLAYER_EQUIPMENT_CHANGED" or event=="EQUIPMENT_SETS_CHANGED" or event=="TRANSMOG_COLLECTION_UPDATED" then self.invalidateTooltips=true end
         self:QueueRefresh()
     end
+end
+
+function A:ActivateBankScope(storage)
+    if not self.isBankWindow then return end
+    local scope=storage:match("^account") and "account" or "character"
+    if self.bankScope==scope then return end
+    self.database=self.bankRoot.scopes[scope]
+    self.bankScope=scope
+    self:InitializeDatabase()
+    self.lastCategories=nil
+    self:RefreshProfile()
+end
+
+function A:BeginBankLoad()
+    self.bankLoadGeneration=(self.bankLoadGeneration or 0)+1
+    self.bankLoadRetryCount=0; self.bankLoadRetryQueued=nil; self.bankLoading=nil
+end
+
+function A:ScheduleBankLoadRetry()
+    if not self.atBank then return end
+    local ids=self:GetBankContainers(self:BankType(self.storage))
+    local missing=#ids>0 and ((self.capacity.total or 0)==0 or #self.items==0)
+    for _,bag in ipairs(self:GetScannedBags()) do if C_Container.GetContainerNumSlots(bag)==0 then missing=true; break end end
+    for _,item in ipairs(self.items or {}) do if item.pending then missing=true; break end end
+    self.bankLoading=missing and (self.bankLoadRetryCount or 0)<6 or false
+    if not self.bankLoading or self.bankLoadRetryQueued then return end
+    local generation=self.bankLoadGeneration
+    self.bankLoadRetryQueued=true
+    self.bankLoadRetryCount=(self.bankLoadRetryCount or 0)+1
+    C_Timer.After(0.2*self.bankLoadRetryCount,function()
+        if generation~=self.bankLoadGeneration or not self.atBank then return end
+        self.bankLoadRetryQueued=nil
+        if not self.window:IsShown() then return end
+        for id,state in pairs(self.itemRequests) do
+            if state=="failed" then self.itemRequests[id]=nil; self.loading[id]=nil end
+        end
+        self:QueueRefresh()
+    end)
 end

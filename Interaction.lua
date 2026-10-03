@@ -52,6 +52,7 @@ function A:ResolveDropTarget()
 end
 
 function A:TryVirtualDrop(category,index)
+    if self.isBankWindow and not self:CanMutateBank(nil,true) then return false end
     local source=self.itemDrag
     if not source or self.draft or self.physicalBagView or InCombatLockdown() then return false end
     local kind,id=GetCursorInfo()

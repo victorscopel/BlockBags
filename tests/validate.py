@@ -26,7 +26,7 @@ GetLocale = function() return TEST_LOCALE end
 A = {}
 ''')
 addon = lua.globals().A
-for name in ["Locale.lua", "Core.lua", "Query.lua", "Views.lua", "Storage.lua", "ItemFeatures.lua", "BulkActions.lua", "Inventory.lua", "Placement.lua", "Features.lua", "Profiles.lua", "Interaction.lua", "BankWindow.lua", "Integration.lua", "BagTools.lua", "FeatureSettings.lua"]:
+for name in ["Locale.lua", "Core.lua", "Query.lua", "Views.lua", "Storage.lua", "ItemFeatures.lua", "BulkActions.lua", "Inventory.lua", "Placement.lua", "Features.lua", "Profiles.lua", "Interaction.lua", "BankAccess.lua", "BankWindow.lua", "Integration.lua", "BagTools.lua", "FeatureSettings.lua"]:
     sources[name]("BlockBags", addon)
 lua.execute('''
 A:InitializeDatabase()
@@ -107,9 +107,9 @@ lua.execute('''
 local methods = {}
 local mt = { __index = function(_, key) return methods[key] or function() end end }
 createdFrames=0
-function CreateFrame(kind, name, parent)
+function CreateFrame(kind, name, parent, template)
     createdFrames=createdFrames+1
-    return setmetatable({ kind=kind, name=name, parent=parent, shown=true, text="", value=0,
+    return setmetatable({ kind=kind, name=name, parent=parent, template=template, shown=true, text="", value=0,
         minimum=0, maximum=0, scripts={}, children={}, Low=false, High=false, Text=false, IconQuestTexture=false }, mt)
 end
 UIParent = CreateFrame("Frame")
@@ -120,6 +120,9 @@ function methods:CreateTexture() return CreateFrame("Texture",nil,self) end
 function methods:SetScript(key, fn) self.scripts[key]=fn end
 function methods:HookScript(key, fn) self.scripts[key]=fn end
 function methods:GetScript(key) return self.scripts[key] end
+function methods:Init(kind,bag,slot) self.bankType=kind; self.bankTabID=bag; self.containerSlotID=slot end
+function methods:GetBankTabID() return self.bankTabID end
+function methods:GetContainerSlotID() return self.containerSlotID end
 function methods:SetAttribute(key,value)
     self.attributes=rawget(self,"attributes") or {}; self.attributes[key]=value
 end
@@ -1125,7 +1128,7 @@ assert len({binding.attrib["name"] for binding in binding_root}) == len(binding_
 assert "Bindings.xml" not in (root / "BlockBags.toc").read_text(encoding="utf-8").splitlines()
 item_button_source = (root / "UI.lua").read_text(encoding="utf-8").split("function A:GetItemButton",1)[1].split("function A:PaintItem",1)[0]
 assert "ContainerFrameItemButtonTemplate,SecureActionButtonTemplate" in item_button_source
-assert 'b:HookScript("OnClick"' in item_button_source and 'b:SetScript("OnClick"' not in item_button_source
+assert 'if bankButton then b:SetScript("OnClick",click) else b:HookScript("OnClick",click) end' in item_button_source
 print("Bindings/security setup OK: automatic XML load, one header, preserved secure click handler")
 
 lua.execute((root / "tests" / "favorite_restore.lua").read_text(encoding="utf-8"))
@@ -1157,3 +1160,5 @@ lua.execute((root / "tests" / "bank_window.lua").read_text(encoding="utf-8"))
 lua.execute((root / "tests" / "backpack_controls.lua").read_text(encoding="utf-8"))
 
 lua.execute((root / "tests" / "item_borders.lua").read_text(encoding="utf-8"))
+
+lua.execute((root / "tests" / "bank_access.lua").read_text(encoding="utf-8"))

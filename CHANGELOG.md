@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.7.0 — preview
+
+- Separate character-bank and Warband categories, layouts and profiles.
+- Synchronize native bank context and route deposits to the selected Warband tab; never redirect from a full selected tab.
+- Use native bank item buttons and refund confirmations, with access checks for read-only and unavailable banks.
+- Mark items incompatible with the selected bank in the backpack.
+- Refresh changed containers and bound retries for delayed bank data.
+- Remove backpack-only currency, equipped-bag and favorite controls from bank settings.
+- Keep overlapping backpack and bank controls in their respective window layers.
+
 ## 0.6.2 — preview
 
 - Resize item quality borders, special-item overlays and quest frames with category icons.

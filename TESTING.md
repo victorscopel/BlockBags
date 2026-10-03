@@ -60,3 +60,15 @@ Use itens comuns e baratos para validar ações de servidor.
 
 Registre build do WoW, versão e erro completo em um issue. Nunca envie arquivos
 WTF completos como requisito de reprodução.
+
+### Bank regression checks (0.7.0)
+
+Offline tests cover tab routing, access guards, native button template selection, refund popup arguments, scoped profiles, selective reads and bounded retries. Native clicks, protected execution and visual layering still need the WoW client.
+
+- [ ] Select a Warband tab; right-click a backpack item and confirm it goes only to that tab. Fill it and confirm other tabs are not used.
+- [ ] Check incompatible item dimming, read-only access, no purchased tabs and blocked bank access.
+- [ ] Shift-split, link, drag and right-click bank items without taint errors. Confirm or cancel refundable deposits.
+- [ ] Create/edit profiles and categories separately in character bank and Warband bank; reload and verify each.
+- [ ] Bank settings omit currencies, the equipped-bag bar and favorites. Backpack favorites still work.
+- [ ] Overlap both windows, click/drag each title and click items; the active window and its controls stay together.
+- [ ] Open bank with slow data arrival, switch storage and close while loading. Check recovery and that retries stop.

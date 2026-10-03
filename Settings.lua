@@ -35,6 +35,7 @@ end
 
 function A:SetCategoryOption(id,key,value)
     if InCombatLockdown() then self:Print(A.L["Aguarde o fim do combate."]); return end
+    if self.isBankWindow and id=="reagentbag" then return end
     local data=self:GetLayout()[id]
     if not data then return end
     if key=="rule" then
@@ -121,7 +122,7 @@ function A:RegisterSettings()
     local categoryPage=Settings.RegisterCanvasLayoutSubcategory(category,categories,A.L["Categorias"])
     local profiles=page(A.L["Perfis"],840)
     local profilePage=Settings.RegisterCanvasLayoutSubcategory(category,profiles,A.L["Perfis"])
-    local features=page(A.L["Moedas, indicadores e abas"],1080)
+    local features=page(A.L[self.isBankWindow and "Indicadores e abas" or "Moedas, indicadores e abas"],self.isBankWindow and 835 or 1080)
     local featurePage=Settings.RegisterCanvasLayoutSubcategory(category,features,A.L["Recursos"])
     self.settingsPages={general=general,categories=categories,profiles=profiles,features=features}
     self.settingsIDs={general=category:GetID(),categories=categoryPage:GetID(),profiles=profilePage:GetID(),features=featurePage:GetID()}
@@ -148,9 +149,9 @@ function A:BuildSettingsControls()
     text(layout,A.L["Define a distância real entre painéis. Alterar este valor aproxima as categorias mantendo sua ordem. Itens entrando ou saindo nunca movem os painéis."],16,-122,560)
     local actions=section(g,A.L["Acesso rápido"],-360,94)
     button(actions,A.L["Editar layout"],16,-48,180,function() SettingsPanel:Hide(); self.window:Show(); self:StartEdit() end)
-    button(actions,A.L["Gerenciar favoritos"],212,-48,190,function() SettingsPanel:Hide(); self.window:Show(); self:OpenFavorites() end)
+    if not self.isBankWindow then button(actions,A.L["Gerenciar favoritos"],212,-48,190,function() SettingsPanel:Hide(); self.window:Show(); self:OpenFavorites() end) end
     local help=section(g,A.L["Organização dos itens"],-466,146)
-    text(help,A.L["Arraste entre categorias ou use Alt + clique direito para atribuir um item. Missões reúne itens que o WoW associa a uma missão. A bolsa física de reagentes mantém suas restrições."],16,-44,560)
+    text(help,A.L[self.isBankWindow and "Arraste entre categorias para organizar os itens deste banco. Clique direito em um item para retirar para a mochila. O destino dos depósitos é o banco ou a aba da tropa selecionada." or "Arraste entre categorias ou use Alt + clique direito para atribuir um item. Missões reúne itens que o WoW associa a uma missão. A bolsa física de reagentes mantém suas restrições."],16,-44,560)
     button(help,A.L["Diagnóstico de memória"],16,-105,210,function() self:ReportMemory() end)
     local direct=section(g,A.L["Movimento direto das categorias"],-624,110)
     controls.layoutLock=button(direct,"",16,-40,255,function() self:ToggleLayoutLock() end)
@@ -159,8 +160,10 @@ function A:BuildSettingsControls()
     local choose=section(c,A.L["Categoria selecionada"],-42,92)
     controls.categorySelect=dropdown(choose,16,-47,350,function(_,root)
         for _,cat in ipairs(self.categories) do
-            root:CreateRadio(self:CategoryName(cat.id),function(id) return self.settingsCategory==id end,
-                function(id) self.settingsCategory=id; self:RefreshSettings() end,cat.id)
+            if not self.isBankWindow or cat.id~="reagentbag" then
+                root:CreateRadio(self:CategoryName(cat.id),function(id) return self.settingsCategory==id end,
+                    function(id) self.settingsCategory=id; self:RefreshSettings() end,cat.id)
+            end
         end
     end)
     controls.categoryTitle=text(choose,"",385,-52,200)
@@ -273,11 +276,13 @@ end
 function A:RefreshSettings()
     local c=self.settingsControls
     if not c then return end
+    if self.isBankWindow and self.settingsCategory=="reagentbag" then self.settingsCategory=nil end
     self.settingsCategory=self:GetLayout()[self.settingsCategory or ""] and self.settingsCategory or self.categories[1].id
     self.settingsProfile=self:GetDatabase().profiles[self.settingsProfile or ""] and self.settingsProfile or self.profileKey
     local d=self:GetLayout()[self.settingsCategory]
     self.settingsInitializing=true
-    c.info:SetText(A.L["Perfil ativo: "]..self.profileKey..(self.draft and A.L[" — prévia de edição"] or ""))
+    local scope=self.isBankWindow and (self:BankType(self.storage)==Enum.BankType.Account and A.L["Banco da tropa"] or A.L["Banco do personagem"]).." · " or ""
+    c.info:SetText(scope..A.L["Perfil ativo: "]..self.profileKey..(self.draft and A.L[" — prévia de edição"] or ""))
     c.categoryTitle:SetText(d.hidden and A.L["Oculta"] or A.L["Visível"])
     c.categorySelect:OverrideText(self:CategoryName(self.settingsCategory))
     c.profileSelect:OverrideText(self.settingsProfile)
@@ -286,7 +291,7 @@ function A:RefreshSettings()
     c.visibility:SetText(d.hidden and A.L["Mostrar categoria"] or A.L["Ocultar categoria"])
     c.positions:SetText(d.compact and A.L["Posições: automáticas"] or A.L["Posições: fixas"])
     c.deleteCategory:SetEnabled(self:IsCustomCategory(self.settingsCategory) and not self.draft)
-    c.profileTitle:SetText(A.L["Perfil ativo: "]..self.profileKey)
+    c.profileTitle:SetText(scope..A.L["Perfil ativo: "]..self.profileKey)
     c.profileChoice:SetText(A.L["Selecionado: "]..self.settingsProfile)
     for _,pageFrame in pairs(self.settingsPages) do pageFrame.content.initializing=true end
     c.generalSpacing:SetValue(self:GetSettings().categorySpacing or 0)

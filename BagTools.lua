@@ -7,8 +7,9 @@ function A:CreateBagMenuButton()
     b:SetSize(40, 40)
     b:SetPoint("TOPLEFT", self.window, "TOPLEFT", -4, 7)
     -- Keep the bag button above the NineSlice border.
-    b:SetFrameStrata("DIALOG")
+    b:SetFrameStrata("HIGH")
     b:SetFrameLevel(self.window:GetFrameLevel() + 150)
+    b:HookScript("OnMouseDown",function() self:FocusWindow() end)
     b:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     local portrait = b:CreateTexture(nil, "OVERLAY")
     portrait:SetTexture("Interface\\Containerframe\\Bagslots2x")
@@ -32,13 +33,15 @@ function A:CreateBagMenuButton()
     b:SetScript("OnClick", function(_, mouseButton)
         if mouseButton == "RightButton" then self:ToggleBagSlots(); return end
         MenuUtil.CreateContextMenu(b, function(_, root)
-            root:CreateCheckbox(A.L["Visualização por bolsa"], function()
+            root:CreateCheckbox(A.L[self.isBankWindow and "Visualização por aba física" or "Visualização por bolsa"], function()
                 return self.physicalBagView == true
             end, function() self:ToggleBagSlots() end)
+            if not self.isBankWindow then
             local inventory=self.inventoryController or self
             root:CreateCheckbox(A.L["Mostrar barra de bolsas do WoW"], function()
                 return inventory.profile.settings.showBlizzardBagBar==true
             end, function() inventory:ToggleBlizzardBagBar() end)
+            end
             root:CreateCheckbox(A.L["Mostrar nível dos equipamentos"], function()
                 return self:GetSettings().showItemLevel ~= false
             end, function()
@@ -49,7 +52,7 @@ function A:CreateBagMenuButton()
             root:CreateDivider()
             root:CreateButton(A.L["Configurações"], function() self:OpenGeneralSettings() end)
             root:CreateButton(A.L["Editar layout"], function() self:StartEdit() end)
-            root:CreateButton(A.L["Moedas, indicadores e abas"], function() self:OpenSettings("features") end)
+            root:CreateButton(A.L[self.isBankWindow and "Indicadores e abas" or "Moedas, indicadores e abas"], function() self:OpenSettings("features") end)
             if self.atBank and C_Bank and C_Bank.CanPurchaseBankTab then
                 for _,kind in ipairs({Enum.BankType.Character,Enum.BankType.Account}) do
                     if C_Bank.CanPurchaseBankTab(kind) then

@@ -50,8 +50,8 @@ assert(bank.panels~=A.panels and bank.buttons~=A.buttons and bank.settingsIDs~=A
 assert(bank:GetBaseLayout().consumables.tint.r==0.11)
 assert(not A.profile.extraLayouts["character:default"])
 assert(not A.storageSelector:IsShown() and bank.storageSelector:IsShown())
-assert(#bank:StorageChoices()==2)
-assert(bank.windowName=="BlockBagsBankWindow" and bank:GetDatabase()==BlockBagsDB.bank)
+assert(#bank:StorageChoices()==3)
+assert(bank.windowName=="BlockBagsBankWindow" and bank:GetDatabase()==BlockBagsDB.bank.scopes.character)
 -- Renaming/recoloring bank categories never changes inventory categories.
 local originalName=A:CategoryName("consumables")
 bank:SetCategoryOption("consumables","name","Bank potions")
@@ -60,7 +60,7 @@ assert(A:CategoryName("consumables")==originalName and bank:CategoryName("consum
 assert(A:GetLayout().consumables.tint==nil or A:GetLayout().consumables.tint.r~=0.9)
 local bankItem=bank.items[1]
 bank:ToggleFavorite(bankItem)
-assert(bank.profile.favorites[94001] and not A.profile.favorites[94001])
+assert(not bank.profile.favorites[94001] and not A.profile.favorites[94001])
 local extra=bank:CreateCategory("Bank only"); assert(extra and not A:GetLayout()[extra])
 assert(bank:DeleteCategory(extra) and not A:GetLayout()[extra])
 -- Warband selection leaves inventory and character-bank layouts alone.
@@ -81,12 +81,13 @@ assert(bank.profileKey=="Bank profile" and A.profileKey==before and not BlockBag
 assert(bank:SelectProfile(before))
 -- Warm both views, then repeated opening/closing reuses all frames.
 bank:SetStorage("account_12"); bank:SetStorage("character")
+for n=1,10 do A:BankClosed(); A:BankOpened(); bank:SetStorage("account_12"); bank:SetStorage("character") end
 local frames=createdFrames
 for n=1,30 do
     A:BankClosed(); assert(A.window:IsShown() and not bank.window:IsShown())
     A:BankOpened(); bank:SetStorage("account_12"); bank:SetStorage("character")
 end
-assert(createdFrames==frames and A.bankController==bank)
+assert(createdFrames==frames and A.bankController==bank,"frames: "..frames.." -> "..createdFrames)
 -- Hiding inventory alone does not close the bank interaction.
 A.window:Hide(); A.window.scripts.OnHide()
 assert(bankCloses==0 and bank.window:IsShown())
@@ -98,6 +99,7 @@ assert(A:GetBaseLayout().consumables.width==mainLayout.consumables.width)
 -- Bag updates reach both models without creating another controller or frames.
 A:BankOpened()
 contents[6][2]=94002
+bank:HandleBankWindowEvent("BAG_UPDATE",6)
 bank:HandleBankWindowEvent("BAG_UPDATE_DELAYED")
 A:QueueRefresh()
 assert(#bank.items==2 and #A.items==2)
@@ -117,4 +119,4 @@ InCombatLockdown=function() return false end
 bank:HandleBankWindowEvent("PLAYER_REGEN_ENABLED")
 assert(not bank.pendingBankWindowClose and not bank.window:IsShown() and A.window:IsShown())
 A.pendingStorageReset=nil
-print("Separate bank OK: simultaneous windows, own categories/favorites/profiles/options, legacy bank layouts migrated, Warband selector isolated, cross-window physical drops, 30 reopen cycles reuse frames, independent close behavior")
+print("Separate bank OK: simultaneous windows, own categories/profiles/options and backpack-only favorites, legacy bank layouts migrated, Warband selector isolated, cross-window physical drops, 30 reopen cycles reuse frames, independent close behavior")

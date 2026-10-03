@@ -15,8 +15,8 @@ resize or move panels. Layout changes occur only through user interaction.
   values support equipment-set names and tooltip phrases.
 - Views: category tabs and independent layouts keyed by storage + tab. Main
   inventory/default-tab layout keeps its original schema for existing profiles.
-- Storage: current bank access, purchased container enumeration, bank suppression,
-  storage selection and explicit native bank types for right-click operations.
+- Storage/BankAccess/BankWindow: purchased containers, native bank context, exact
+  selected-tab routing, access guards and independent bank controllers.
 - Placement: surviving GUID positions, favorite reservations, optional compaction,
   physical empty destinations and collision-aware persistent geometry.
 - Theme/BagTools/UI: pooled Blizzard decoration and native slot buttons. Physical
@@ -40,13 +40,21 @@ its `views[storage:tab]` table keeps other position maps isolated. BB1 exports o
 physical GUID positions. Imports validate category/tab IDs, geometries, rules,
 settings and overlap within a category group, with bounded parsing and no Lua eval.
 
+Bank profiles live under `BlockBagsDB.bank.scopes.character` and
+`BlockBagsDB.bank.scopes.account`, each with its own profiles, categories and
+position maps. Existing shared bank profiles seed both scopes once. Bank
+favorites are removed during migration/selection; favorites remain a backpack
+feature. Bank settings omit character currencies and equipped-bag controls.
+
 ## Event and allocation boundaries
 
 No idle OnUpdate: only active dragging/resizing uses it, skipping unchanged cursor
 positions. Refresh requests coalesce, hidden windows defer scans, item requests
-have no timer retry loop, and currency updates do not rescan inventory. Bank slots
+have no permanent timer retry loop, and currency updates do not rescan inventory. Bank slots
 are scanned only while their bank is viewable. Metadata/tooltip data are refreshed
 by item or equipment/collection events; tooltips are queried only when searched.
+Dirty bag events reuse unchanged slot models. Bank opening retries delayed data
+at most six times; generation checks cancel retries on storage switches or close.
 
 Slot models, ItemLocations, group buffers, native buttons and auxiliary visuals are
 reused. Bank/group switches allocate a bounded initial set of parents/maps, then
@@ -59,9 +67,9 @@ callbacks cannot restart a cancelled queue. A rejected operation attempts once.
 
 ## Integration constraints
 
-The main window switches between inventory and bank storage, rather than displaying
-multiple storage windows simultaneously. BankPanel initialization occurs on bank
-opening, following Retail API requirements. Purchases are user-triggered through
+The backpack and bank have separate windows and button pools. The focused window
+uses a higher frame level, while bag and close controls share its strata. Native
+BankPanel context follows the selected bank/tab. Purchases are user-triggered through
 native confirmation. Exact protected-frame behavior remains subject to in-game
 validation in TESTING.md; offline Lua mocks cannot certify freedom from taint.
 

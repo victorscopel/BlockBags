@@ -25,6 +25,7 @@ local function button(parent, text, width, action)
     b:SetSize(width, 24)
     A:StyleCommand(b,text)
     b:SetScript("OnClick", action)
+    b:SetScript("OnMouseDown",function() if parent.blockOwner then parent.blockOwner:FocusWindow() end end)
     return b
 end
 
@@ -35,6 +36,7 @@ local function iconButton(parent, texture, title, description, action)
     b:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
     b:SetAlpha(0.7)
     b:SetScript("OnClick", action)
+    b:SetScript("OnMouseDown",function() if parent.blockOwner then parent.blockOwner:FocusWindow() end end)
     b:SetScript("OnEnter", function()
         b:SetAlpha(1)
         GameTooltip:SetOwner(b, "ANCHOR_TOP")
@@ -46,6 +48,14 @@ local function iconButton(parent, texture, title, description, action)
     return b
 end
 
+function A:FocusWindow()
+    if InCombatLockdown() or not self.window then return end
+    local inventory=self.inventoryController or self
+    local other=self.isBankWindow and inventory or inventory.bankController
+    if other and other.window then other.window:SetFrameLevel(100) end
+    self.window:SetFrameLevel(1200)
+end
+
 function A:BuildUI()
     self:InstallInteractionHooks()
     self.canvasWidth, self.canvasHeight = 880, 600
@@ -53,8 +63,12 @@ function A:BuildUI()
     self.windowName=self.windowName or "BlockBagsWindow"
     local w = CreateFrame("Frame", self.windowName, UIParent, "BackdropTemplate")
     self.window = w
+    w.blockOwner=self
     w:SetSize(self.profile.window.width or 912, self.profile.window.height or 716)
     w:SetFrameStrata("HIGH")
+    w:SetToplevel(true)
+    w:SetFrameLevel(100)
+    w:HookScript("OnMouseDown",function() self:FocusWindow() end)
     box(w)
     w:SetBackdrop({ bgFile = backdrop.bgFile, edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
         tile = true, tileSize = 32, edgeSize = 32,
@@ -77,6 +91,7 @@ function A:BuildUI()
     move:SetPoint("TOPRIGHT", -32, 0)
     move:SetHeight(38)
     move:EnableMouse(true)
+    move:SetScript("OnMouseDown",function() self:FocusWindow() end)
     move:RegisterForDrag("LeftButton")
     move:SetScript("OnDragStart", function() if not InCombatLockdown() then w:StartMoving() end end)
     move:SetScript("OnDragStop", function()
@@ -92,7 +107,7 @@ function A:BuildUI()
     end)
     local close = CreateFrame("Button", nil, w, "UIPanelCloseButton")
     self.closeButton=close
-    close:SetFrameStrata("DIALOG")
+    close:SetFrameStrata("HIGH")
     close:SetFrameLevel(w:GetFrameLevel()+150)
     close:SetSize(24,24)
     close:SetPoint("TOPRIGHT", -4, -2)
@@ -103,6 +118,7 @@ function A:BuildUI()
     self.search:SetSize(400, 24)
     self.search:SetPoint("TOPLEFT", 24, -48)
     self.search:SetAutoFocus(false)
+    self.search:HookScript("OnMouseDown",function() self:FocusWindow() end)
     self.search:SetMaxLetters(100)
     self.search:SetScript("OnEscapePressed", function(edit) edit:SetText(""); edit:ClearFocus() end)
     self.search:SetScript("OnEnterPressed", function(edit) edit:ClearFocus() end)
@@ -199,7 +215,7 @@ function A:BuildUI()
     self.combatOverlay:SetBackdropColor(0.04, 0.05, 0.06, 0.85)
     label(self.combatOverlay, A.L["Inventário pausado durante o combate.\nAs atualizações serão aplicadas ao sair de combate."], 14):SetPoint("CENTER")
     self.combatOverlay:Hide()
-    w:SetScript("OnShow", function() self:PlayBackpackSound(true); self.forceItemPaint=true; self:QueueRefresh() end)
+    w:SetScript("OnShow", function() self:FocusWindow(); self:PlayBackpackSound(true); self.forceItemPaint=true; self:QueueRefresh() end)
     w:SetScript("OnHide", function()
         if self.openingSettings then w:Show(); return end
         self:PlayBackpackSound(false)
@@ -320,7 +336,7 @@ function A:CreatePanel(category)
         self:Render()
     end)
     panel.organize:SetPoint("TOPLEFT", 8, -24)
-    panel.mode = iconButton(panel, "Interface\\Buttons\\UI-CheckBox-Up", A.L["Posições fixas ou automáticas"], A.L["F: mantém posições fixas. A: ordena por nome e fecha espaços automaticamente nesta categoria. Favoritos ficam reservados nos dois modos. Itens soltos manualmente mantêm o slot até organizar ou alternar novamente."], function()
+    panel.mode = iconButton(panel, "Interface\\Buttons\\UI-CheckBox-Up", A.L["Posições fixas ou automáticas"], A.L[self.isBankWindow and "F: mantém posições fixas. A: ordena por nome e fecha espaços automaticamente nesta categoria. Itens soltos manualmente mantêm o slot até organizar ou alternar novamente." or "F: mantém posições fixas. A: ordena por nome e fecha espaços automaticamente nesta categoria. Favoritos ficam reservados nos dois modos. Itens soltos manualmente mantêm o slot até organizar ou alternar novamente."], function()
         self:SetCategoryOption(panel.id,"compact",not self:GetLayout()[panel.id].compact)
     end)
     panel.mode:SetPoint("LEFT", panel.organize, "RIGHT", 4, 0)
@@ -363,6 +379,7 @@ function A:CreatePanel(category)
     panel.scroll:SetScript("OnMouseWheel", panel.wheel)
 
     panel.move = CreateFrame("Frame", nil, panel)
+    panel.move:SetScript("OnMouseDown",function() self:FocusWindow() end)
     panel.move:SetPoint("TOPLEFT")
     panel.move:SetPoint("TOPRIGHT")
     panel.move:SetHeight(22)
@@ -650,9 +667,28 @@ function A:GetItemButton(item, panel)
     end
     local parent = panel.bagParents[item.bag]
     if not b then
-        b = CreateFrame("ItemButton", (self.itemButtonPrefix or "BlockBagsItem") .. item.bag .. "_" .. item.slot, parent, "ContainerFrameItemButtonTemplate,SecureActionButtonTemplate")
+        local bankButton=self.isBankWindow==true
+        local template=bankButton and "BankItemButtonTemplate" or "ContainerFrameItemButtonTemplate,SecureActionButtonTemplate"
+        b = CreateFrame("ItemButton", (self.itemButtonPrefix or "BlockBagsItem") .. item.bag .. "_" .. item.slot, parent, template)
         self.buttons[item.slotKey] = b
-        b:Initialize(item.bag, item.slot)
+        if bankButton then
+            b:Init(self:BankType(self.storage),item.bag,item.slot)
+            b.GetBagID=function(frame) return frame:GetBankTabID() end
+            b.GetID=function(frame) return frame:GetContainerSlotID() end
+            b.SetHasItem=function() end
+            b.SetReadable=function() end
+            b.UpdateNewItem=function() end
+            b.UpdateJunkItem=function() end
+            b.UpdateQuestItem=function(frame,isQuestItem,questID,isActive)
+                frame:RefreshQuestItemInfo()
+                if frame.IconQuestTexture then
+                    if questID and not isActive then frame.IconQuestTexture:SetTexture(TEXTURE_ITEM_QUEST_BANG)
+                    else frame.IconQuestTexture:SetTexture(TEXTURE_ITEM_QUEST_BORDER) end
+                    frame.IconQuestTexture:SetShown(questID or isQuestItem)
+                end
+            end
+        else b:Initialize(item.bag, item.slot) end
+        b:HookScript("OnMouseDown",function() self:FocusWindow() end)
         b:RegisterForClicks("LeftButtonUp","RightButtonUp")
         b:SetAttribute("useOnKeyDown",false)
         b:SetAttribute("item2",item.bag.." "..item.slot)
@@ -669,11 +705,13 @@ function A:GetItemButton(item, panel)
         b:EnableMouseWheel(true)
         b:HookScript("OnEnter", function(frame)
             if frame.newMarker then frame.newMarker:Hide() end
+            if frame.bankBlocked then GameTooltip:AddLine(self.L["Este item não pode ser depositado nesse banco."],1,0.3,0.3,true); GameTooltip:Show() end
             self:ShowCategoryDropHint(frame.anchorCategory)
         end)
         b:HookScript("OnLeave",function() self:HideCategoryDropHint() end)
         local nativeDrag=b:GetScript("OnDragStart")
         b:SetScript("OnDragStart",function(frame,...)
+            if bankButton and not self:CanMutateBank(nil,true) then return end
             self:CaptureItemSource(frame)
             if nativeDrag then nativeDrag(frame,...) end
         end)
@@ -682,9 +720,10 @@ function A:GetItemButton(item, panel)
             self:CompleteItemDrag()
             if nativeStop then nativeStop(frame,...) end
         end)
-        local nativeClick=ContainerFrameItemButtonMixin and ContainerFrameItemButtonMixin.OnClick or ContainerFrameItemButton_OnClick
+        local nativeClick=bankButton and b:GetScript("OnClick") or (ContainerFrameItemButtonMixin and ContainerFrameItemButtonMixin.OnClick or ContainerFrameItemButton_OnClick)
         -- Keep the secure template's OnClick untouched; observe it afterward.
-        b:HookScript("OnClick",function(frame,mouseButton,...)
+        local function click(frame,mouseButton,...)
+            if bankButton and not self:CanMutateBank(nil,true) then return end
             if mouseButton=="LeftButton" then
                 if CursorHasItem() and self:TryVirtualDrop(frame.anchorCategory,frame.anchorIndex) then return end
                 if not CursorHasItem() then self:CaptureItemSource(frame) end
@@ -693,15 +732,17 @@ function A:GetItemButton(item, panel)
             if mouseButton=="RightButton" and IsAltKeyDown() and frame.currentItem then
                 self:OpenItemActions(frame.currentItem)
             elseif mouseButton=="RightButton" and self.atBank and frame.currentItem and not IsModifiedClick() then
-                local destination=(self.storage or "bags")=="bags" and (self.bankDepositTarget or "character") or self.storage
-                C_Container.UseContainerItem(frame.currentItem.bag,frame.currentItem.slot,nil,self:BankType(destination))
+                self:TransferBankItem(frame.currentItem)
             elseif mouseButton=="RightButton" and not IsModifiedClick() and frame:GetAttribute("type2")=="item" then
                 return
             elseif nativeClick then nativeClick(frame,mouseButton,...) end
-        end)
+        end
+        if bankButton then b:SetScript("OnClick",click) else b:HookScript("OnClick",click) end
         for _, event in ipairs({"OnReceiveDrag", "OnMouseDown"}) do
             local native=b:GetScript(event)
             b:SetScript(event,function(frame,...)
+                if event=="OnMouseDown" then self:FocusWindow() end
+                if bankButton and not self:CanMutateBank(nil,true) then return end
                 if event=="OnReceiveDrag" and self:TryVirtualDrop(frame.anchorCategory,frame.anchorIndex) then return end
                 if CursorHasItem() then self:RememberDrop(frame) end
                 if native then native(frame,...) end
@@ -765,9 +806,10 @@ function A:PaintItem(b,item,search)
     b.levelLabel:SetShown(showLevel)
     self:PaintItemIndicators(b,item)
     local group=self.groups[item.category]
-    b.favoriteMarker:SetShown(group and group.reserved[b.anchorIndex]==info.itemID and group.positions[b.anchorIndex]==item)
+    b.favoriteMarker:SetShown(not self.isBankWindow and group and group.reserved[b.anchorIndex]==info.itemID and group.positions[b.anchorIndex]==item)
     b.focusBorder:SetShown(self.focusedSearchIdentity==item.identity)
     local match=search=="" or self:MatchesQuery(item,search)
+    self:UpdateBankEligibility(b,item)
     b:SetAlpha(match and 1 or 0.22); b:EnableMouse(not self.draft)
     return match
 end
@@ -787,6 +829,7 @@ function A:PaintEmpty(b,slot,panel,index)
         if b.UpdateItemContextMatching then b:UpdateItemContextMatching() end
         p.kind="empty"
     end
+    if type(b.bankRestriction)=="table" or type(b.bankRestriction)=="userdata" then b.bankRestriction:Hide() end
     b.favoriteMarker:Hide(); b.focusBorder:Hide(); b.newMarker:Hide(); b.levelLabel:Hide()
     b.upgradeMarker:Hide(); b.setMarker:Hide(); b.transmogMarker:Hide()
     if b.IconQuestTexture then b.IconQuestTexture:Hide() end
@@ -879,7 +922,9 @@ function A:Render()
         self.status:SetText(A.L["EDIÇÃO — arraste, redimensione ou use a engrenagem."])
         self.money:SetText("")
     elseif c then
-        if self.isBankWindow then self.status:SetText(string.format(A.L["Livres: %d/%d"],c.free,c.total))
+        if self.isBankWindow then
+            local state=self:BankState()
+            self.status:SetText(self.bankLoading and A.L["Carregando dados do banco…"] or state=="ready" and string.format(A.L["Livres: %d/%d"],c.free,c.total) or self:BankStateText(state))
         else self.status:SetText(string.format(A.L["Livres: %d/%d  |  Reagentes livres: %d/%d"], c.free, c.total, c.reagentFree, c.reagentTotal)) end
         self.money:SetText(self:FormatMoney(GetMoney()))
     end
