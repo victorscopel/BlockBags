@@ -124,13 +124,13 @@ A.atBank=true
 assert(#A:StorageChoices()==4)
 local bagPositions=A.profile.placements
 assert(A:SetStorage("character") and #A:GetScannedBags()==2)
-assert(#A.items==2 and A.capacity.total==8 and A.windowTitle:GetText()=="Banco do personagem")
+assert(#A.items==2 and A.capacity.total==8 and A.windowTitle:GetText()==A.L["Banco do personagem"])
 local bankLayout=A:GetBaseLayout(); bankLayout.equipment.x=0; bankLayout.equipment.width=300
 A:Reconcile(); A:Render()
 assert(A:GetPositions()~=bagPositions and A.profile.layout.equipment.width~=300)
 assert(A:SetStorage("account_12") and #A.items==1 and A.items[1].bag==12)
 assert(A.items[1].binding=="warbound")
-assert(A.windowTitle:GetText()=="Tropa: Materials")
+assert(A.windowTitle:GetText()==A.L["Tropa: "].."Materials")
 A:ToggleBagSlots(); assert(A.physicalBagView and not A.bagSlots:IsShown() and A.physicalSections[12]:IsShown())
 A:ToggleBagSlots(); assert(not A.physicalBagView)
 assert(A:SetStorage("character") and A:GetBaseLayout().equipment.width==300)

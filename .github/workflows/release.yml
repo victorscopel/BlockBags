@@ -15,7 +15,8 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install -r tests/requirements.txt
-      - run: python tests/validate.py
+      - run: python tests/validate.py ptBR
+      - run: python tests/validate.py enUS
       - run: python tools/package.py
       - name: Create release
         shell: bash

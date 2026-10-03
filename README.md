@@ -9,8 +9,8 @@ inventory, so you can always find things where you expect them.
 Arrange categories like blocks, choose their dimensions, and decide whether each
 category keeps item positions or automatically fills gaps.
 
-> **Early preview — 0.5.0.** Bank integration and bulk actions are still being
-> tested in-game. The current addon interface is primarily in Portuguese.
+> **Early preview — 0.5.1.** Bank integration and bulk actions are still being
+> tested in-game. The interface follows your WoW client language: Portuguese or English.
 
 ## Features
 
@@ -44,14 +44,14 @@ currently supported.
 
 ## Getting started
 
-- Open your bags with the usual keybind or `/ab`.
+- Open your bags with the usual keybind or `/bb`.
 - Click the circular bag button for settings and layout options.
 - Drag a category header to move it. Hold **Shift** to bypass snapping.
 - Enter layout editing to resize categories and the inventory window.
 - Drag an item onto another category to assign it manually.
 - Right-click the bag button to switch temporarily to physical bags.
 - Right-click a category header for tab assignments and available bulk actions.
-- Use `/ab config` for settings or `/ab edit` for layout editing.
+- Use `/bb config` for settings or `/bb edit` for layout editing.
 
 Closing settings keeps your inventory open. New items stay in their assigned
 categories instead of moving into a separate recent-items section.

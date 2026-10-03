@@ -13,19 +13,19 @@ function A:BulkContextValid(action)
     return self.atBank and C_Bank and C_Bank.CanUseBank(action.bankType)
 end
 function A:RequestCategoryAction(category,kind,targetStorage)
-    if self.bulkAction then self:Print("Uma operação já está em andamento."); return false end
+    if self.bulkAction then self:Print(A.L["Uma operação já está em andamento."]); return false end
     local group=self.groups[category]
     if not group then return false end
     local action={kind=kind,bankType=self:BankType(targetStorage or self.storage),entries={},index=1,done=0,skipped=0,viewKey=self:ViewKey()}
-    if not self:BulkContextValid(action) then self:Print("Abra o banco ou vendedor correspondente antes desta ação."); return false end
-    if kind=="sell" and self.atBank then self:Print("Feche o banco antes de vender itens."); return false end
+    if not self:BulkContextValid(action) then self:Print(A.L["Abra o banco ou vendedor correspondente antes desta ação."]); return false end
+    if kind=="sell" and self.atBank then self:Print(A.L["Feche o banco antes de vender itens."]); return false end
     for _,item in ipairs(group.items) do
         if not self.profile.favorites[item.info.itemID] and (item.equipmentSet or "")=="" then
             action.entries[#action.entries+1]={bag=item.bag,slot=item.slot,id=item.info.itemID,identity=item.identity,
                 link=item.info.hyperlink,count=item.info.stackCount,location=self.slotLocations[item.slotKey]}
         end
     end
-    if #action.entries==0 then self:Print("Não há itens elegíveis: favoritos e conjuntos são protegidos."); return false end
+    if #action.entries==0 then self:Print(A.L["Não há itens elegíveis: favoritos e conjuntos são protegidos."]); return false end
     -- Confirm the item count and destination before starting.
     self.pendingBulkAction=action
     if not StaticPopupDialogs.BLOCKBAGS_CATEGORY_ACTION then
@@ -33,9 +33,9 @@ function A:RequestCategoryAction(category,kind,targetStorage)
             OnAccept=function(_,data) A:StartBulkAction(data) end,
             OnCancel=function() A.pendingBulkAction=nil end}
     end
-    local verb=kind=="sell" and "Vender" or kind=="withdraw" and "Retirar" or "Depositar"
-    local destination=kind=="sell" and "no vendedor" or kind=="withdraw" and "para o inventário" or (action.bankType==Enum.BankType.Account and "no banco da tropa" or "no banco do personagem")
-    StaticPopup_Show("BLOCKBAGS_CATEGORY_ACTION",verb.." "..#action.entries.." pilhas de "..self:CategoryName(category).." "..destination.."? Favoritos e conjuntos não serão movidos.",nil,action)
+    local verb=kind=="sell" and A.L["Vender"] or kind=="withdraw" and A.L["Retirar"] or A.L["Depositar"]
+    local destination=kind=="sell" and A.L["no vendedor"] or kind=="withdraw" and A.L["para o inventário"] or (action.bankType==Enum.BankType.Account and A.L["no banco da tropa"] or A.L["no banco do personagem"])
+    StaticPopup_Show("BLOCKBAGS_CATEGORY_ACTION",verb.." "..#action.entries..A.L[" pilhas de "]..self:CategoryName(category).." "..destination..A.L["? Favoritos e conjuntos não serão movidos."],nil,action)
     return true
 end
 function A:StartBulkAction(action)
@@ -44,11 +44,11 @@ function A:StartBulkAction(action)
     self.bulkAction=action
     local function step()
         if self.bulkAction~=action or action.cancelled then return end
-        if not self:BulkContextValid(action) then self:CancelBulkAction(); self:Print("Operação interrompida."); return end
+        if not self:BulkContextValid(action) then self:CancelBulkAction(); self:Print(A.L["Operação interrompida."]); return end
         local entry=action.entries[action.index]
         if not entry then
             self.bulkAction=nil
-            self:Print("Operação concluída: "..action.done.." pilhas processadas; "..action.skipped.." ignoradas.")
+            self:Print(A.L["Operação concluída: "]..action.done..A.L[" pilhas processadas; "]..action.skipped..A.L[" ignoradas."])
             self:QueueRefresh(); return
         end
         local info=C_Container.GetContainerItemInfo(entry.bag,entry.slot)
@@ -73,7 +73,7 @@ function A:StartBulkAction(action)
             if self.bulkAction~=action then return end
             local after=C_Container.GetContainerItemInfo(entry.bag,entry.slot)
             if after and after.itemID==entry.id and after.stackCount==entry.count and after.hyperlink==entry.link then
-                self:CancelBulkAction(); self:Print("Operação interrompida: o servidor não confirmou a transferência. Verifique espaço e restrições."); self:QueueRefresh(); return
+                self:CancelBulkAction(); self:Print(A.L["Operação interrompida: o servidor não confirmou a transferência. Verifique espaço e restrições."]); self:QueueRefresh(); return
             end
             action.done=action.done+1; action.index=action.index+1; step()
         end)
@@ -83,15 +83,15 @@ function A:StartBulkAction(action)
 end
 function A:AddCategoryActions(root,id)
     if self.draft then return end
-    local tabs=root:CreateButton("Mover categoria para aba")
-    if tabs then for _,tab in ipairs(self:GetTabs()) do tabs:CreateButton(tab.name,function() self:AssignCategoryTab(id,tab.id) end) end end
+    local tabs=root:CreateButton(A.L["Mover categoria para aba"])
+    if tabs then for _,tab in ipairs(self:GetTabs()) do tabs:CreateButton(self:TabName(tab),function() self:AssignCategoryTab(id,tab.id) end) end end
     if self.atBank then
         if (self.storage or "bags")=="bags" then
-            if C_Bank.CanUseBank(Enum.BankType.Character) then root:CreateButton("Depositar categoria no banco",function() self:RequestCategoryAction(id,"deposit","character") end) end
-            if C_Bank.CanUseBank(Enum.BankType.Account) then root:CreateButton("Depositar categoria no banco da tropa",function() self:RequestCategoryAction(id,"deposit","account") end) end
-        else root:CreateButton("Retirar categoria para o inventário",function() self:RequestCategoryAction(id,"withdraw",self.storage) end) end
+            if C_Bank.CanUseBank(Enum.BankType.Character) then root:CreateButton(A.L["Depositar categoria no banco"],function() self:RequestCategoryAction(id,"deposit","character") end) end
+            if C_Bank.CanUseBank(Enum.BankType.Account) then root:CreateButton(A.L["Depositar categoria no banco da tropa"],function() self:RequestCategoryAction(id,"deposit","account") end) end
+        else root:CreateButton(A.L["Retirar categoria para o inventário"],function() self:RequestCategoryAction(id,"withdraw",self.storage) end) end
     elseif MerchantFrame and MerchantFrame:IsShown() then
-        root:CreateButton("Vender itens desta categoria…",function() self:RequestCategoryAction(id,"sell") end)
+        root:CreateButton(A.L["Vender itens desta categoria…"],function() self:RequestCategoryAction(id,"sell") end)
     end
-    if self.bulkAction then root:CreateButton("Interromper operação",function() self:CancelBulkAction() end) end
+    if self.bulkAction then root:CreateButton(A.L["Interromper operação"],function() self:CancelBulkAction() end) end
 end

@@ -9,7 +9,7 @@
 
 ## Expansões futuras
 
-- Localização completa em inglês e outros idiomas.
+- Traduções para outros idiomas além de inglês e português.
 - Regras com grupos E/OU e filtros de profissão mais detalhados.
 - Ordenação manual por mais atributos dentro da categoria.
 - Agrupamento virtual opcional de pilhas, mantendo acesso claro aos slots reais.

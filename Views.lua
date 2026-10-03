@@ -1,5 +1,5 @@
 local _, A = ...
-local defaultTabs={{id="default",name="Principal"}}
+local defaultTabs={{id="default",name=A.L["Principal"]}}
 
 function A:GetTabs() return self.profile.tabs or defaultTabs end
 function A:ViewKey() return (self.storage or "bags")..":"..(self.activeTab or "default") end
@@ -35,7 +35,7 @@ function A:FooterExtra()
 end
 
 function A:SelectTab(id)
-    if self.draft or InCombatLockdown() then self:Print("Salve ou cancele o layout antes de trocar de aba."); return false end
+    if self.draft or InCombatLockdown() then self:Print(A.L["Salve ou cancele o layout antes de trocar de aba."]); return false end
     local found=false; for _,tab in ipairs(self:GetTabs()) do if tab.id==id then found=true end end
     if not found then return false end
     if self.physicalBagView then self:SetPhysicalBagView(false) end
@@ -48,7 +48,7 @@ end
 function A:CreateTab(name)
     if not self:CanChangeProfile() then return false end
     name=(name or ""):match("^%s*(.-)%s*$")
-    if #name==0 or #name>40 or #self:GetTabs()>=8 then self:Print("Use um nome de até 40 caracteres; limite de 8 abas."); return false end
+    if #name==0 or #name>40 or #self:GetTabs()>=8 then self:Print(A.L["Use um nome de até 40 caracteres; limite de 8 abas."]); return false end
     self.profile.tabs=self.profile.tabs or self:Copy(defaultTabs)
     local used={}; for _,tab in ipairs(self.profile.tabs) do used[tab.id]=true end
     local n=1; while used["tab"..n] do n=n+1 end
@@ -129,7 +129,7 @@ function A:PaintTabs()
         if tab then
             local width=math.min(96,math.floor((self.window:GetWidth()-40)/#self:GetTabs())-3)
             b:ClearAllPoints(); b:SetPoint("LEFT",(index-1)*(width+3),0); b:SetWidth(width)
-            b:SetText(tab.name); b:SetEnabled(not self.draft and tab.id~=(self.activeTab or "default"))
+            b:SetText(self:TabName(tab)); b:SetEnabled(not self.draft and tab.id~=(self.activeTab or "default"))
         end
     end
     bar:SetShown(#self:GetTabs()>1 and not self.physicalBagView)

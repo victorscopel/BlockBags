@@ -3,7 +3,7 @@ local _, A = ...
 function A:Toggle()
     if not self.ready then return end
     if InCombatLockdown() then
-        self:Print("Nesta versão, abrir ou fechar a bolsa fica disponível fora de combate.")
+        self:Print(A.L["Nesta versão, abrir ou fechar a bolsa fica disponível fora de combate."])
         return
     end
     self.window:SetShown(not self.window:IsShown())
@@ -33,14 +33,14 @@ function A:InstallIntegration()
     for _, name in ipairs({ "BetterBags", "MyBags", "ArkInventory", "Baganator", "Bagnon" }) do
         if C_AddOns.IsAddOnLoaded(name) then
             self.integrationBlocked = true
-            self:Print(name .. " está ativo. Use /ab para testar; desative os outros addons de bolsas e dê /reload para substituir a interface padrão.")
+            self:Print(name .. A.L[" está ativo. Use /bb para testar; desative os outros addons de bolsas e dê /reload para substituir a interface padrão."])
             return
         end
     end
     local engine = ElvUI and ElvUI[1]
     if C_AddOns.IsAddOnLoaded("ElvUI") and (not engine or not engine.private or engine.private.bags.enable) then
         self.integrationBlocked = true
-        self:Print("O módulo de bolsas do ElvUI está ativo. Desative-o e dê /reload. O BlockBags continua acessível por /ab.")
+        self:Print(A.L["O módulo de bolsas do ElvUI está ativo. Desative-o e dê /reload. O BlockBags continua acessível por /bb."])
         return
     end
     if InCombatLockdown() then return end
@@ -65,5 +65,5 @@ function A:InstallIntegration()
 end
 
 BINDING_HEADER_BLOCKBAGS = "BlockBags"
-BINDING_NAME_BLOCKBAGS_TOGGLE = "Abrir/fechar BlockBags"
-BINDING_NAME_ANCHORBAGS_TOGGLE = "Abrir/fechar BlockBags (atalho legado)"
+BINDING_NAME_BLOCKBAGS_TOGGLE = A.L["Abrir/fechar BlockBags"]
+BINDING_NAME_ANCHORBAGS_TOGGLE = A.L["Abrir/fechar BlockBags (atalho legado)"]

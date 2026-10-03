@@ -1,16 +1,16 @@
 local _, A = ...
 BlockBags = A
 AnchorBags = A -- Compatibility for existing bindings/scripts.
-A.version = "0.5.0"
+A.version = "0.5.1"
 A.cell, A.padding, A.header, A.scrollGutter = 40, 8, 36, 0
 A.categories = {
-    { id = "equipment", name = "Equipamentos", x = 0, y = 0, cols = 8, rows = 4 },
-    { id = "consumables", name = "Consumíveis", x = 9, y = 0, cols = 5, rows = 3 },
-    { id = "reagentbag", name = "Bolsa de reagentes", x = 15, y = 0, cols = 6, rows = 5 },
-    { id = "materials", name = "Materiais", x = 0, y = 6, cols = 8, rows = 3 },
-    { id = "quest", name = "Missões", x = 9, y = 5, cols = 5, rows = 3 },
-    { id = "misc", name = "Diversos", x = 15, y = 7, cols = 6, rows = 3 },
-    { id = "junk", name = "Lixo", x = 0, y = 11, cols = 8, rows = 2 },
+    { id = "equipment", name = A.L["Equipamentos"], x = 0, y = 0, cols = 8, rows = 4 },
+    { id = "consumables", name = A.L["Consumíveis"], x = 9, y = 0, cols = 5, rows = 3 },
+    { id = "reagentbag", name = A.L["Bolsa de reagentes"], x = 15, y = 0, cols = 6, rows = 5 },
+    { id = "materials", name = A.L["Materiais"], x = 0, y = 6, cols = 8, rows = 3 },
+    { id = "quest", name = A.L["Missões"], x = 9, y = 5, cols = 5, rows = 3 },
+    { id = "misc", name = A.L["Diversos"], x = 15, y = 7, cols = 6, rows = 3 },
+    { id = "junk", name = A.L["Lixo"], x = 0, y = 11, cols = 8, rows = 2 },
 }
 
 function A:Copy(value)
@@ -51,7 +51,7 @@ end
 function A:CategoryName(id)
     local data = self:GetLayout()[id]
     if data and data.name then return data.name end
-    for _, cat in ipairs(self.categories) do if cat.id == id then return cat.name end end
+    for _, cat in ipairs(self.categories) do if cat.id == id then return self:DefaultCategoryName(cat.id,cat.name) end end
     return id
 end
 
@@ -188,7 +188,7 @@ events:SetScript("OnEvent", function(_, event, arg, success)
     end
 end)
 
-SLASH_BLOCKBAGS1 = "/ab"
+SLASH_BLOCKBAGS1 = "/bb"
 SLASH_BLOCKBAGS2 = "/blockbags"
 SLASH_BLOCKBAGS3 = "/blocks"
 SlashCmdList.BLOCKBAGS = function(message)
@@ -204,22 +204,22 @@ SlashCmdList.BLOCKBAGS = function(message)
         A.window:Show()
         A:StartEdit()
     elseif command == "reset" then
-        if InCombatLockdown() then A:Print("Aguarde o fim do combate."); return end
+        if InCombatLockdown() then A:Print(A.L["Aguarde o fim do combate."]); return end
         if A.draft then A:FinishEdit(false) end
         A:SetBaseLayout(A:DefaultLayout())
         A:PackLayout(A:GetBaseLayout(),A:GetSettings().categorySpacing or 0)
         A:ResizeCanvas()
         A:ApplyLayout()
         A:QueueRefresh()
-        A:Print("Layout restaurado. As posições dos itens foram mantidas.")
+        A:Print(A.L["Layout restaurado. As posições dos itens foram mantidas."])
     elseif command:match("^scale ") then
         local scale = tonumber(command:match("^scale (.+)$"))
-        if InCombatLockdown() then A:Print("Aguarde o fim do combate."); return end
+        if InCombatLockdown() then A:Print(A.L["Aguarde o fim do combate."]); return end
         if scale and scale >= 0.5 and scale <= 1.25 then
             A.profile.window.scale = scale
             A.window:SetScale(scale)
-        else A:Print("Use /ab scale 0.85 (intervalo: 0.5 a 1.25).") end
+        else A:Print(A.L["Use /bb scale 0.85 (intervalo: 0.5 a 1.25)."]) end
     elseif command == "help" then
-        A:Print("/ab — abrir; /ab edit — editar; /ab config — opções; /ab memory — diagnóstico; /ab reset — restaurar layout; /ab scale 0.85.")
+        A:Print(A.L["/bb — abrir; /bb edit — editar; /bb config — opções; /bb memory — diagnóstico; /bb reset — restaurar layout; /bb scale 0.85."])
     else A:Toggle() end
 end

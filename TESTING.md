@@ -4,16 +4,20 @@
 
 ```sh
 python -m pip install -r tests/requirements.txt
-python tests/validate.py
+python tests/validate.py ptBR
+python tests/validate.py enUS
 python tools/package.py
 ```
 
 Os testes usam Lua 5.1 através do lupa. Compilam todos os módulos e exercitam
-classificação, posições, editor, importação, integração e os recursos da 0.5.0
+classificação, posições, editor, importação, integração e os recursos da 0.5.1
 com APIs simuladas. Incluem limites de cache, crescimento retido após GC,
 reutilização de frames e cancelamento de operações. Não substituem o cliente.
 
 ## No WoW Retail, antes de publicar como estável
+
+- [ ] Conferir menus e mensagens em clientes ptBR e enUS; testar `/bb help`.
+- [ ] Confirmar que o X aparece e fecha o inventário em ambos os modos de bolsas.
 
 Ative `/console scriptErrors 1`, desative outros substitutos de bolsa e dê `/reload`.
 Use itens comuns e baratos para validar ações de servidor.
@@ -44,7 +48,7 @@ Use itens comuns e baratos para validar ações de servidor.
 - [ ] Banco/inventário cheio ou transferência rejeitada não cria tentativas infinitas.
 - [ ] Fechar inventário fecha sessão bancária; reabrir não fica preso no banco.
 - [ ] Em combate, atualizações são pausadas e retomadas sem erros de taint.
-- [ ] Repetir abas/bancos/arrastos e comparar `/ab memory`; usar `/ab memory gc`
+- [ ] Repetir abas/bancos/arrastos e comparar `/bb memory`; usar `/bb memory gc`
   apenas no diagnóstico, distinguindo temporários de memória retida.
 
 Registre build do WoW, versão e erro completo em um issue. Nunca envie arquivos

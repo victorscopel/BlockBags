@@ -24,18 +24,18 @@ function A:CreateBagMenuButton()
     b:SetScript("OnEnter", function()
         highlight:Show()
         GameTooltip:SetOwner(b, "ANCHOR_RIGHT")
-        GameTooltip:SetText("Bolsas")
-        GameTooltip:AddLine("Clique: menu. Clique direito: alternar visualização por bolsa.", 1, 1, 1, true)
+        GameTooltip:SetText(A.L["Bolsas"])
+        GameTooltip:AddLine(A.L["Clique: menu. Clique direito: alternar visualização por bolsa."], 1, 1, 1, true)
         GameTooltip:Show()
     end)
     b:SetScript("OnLeave", function() highlight:Hide(); GameTooltip:Hide() end)
     b:SetScript("OnClick", function(_, mouseButton)
         if mouseButton == "RightButton" then self:ToggleBagSlots(); return end
         MenuUtil.CreateContextMenu(b, function(_, root)
-            root:CreateCheckbox("Mostrar bolsas equipadas", function()
+            root:CreateCheckbox(A.L["Mostrar bolsas equipadas"], function()
                 return self.physicalBagView == true
             end, function() self:ToggleBagSlots() end)
-            root:CreateCheckbox("Mostrar nível dos equipamentos", function()
+            root:CreateCheckbox(A.L["Mostrar nível dos equipamentos"], function()
                 return self:GetSettings().showItemLevel ~= false
             end, function()
                 local settings = self:GetSettings()
@@ -43,17 +43,17 @@ function A:CreateBagMenuButton()
                 self:Render()
             end)
             root:CreateDivider()
-            root:CreateButton("Configurações", function() self:OpenGeneralSettings() end)
-            root:CreateButton("Editar layout", function() self:StartEdit() end)
-            root:CreateButton("Moedas, indicadores e abas", function() self:OpenSettings("features") end)
+            root:CreateButton(A.L["Configurações"], function() self:OpenGeneralSettings() end)
+            root:CreateButton(A.L["Editar layout"], function() self:StartEdit() end)
+            root:CreateButton(A.L["Moedas, indicadores e abas"], function() self:OpenSettings("features") end)
             if self.atBank and C_Bank and C_Bank.CanPurchaseBankTab then
                 for _,kind in ipairs({Enum.BankType.Character,Enum.BankType.Account}) do
                     if C_Bank.CanPurchaseBankTab(kind) then
-                        root:CreateButton(kind==Enum.BankType.Account and "Comprar aba da tropa…" or "Comprar aba do banco…",function() self:PurchaseBankTab(kind) end)
+                        root:CreateButton(kind==Enum.BankType.Account and A.L["Comprar aba da tropa…"] or A.L["Comprar aba do banco…"],function() self:PurchaseBankTab(kind) end)
                     end
                 end
             end
-            if self.bulkAction then root:CreateButton("Interromper operação em lote",function() self:CancelBulkAction() end) end
+            if self.bulkAction then root:CreateButton(A.L["Interromper operação em lote"],function() self:CancelBulkAction() end) end
         end)
     end)
 end
@@ -72,7 +72,7 @@ function A:BuildBagSlots()
     panel.buttons = {}
     local title = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     title:SetPoint("TOP", 0, -5)
-    title:SetText("Bolsas equipadas")
+    title:SetText(A.L["Bolsas equipadas"])
     for bag = 1, Enum.BagIndex.ReagentBag do
         local b = CreateFrame("ItemButton", nil, panel)
         panel.buttons[bag] = b
@@ -100,7 +100,7 @@ function A:BuildBagSlots()
         b:SetScript("OnEnter", function()
             GameTooltip:SetOwner(b, "ANCHOR_RIGHT")
             if b.empty then
-                GameTooltip:SetText(bag == Enum.BagIndex.ReagentBag and "Slot da bolsa de reagentes" or "Slot de bolsa vazio")
+                GameTooltip:SetText(bag == Enum.BagIndex.ReagentBag and A.L["Slot da bolsa de reagentes"] or A.L["Slot de bolsa vazio"])
             else GameTooltip:SetInventoryItem("player", b.inventoryID) end
             GameTooltip:Show()
         end)
@@ -127,7 +127,7 @@ end
 
 function A:ToggleBagSlots()
     if InCombatLockdown() then return end
-    if self.draft then self:Print("Salve ou cancele o layout antes de mostrar as bolsas."); return end
+    if self.draft then self:Print(A.L["Salve ou cancele o layout antes de mostrar as bolsas."]); return end
     self:SetPhysicalBagView(not self.physicalBagView)
 end
 
@@ -202,7 +202,7 @@ function A:RenderPhysicalBags()
         panel:SetSize(width, sectionHeight)
         panel.content:SetSize(width, math.max(1, sectionHeight - 24))
         local name = C_Container.GetBagName and C_Container.GetBagName(bag) or nil
-        panel.title:SetText("#" .. bagIndex .. ": " .. (name or (bag == 0 and "Mochila" or bag == Enum.BagIndex.ReagentBag and "Bolsa de reagentes" or "Bolsa")))
+        panel.title:SetText("#" .. bagIndex .. ": " .. (name or (bag == 0 and A.L["Mochila"] or bag == Enum.BagIndex.ReagentBag and A.L["Bolsa de reagentes"] or A.L["Bolsa"])))
         panel:SetShown(count > 0)
         if count > 0 then offsets[column] = offsets[column] + sectionHeight end
         for slot = 1, count do
@@ -228,6 +228,6 @@ function A:RenderPhysicalBags()
     for _,b in pairs(self.buttons) do if b.renderSerial ~= self.renderSerial then b:Hide(); b.currentItem=nil end end
     self.forceItemPaint=nil
     local c=self.capacity
-    if c then self.status:SetText(string.format("Livres: %d/%d  |  Reagentes livres: %d/%d",c.free,c.total,c.reagentFree,c.reagentTotal)) end
+    if c then self.status:SetText(string.format(A.L["Livres: %d/%d  |  Reagentes livres: %d/%d"],c.free,c.total,c.reagentFree,c.reagentTotal)) end
     self.money:SetText(GetCoinTextureString(GetMoney()))
 end

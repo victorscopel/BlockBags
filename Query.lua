@@ -20,7 +20,7 @@ local slotAliases={cabeca="INVTYPE_HEAD",head="INVTYPE_HEAD",pescoco="INVTYPE_NE
 
 function A:CompileQuery(query)
     query=(query or ""):lower():match("^%s*(.-)%s*$")
-    if #query>256 then return nil,"Use no máximo 256 caracteres." end
+    if #query>256 then return nil,A.L["Use no máximo 256 caracteres."] end
     local compiled={}
     if query=="" then return compiled end
     -- Match plain text as a phrase; combine attribute filters with AND.
@@ -38,7 +38,7 @@ function A:CompileQuery(query)
                 elseif c:match("%s") and not quoted then break end
                 at=at+1
             end
-            if quoted then return nil,"Aspas incompletas." end
+            if quoted then return nil,A.L["Aspas incompletas."] end
             tokens[#tokens+1]=query:sub(start,at-1):gsub('"',"")
         end
     end
@@ -48,22 +48,22 @@ function A:CompileQuery(query)
         local key,value=token:match("^([%a]+):(.*)$")
         if not key then key,value="name",token end
         key=aliases[key] or key
-        if not fields[key] or value=="" then return nil,"Filtro inválido: "..token end
+        if not fields[key] or value=="" then return nil,A.L["Filtro inválido: "]..token end
         local term={field=key,value=value,invert=invert}
         if key=="id" or key=="ilvl" or key=="quality" then
             if key=="quality" then value=tostring(qualities[value] or value) end
             local operator,number=value:match("^([<>]=?)(%d+)$")
             term.number=tonumber(number or value); term.operator=operator or "="
-            if not term.number then return nil,"Valor numérico inválido: "..token end
+            if not term.number then return nil,A.L["Valor numérico inválido: "]..token end
         elseif key=="type" then
             term.number=types[value] or tonumber(value)
-            if not term.number then return nil,"Tipo desconhecido: "..value end
+            if not term.number then return nil,A.L["Tipo desconhecido: "]..value end
         elseif key=="expansion" then
             term.number=(self.expansionAliases or {})[value] or tonumber(value)
-            if not term.number then return nil,"Expansão desconhecida: "..value end
+            if not term.number then return nil,A.L["Expansão desconhecida: "]..value end
         elseif key=="slot" then term.value=slotAliases[value] or value:upper()
         elseif key=="favorite" or key=="new" or key=="reagent" or key=="upgrade" or key=="uncollected" then
-            if value~="sim" and value~="nao" and value~="true" and value~="false" and value~="1" and value~="0" then return nil,"Use sim ou nao: "..token end
+            if value~="sim" and value~="nao" and value~="true" and value~="false" and value~="1" and value~="0" then return nil,A.L["Use sim ou nao: "]..token end
             term.boolean=value=="sim" or value=="true" or value=="1"
         end
         compiled[#compiled+1]=term
@@ -76,7 +76,7 @@ function A:ValidateCategoryRule(rule)
     if not terms then return false,err end
     for _,term in ipairs(terms) do
         if term.field=="category" or term.field=="favorite" or term.field=="new" then
-            return false,"Regras não podem depender de categoria, favorito ou item novo."
+            return false,A.L["Regras não podem depender de categoria, favorito ou item novo."]
         end
     end
     return true

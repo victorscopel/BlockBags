@@ -176,13 +176,13 @@ function A:OpenCategoryMenu(panel)
     if InCombatLockdown() then return end
     MenuUtil.CreateContextMenu(panel.move,function(_,root)
         root:CreateTitle(self:CategoryName(panel.id))
-        root:CreateButton("Organizar itens",function() self.organizeCategory=panel.id; self:Reconcile(); self:Render() end)
-        root:CreateCheckbox("Compactar automaticamente",function() return self:GetLayout()[panel.id].compact end,
+        root:CreateButton(A.L["Organizar itens"],function() self.organizeCategory=panel.id; self:Reconcile(); self:Render() end)
+        root:CreateCheckbox(A.L["Compactar automaticamente"],function() return self:GetLayout()[panel.id].compact end,
             function() self:SetCategoryOption(panel.id,"compact",not self:GetLayout()[panel.id].compact) end)
-        root:CreateButton("Personalizar categoria",function() self:OpenCustomization(panel.id) end)
+        root:CreateButton(A.L["Personalizar categoria"],function() self:OpenCustomization(panel.id) end)
         self:AddCategoryActions(root,panel.id)
-        root:CreateButton("Redimensionar no editor",function() self.window:Show(); self:StartEdit() end)
-        root:CreateCheckbox("Bloquear movimento das categorias",function() return self:GetSettings().layoutLocked end,
+        root:CreateButton(A.L["Redimensionar no editor"],function() self.window:Show(); self:StartEdit() end)
+        root:CreateCheckbox(A.L["Bloquear movimento das categorias"],function() return self:GetSettings().layoutLocked end,
             function() self:ToggleLayoutLock() end)
     end)
 end

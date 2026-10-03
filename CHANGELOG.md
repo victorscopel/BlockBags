@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.1 — preview
+
+- Use `/bb` as the primary command; `/blockbags` and `/blocks` remain available.
+- Follow the WoW client language: Portuguese for ptBR/ptPT, English otherwise.
+- Translate settings, menus, messages and default labels in existing profiles.
+- Keep custom names, item assignments and saved layout positions unchanged.
+- Show the inventory close button above the window border.
+
 ## 0.5.0 — prévia
 
 - Fechar opções abertas pelo BlockBags preserva o inventário sem abrir o menu Esc.

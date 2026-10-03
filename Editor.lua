@@ -100,6 +100,6 @@ function A:UpdateEditorVisuals(id,candidate,resize,valid,free)
     for i=0,math.min(m.rows,64)-1 do grid(false,i) end
     -- Draw the closing edges around the last full slot; leftover pixels stay shaded.
     grid(true,math.min(m.cols,64),true); grid(false,math.min(m.rows,64),true)
-    p.caption:SetText(string.format("%d × %d px\n%d colunas × %d linhas · %d slots%s",w,h,m.cols,m.rows,m.cols*m.rows,valid and "" or "\nÁrea ocupada"))
+    p.caption:SetText(string.format(A.L["%d × %d px\n%d colunas × %d linhas · %d slots%s"],w,h,m.cols,m.rows,m.cols*m.rows,valid and "" or A.L["\nÁrea ocupada"]))
     p.caption:SetTextColor(valid and 0.8 or 1,valid and 1 or 0.35,0.8)
 end

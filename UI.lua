@@ -90,8 +90,13 @@ function A:BuildUI()
         self.profile.window.x, self.profile.window.y = self.profile.window.x / scale, self.profile.window.y / scale
     end)
     local close = CreateFrame("Button", nil, w, "UIPanelCloseButton")
-    close:SetFrameLevel(w:GetFrameLevel()+20)
-    close:SetPoint("TOPRIGHT", -2, -2)
+    self.closeButton=close
+    close:SetFrameStrata("DIALOG")
+    close:SetFrameLevel(w:GetFrameLevel()+150)
+    close:SetSize(24,24)
+    close:SetPoint("TOPRIGHT", -4, -2)
+    close:SetScript("OnClick",function() w:Hide() end)
+    close:Show()
 
     self.search = CreateFrame("EditBox", nil, w, "InputBoxTemplate")
     self.search:SetSize(400, 24)
@@ -101,22 +106,22 @@ function A:BuildUI()
     self.search:SetScript("OnEscapePressed", function(edit) edit:SetText(""); edit:ClearFocus() end)
     self.search:SetScript("OnEnterPressed", function(edit) edit:ClearFocus() end)
     self.search:SetScript("OnTextChanged", function() if self.ready then self:Render() end end)
-    self.searchHint = label(self.search, "Buscar itens…", 12)
+    self.searchHint = label(self.search, A.L["Buscar itens…"], 12)
     self.searchHint:SetPoint("LEFT", 5, 0)
     self.search:SetTextInsets(5, 25, 0, 0)
     self.searchClear = CreateFrame("Button", nil, self.search, "UIPanelCloseButton")
     self.searchClear:SetSize(20, 20)
     self.searchClear:SetPoint("RIGHT", -2, 0)
     self.searchClear:SetScript("OnClick", function() self.search:SetText(""); self.search:ClearFocus() end)
-    self.editButton = button(w, "Editar layout", 112, function() self:StartEdit() end)
+    self.editButton = button(w, A.L["Editar layout"], 112, function() self:StartEdit() end)
     self.editButton:SetPoint("TOPRIGHT", -24, -48)
-    self.saveButton = button(w, "Salvar", 75, function() self:FinishEdit(true) end)
+    self.saveButton = button(w, A.L["Salvar"], 75, function() self:FinishEdit(true) end)
     self.saveButton:SetPoint("TOPRIGHT", -24, -48)
-    self.cancelButton = button(w, "Cancelar", 85, function() self:FinishEdit(false) end)
+    self.cancelButton = button(w, A.L["Cancelar"], 85, function() self:FinishEdit(false) end)
     self.cancelButton:SetPoint("RIGHT", self.saveButton, "LEFT", -6, 0)
-    self.generalButton = button(w, "Configurações", 110, function() self:OpenGeneralSettings() end)
+    self.generalButton = button(w, A.L["Configurações"], 110, function() self:OpenGeneralSettings() end)
     self.generalButton:SetPoint("RIGHT", self.cancelButton, "LEFT", -6, 0)
-    self.undoButton = iconButton(w, "Interface\\Buttons\\UI-SpellbookIcon-PrevPage-Up", "Desfazer", "Desfaz o último ajuste do editor (até 50 etapas).", function() self:UndoEdit() end)
+    self.undoButton = iconButton(w, "Interface\\Buttons\\UI-SpellbookIcon-PrevPage-Up", A.L["Desfazer"], A.L["Desfaz o último ajuste do editor (até 50 etapas)."], function() self:UndoEdit() end)
     self.undoButton:SetPoint("RIGHT", self.generalButton, "LEFT", -5, 0)
     for _,control in ipairs({self.generalButton,self.cancelButton,self.saveButton,self.editButton,self.undoButton}) do
         control:SetFrameLevel(w:GetFrameLevel()+20)
@@ -133,13 +138,13 @@ function A:BuildUI()
         self.searchResultIndex=0; self.focusedSearchIdentity=nil
         if self.ready then self:Render() end
     end)
-    self.seenButton = iconButton(w, "Interface\\Buttons\\UI-CheckBox-Check", "Marcar todos como vistos", "Remove o destaque de novos itens sem reorganizar as categorias.", function()
+    self.seenButton = iconButton(w, "Interface\\Buttons\\UI-CheckBox-Check", A.L["Marcar todos como vistos"], A.L["Remove o destaque de novos itens sem reorganizar as categorias."], function()
         for _, item in ipairs(self.items or {}) do C_NewItems.RemoveNewItem(item.bag, item.slot) end
         self:Render()
     end)
     self.seenButton:SetFrameLevel(w:GetFrameLevel()+20)
-    self.lockButton=iconButton(w,"Interface\\Buttons\\LockButton-Locked-Up","Bloquear layout",
-        "Permite ou bloqueia arrastar categorias pelo cabeçalho. Clique direito no cabeçalho abre suas opções.",function() self:ToggleLayoutLock() end)
+    self.lockButton=iconButton(w,"Interface\\Buttons\\LockButton-Locked-Up",A.L["Bloquear layout"],
+        A.L["Permite ou bloqueia arrastar categorias pelo cabeçalho. Clique direito no cabeçalho abre suas opções."],function() self:ToggleLayoutLock() end)
     self.lockButton:SetFrameLevel(w:GetFrameLevel()+20)
     self.lockButton:SetPoint("RIGHT",self.seenButton,"LEFT",-5,0)
 
@@ -191,7 +196,7 @@ function A:BuildUI()
     self.combatOverlay:EnableMouseWheel(true)
     box(self.combatOverlay)
     self.combatOverlay:SetBackdropColor(0.04, 0.05, 0.06, 0.85)
-    label(self.combatOverlay, "Inventário pausado durante o combate.\nAs atualizações serão aplicadas ao sair de combate.", 14):SetPoint("CENTER")
+    label(self.combatOverlay, A.L["Inventário pausado durante o combate.\nAs atualizações serão aplicadas ao sair de combate."], 14):SetPoint("CENTER")
     self.combatOverlay:Hide()
     w:SetScript("OnShow", function() self.forceItemPaint=true; self:QueueRefresh() end)
     w:SetScript("OnHide", function()
@@ -305,15 +310,15 @@ function A:CreatePanel(category)
     panel.title:SetJustifyH("LEFT")
     panel.count = label(panel, "", 11)
     panel.count:SetPoint("TOPRIGHT", -8, -9)
-    panel.organize = iconButton(panel, "Interface\\Buttons\\UI-SpellbookIcon-NextPage-Up", "Organizar esta categoria", "Ordena por nome e fecha os espaços uma vez. Não muda o modo de organização nem combina pilhas.", function()
-        if InCombatLockdown() then self:Print("Aguarde o fim do combate."); return end
+    panel.organize = iconButton(panel, "Interface\\Buttons\\UI-SpellbookIcon-NextPage-Up", A.L["Organizar esta categoria"], A.L["Ordena por nome e fecha os espaços uma vez. Não muda o modo de organização nem combina pilhas."], function()
+        if InCombatLockdown() then self:Print(A.L["Aguarde o fim do combate."]); return end
         self.organizeCategory = panel.id
         self:Reconcile()
         self:Render()
     end)
     panel.organize:SetPoint("TOPLEFT", 8, -24)
-    panel.mode = iconButton(panel, "Interface\\Buttons\\UI-CheckBox-Up", "Posições fixas ou automáticas", "F: mantém posições fixas. A: ordena por nome e fecha espaços automaticamente nesta categoria. Favoritos ficam reservados nos dois modos.", function()
-        if InCombatLockdown() then self:Print("Aguarde o fim do combate."); return end
+    panel.mode = iconButton(panel, "Interface\\Buttons\\UI-CheckBox-Up", A.L["Posições fixas ou automáticas"], A.L["F: mantém posições fixas. A: ordena por nome e fecha espaços automaticamente nesta categoria. Favoritos ficam reservados nos dois modos."], function()
+        if InCombatLockdown() then self:Print(A.L["Aguarde o fim do combate."]); return end
         local layout = self:GetLayout()[panel.id]
         self:PushUndo()
         layout.compact = not layout.compact
@@ -324,7 +329,7 @@ function A:CreatePanel(category)
     panel.mode:SetNormalTexture("Interface\\Buttons\\UI-CheckBox-Up")
     panel.mode.stateLabel=label(panel.mode,"F",11)
     panel.mode.stateLabel:SetPoint("CENTER")
-    panel.customize = iconButton(panel, "Interface\\Icons\\Trade_Engineering", "Personalizar categoria", "Ajuste o tamanho e o espaçamento dos itens. As alterações só são persistidas ao salvar o layout.", function() self:OpenCustomization(panel.id) end)
+    panel.customize = iconButton(panel, "Interface\\Icons\\Trade_Engineering", A.L["Personalizar categoria"], A.L["Ajuste o tamanho e o espaçamento dos itens. As alterações só são persistidas ao salvar o layout."], function() self:OpenCustomization(panel.id) end)
     panel.customize:SetPoint("LEFT", panel.mode, "RIGHT", 4, 0)
 
     panel.scroll = CreateFrame("ScrollFrame", nil, panel)
@@ -400,8 +405,8 @@ function A:CreatePanel(category)
     panel.resize:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
     panel.resize:SetScript("OnEnter",function()
         GameTooltip:SetOwner(panel.resize,"ANCHOR_TOP")
-        GameTooltip:SetText("Redimensionar categoria")
-        GameTooltip:AddLine("Arraste para ajustar livremente. Shift desativa o encaixe nas bordas.",1,1,1,true)
+        GameTooltip:SetText(A.L["Redimensionar categoria"])
+        GameTooltip:AddLine(A.L["Arraste para ajustar livremente. Shift desativa o encaixe nas bordas."],1,1,1,true)
         GameTooltip:Show()
     end)
     panel.resize:SetScript("OnLeave",function() GameTooltip:Hide() end)
@@ -448,7 +453,7 @@ function A:ApplyLayout()
 end
 
 function A:StartEdit()
-    if InCombatLockdown() then self:Print("O editor fica disponível fora de combate."); return end
+    if InCombatLockdown() then self:Print(A.L["O editor fica disponível fora de combate."]); return end
     if self.draft then return end
     if self.physicalBagView then self:SetPhysicalBagView(false) end
     self:CancelInteractions()
@@ -458,7 +463,7 @@ function A:StartEdit()
     self.windowDraft = { width = self.window:GetWidth(), height = self.window:GetHeight() }
     self:ApplyLayout()
     self:Render()
-    self:Print("Arraste o cabeçalho e redimensione pelo canto. Verde: válido; vermelho: ocupado. Salve para confirmar.")
+    self:Print(A.L["Arraste o cabeçalho e redimensione pelo canto. Verde: válido; vermelho: ocupado. Salve para confirmar."])
 end
 
 function A:CreateEditorDialog(title, height)
@@ -818,10 +823,10 @@ function A:Render()
     self.forceItemPaint=nil
     local c = self.capacity
     if self.draft then
-        self.status:SetText("EDIÇÃO — arraste, redimensione ou use a engrenagem.")
+        self.status:SetText(A.L["EDIÇÃO — arraste, redimensione ou use a engrenagem."])
         self.money:SetText("")
     elseif c then
-        self.status:SetText(string.format("Livres: %d/%d  |  Reagentes livres: %d/%d", c.free, c.total, c.reagentFree, c.reagentTotal))
+        self.status:SetText(string.format(A.L["Livres: %d/%d  |  Reagentes livres: %d/%d"], c.free, c.total, c.reagentFree, c.reagentTotal))
         self.money:SetText(GetCoinTextureString(GetMoney()))
     end
 end

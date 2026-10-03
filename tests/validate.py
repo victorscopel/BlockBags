@@ -1,9 +1,11 @@
 """Offline Lua 5.1 syntax and core behaviour checks. Requires lupa (outside addon)."""
 from pathlib import Path
+import sys
 from lupa.lua51 import LuaRuntime
 
 root = Path(__file__).resolve().parents[1]
 lua = LuaRuntime(unpack_returned_tuples=True)
+lua.globals().TEST_LOCALE = sys.argv[1] if len(sys.argv)>1 else "ptBR"
 compile_lua = lua.eval("function(source, name) local f,e = loadstring(source,name); assert(f,e); return f end")
 sources = {}
 for path in sorted(root.glob("*.lua")):
@@ -19,10 +21,11 @@ C_Timer = { After = function(_, fn) pending = fn end }
 InCombatLockdown = function() return false end
 UnitName = function() return "Tester" end
 GetRealmName = function() return "Realm" end
+GetLocale = function() return TEST_LOCALE end
 A = {}
 ''')
 addon = lua.globals().A
-for name in ["Core.lua", "Query.lua", "Views.lua", "Storage.lua", "ItemFeatures.lua", "BulkActions.lua", "Inventory.lua", "Placement.lua", "Features.lua", "Profiles.lua", "Interaction.lua", "Integration.lua", "BagTools.lua", "FeatureSettings.lua"]:
+for name in ["Locale.lua", "Core.lua", "Query.lua", "Views.lua", "Storage.lua", "ItemFeatures.lua", "BulkActions.lua", "Inventory.lua", "Placement.lua", "Features.lua", "Profiles.lua", "Interaction.lua", "Integration.lua", "BagTools.lua", "FeatureSettings.lua"]:
     sources[name]("BlockBags", addon)
 lua.execute('''
 A:InitializeDatabase()
@@ -885,10 +888,10 @@ MenuUtil={CreateContextMenu=function(_,generator)
     generator(nil,root)
 end}
 A:OpenCategoryMenu(A.panels.misc)
-assert(entries["Personalizar categoria"] and entries["Redimensionar no editor"])
-entries["Bloquear movimento das categorias"]()
+assert(entries[A.L["Personalizar categoria"]] and entries[A.L["Redimensionar no editor"]])
+entries[A.L["Bloquear movimento das categorias"]]()
 assert(A:GetSettings().layoutLocked)
-entries["Bloquear movimento das categorias"]()
+entries[A.L["Bloquear movimento das categorias"]]()
 assert(not A:GetSettings().layoutLocked)
 -- Drop feedback reuses its frame rather than allocating a highlight per hover.
 CursorHasItem=function() return true end
@@ -937,11 +940,11 @@ MenuUtil.CreateContextMenu=function(_,generator)
     generator(nil,root)
 end
 A.bagMenuButton.scripts.OnClick(A.bagMenuButton,"LeftButton")
-entries["Mostrar nível dos equipamentos"]()
+entries[A.L["Mostrar nível dos equipamentos"]]()
 assert(A.profile.settings.showItemLevel==false and not A.buttons["0:1"].levelLabel:IsShown())
 local decoded,err=A:DecodeProfile(A:ExportProfile()); assert(decoded,err)
 assert(decoded.settings.showItemLevel==false)
-entries["Mostrar nível dos equipamentos"]()
+entries[A.L["Mostrar nível dos equipamentos"]]()
 assert(A.buttons["0:1"].levelLabel:IsShown())
 filled=false; A:ScanInventory(); A:Reconcile(); A:Render()
 assert(not A.buttons["0:1"].levelLabel:IsShown())
@@ -955,7 +958,7 @@ PickupBagFromSlot=function(id) pickup=id end
 C_Container.GetContainerNumSlots=function(bag) return bag==5 and 40 or 32 end
 C_Container.GetContainerNumFreeSlots=function(bag) return bag==5 and 40 or 12 end
 local layout=A:ExportProfile()
-entries["Mostrar bolsas equipadas"]()
+entries[A.L["Mostrar bolsas equipadas"]]()
 assert(A.bagSlots:IsShown() and #A.bagSlots.buttons==5)
 assert(A.bagSlots.buttons[1].capacityLabel:GetText()=="20/32")
 assert(A.bagSlots.buttons[5].capacityLabel:GetText()=="0/40")
@@ -1025,7 +1028,7 @@ print("Physical view OK: all native slots grouped by bag, no virtual category dr
 lua.execute('''
 -- Settings close (including Escape's global bag-close hooks) must preserve the
 -- inventory, then restore ordinary Escape handling exactly once.
-assert(A.windowTitle:GetText()=="Inventário")
+assert(A.windowTitle:GetText()==A.L["Inventário"])
 local jobs={}
 C_Timer.After=function(_,fn) jobs[#jobs+1]=fn end
 local function flush()
@@ -1075,3 +1078,5 @@ print("Settings close OK: Escape/global bag close and queued closes preserve inv
 ''')
 
 lua.execute((root / "tests" / "expanded.lua").read_text(encoding="utf-8"))
+
+lua.execute((root / "tests" / "localization.lua").read_text(encoding="utf-8"))

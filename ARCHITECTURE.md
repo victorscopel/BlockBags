@@ -5,6 +5,8 @@ resize or move panels. Layout changes occur only through user interaction.
 
 ## Modules
 
+- Locale: client-language text and default category/tab labels; custom names remain unchanged.
+
 - Core: SavedVariables migration, event routing, coalesced refresh and combat state.
 - Inventory: reusable physical-slot models and bounded current-inventory metadata.
 - ItemFeatures: instance ilvl, usability-aware upgrades, optional Pawn, equipment

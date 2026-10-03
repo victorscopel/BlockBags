@@ -38,7 +38,7 @@ function A:DropIntoCategory(category)
         index=1
         while group.positions[index] or group.reserved[index] or (self.emptyPositions[category] or {})[index] do index=index+1 end
     end
-    if not chosen then self:Print("Não há um slot físico livre compatível para receber este item."); return false end
+    if not chosen then self:Print(A.L["Não há um slot físico livre compatível para receber este item."]); return false end
     self:RememberDrop({anchorCategory=category,anchorIndex=index,anchorSlotKey=chosen.slotKey})
     C_Container.PickupContainerItem(chosen.bag,chosen.slot)
     -- Clear the pending category assignment when a transfer fails.
@@ -51,8 +51,8 @@ function A:DropIntoCategory(category)
 end
 
 function A:CanChangeProfile()
-    if InCombatLockdown() then self:Print("Aguarde o fim do combate."); return false end
-    if self.draft then self:Print("Salve ou cancele a edição do layout antes de trocar perfis ou criar categorias."); return false end
+    if InCombatLockdown() then self:Print(A.L["Aguarde o fim do combate."]); return false end
+    if self.draft then self:Print(A.L["Salve ou cancele a edição do layout antes de trocar perfis ou criar categorias."]); return false end
     return true
 end
 
@@ -98,7 +98,7 @@ end
 function A:CreateProfile(name, duplicate)
     if not self:CanChangeProfile() then return false end
     name = (name or ""):match("^%s*(.-)%s*$")
-    if #name == 0 or #name > 60 or BlockBagsDB.profiles[name] then self:Print("Use um nome novo com até 60 caracteres."); return false end
+    if #name == 0 or #name > 60 or BlockBagsDB.profiles[name] then self:Print(A.L["Use um nome novo com até 60 caracteres."]); return false end
     local profile
     if duplicate then profile = self:Copy(self.profile); profile.placements = {}
     else
@@ -115,7 +115,7 @@ end
 function A:RenameProfile(name)
     if not self:CanChangeProfile() then return end
     name=(name or ""):match("^%s*(.-)%s*$")
-    if #name==0 or #name>60 or BlockBagsDB.profiles[name] then self:Print("Nome inválido ou já utilizado."); return end
+    if #name==0 or #name>60 or BlockBagsDB.profiles[name] then self:Print(A.L["Nome inválido ou já utilizado."]); return end
     local old=self.profileKey
     BlockBagsDB.profiles[name], BlockBagsDB.profiles[old] = self.profile, nil
     for _,positions in pairs(BlockBagsDB.inventoryPositions) do
@@ -129,7 +129,7 @@ end
 function A:DeleteProfile(name)
     if not self:CanChangeProfile() then return false end
     for _, key in pairs(BlockBagsDB.characterProfiles) do
-        if key==name then self:Print("Este perfil está em uso por um personagem. Troque o perfil antes de excluir."); return false end
+        if key==name then self:Print(A.L["Este perfil está em uso por um personagem. Troque o perfil antes de excluir."]); return false end
     end
     BlockBagsDB.profiles[name]=nil
     for _,positions in pairs(BlockBagsDB.inventoryPositions) do positions[name]=nil end
@@ -140,7 +140,7 @@ end
 function A:CreateCategory(name)
     if not self:CanChangeProfile() then return end
     name=(name or ""):match("^%s*(.-)%s*$")
-    if #name==0 or #name>60 or #self.categories>=32 then self:Print("Nome obrigatório (até 60 caracteres); limite de 32 categorias."); return end
+    if #name==0 or #name>60 or #self.categories>=32 then self:Print(A.L["Nome obrigatório (até 60 caracteres); limite de 32 categorias."]); return end
     local n=1
     while self.profile.layout["custom"..n] do n=n+1 end
     local id="custom"..n
@@ -171,10 +171,10 @@ end
 
 function A:DeleteCategory(id)
     if not self:CanChangeProfile() then return false end
-    if not self:IsCustomCategory(id) then self:Print("Categorias padrão não podem ser excluídas."); return false end
+    if not self:IsCustomCategory(id) then self:Print(A.L["Categorias padrão não podem ser excluídas."]); return false end
     local visible=0
     for other,data in pairs(self.profile.layout) do if other~=id and not data.hidden then visible=visible+1 end end
-    if visible==0 then self:Print("Mostre outra categoria antes de excluir esta."); return false end
+    if visible==0 then self:Print(A.L["Mostre outra categoria antes de excluir esta."]); return false end
     for index,cat in ipairs(self.categories) do if cat.id==id then table.remove(self.categories,index); break end end
     self.profile.layout[id]=nil
     if self.profile.categoryTabs then self.profile.categoryTabs[id]=nil end
@@ -207,7 +207,7 @@ local function encode(value)
         for _,key in ipairs(keys) do out[#out+1]=encode(key); out[#out+1]=encode(value[key]) end
         return table.concat(out)
     end
-    error("Tipo inválido")
+    error(A.L["Tipo inválido"])
 end
 
 function A:ExportProfile()
@@ -218,15 +218,15 @@ function A:ExportProfile()
 end
 
 function A:DecodeProfile(code)
-    if type(code)~="string" or #code>1048576 then return nil,"Código muito grande." end
+    if type(code)~="string" or #code>1048576 then return nil,A.L["Código muito grande."] end
     code=code:gsub("%s","")
-    if code:sub(1,4)~="BB1:" then return nil,"Formato esperado: BB1." end
+    if code:sub(1,4)~="BB1:" then return nil,A.L["Formato esperado: BB1."] end
     local hex=code:sub(5)
-    if #hex%2~=0 or hex:find("[^%x]") then return nil,"Código incompleto ou inválido." end
+    if #hex%2~=0 or hex:find("[^%x]") then return nil,A.L["Código incompleto ou inválido."] end
     local raw=hex:gsub("%x%x",function(pair) return string.char(tonumber(pair,16)) end)
     local at,nodes=1,0
     local function read(depth)
-        nodes=nodes+1; assert(depth<16 and nodes<100000,"Limite de dados excedido")
+        nodes=nodes+1; assert(depth<16 and nodes<100000,A.L["Limite de dados excedido"])
         local tag=raw:sub(at,at); at=at+1
         if tag=="b" then local b=raw:sub(at,at); at=at+1; assert(b=="0" or b=="1"); return b=="1" end
         local delimiter=tag=="n" and ";" or ":"
@@ -242,81 +242,81 @@ function A:DecodeProfile(code)
         return value
     end
     local ok,p=pcall(function() local value=read(0); assert(at==#raw+1); return value end)
-    if not ok then return nil,"Código inválido ou incompleto." end
+    if not ok then return nil,A.L["Código inválido ou incompleto."] end
     local valid,err=pcall(function() self:ValidateProfile(p) end)
-    if not valid then return nil,"Configuração inválida: "..tostring(err) end
+    if not valid then return nil,A.L["Configuração inválida: "]..tostring(err) end
     p.placements={}
     return p
 end
 
 function A:ValidateProfile(p)
-    local function number(v,lo,hi) assert(type(v)=="number" and v==v and v>=lo and v<=hi,"número fora do intervalo") end
-    assert(type(p)=="table" and p.version==1 and type(p.categories)=="table" and #p.categories>=1 and #p.categories<=32,"categorias")
+    local function number(v,lo,hi) assert(type(v)=="number" and v==v and v>=lo and v<=hi,A.L["número fora do intervalo"]) end
+    assert(type(p)=="table" and p.version==1 and type(p.categories)=="table" and #p.categories>=1 and #p.categories<=32,A.L["categorias"])
     assert(type(p.layout)=="table" and type(p.settings)=="table" and type(p.window)=="table","layout")
     local ids,visible={},0
     for _,cat in ipairs(p.categories) do
-        assert(type(cat.id)=="string" and cat.id:match("^[%w_]+$") and #cat.id<=40 and not ids[cat.id],"identificador")
-        assert(type(cat.name)=="string" and #cat.name>0 and #cat.name<=60,"nome")
+        assert(type(cat.id)=="string" and cat.id:match("^[%w_]+$") and #cat.id<=40 and not ids[cat.id],A.L["identificador"])
+        assert(type(cat.name)=="string" and #cat.name>0 and #cat.name<=60,A.L["nome"])
         ids[cat.id]=true
-        local d=p.layout[cat.id]; assert(type(d)=="table","categoria sem layout")
+        local d=p.layout[cat.id]; assert(type(d)=="table",A.L["categoria sem layout"])
         number(d.x,0,1000); number(d.y,0,1000); number(d.cols,2,30); number(d.rows,1,30)
-        for _,key in ipairs({"cols","rows"}) do assert(d[key]%1==0,"grade inteira") end
+        for _,key in ipairs({"cols","rows"}) do assert(d[key]%1==0,A.L["grade inteira"]) end
         number(d.itemSize,24,56); number(d.itemSpacing,0,12)
         if d.width then number(d.width,96,12000) end
         if d.height then number(d.height,76,12000) end
         local _,_,w,h=self:PanelRect(d)
         local minW,minH=self:MinimumPanelSize(d)
-        assert(w>=minW and h>=minH,"categoria menor que um item")
+        assert(w>=minW and h>=minH,A.L["categoria menor que um item"])
         cat.x,cat.y,cat.cols,cat.rows=d.x,d.y,d.cols,d.rows
         assert(d.hidden==nil or type(d.hidden)=="boolean"); assert(d.compact==nil or type(d.compact)=="boolean")
         if d.name then assert(type(d.name)=="string" and #d.name>0 and #d.name<=60) end
         if d.rule then
-            assert(type(d.rule)=="string" and #d.rule<=256,"regra inválida")
+            assert(type(d.rule)=="string" and #d.rule<=256,A.L["regra inválida"])
             local valid,err=self:ValidateCategoryRule(d.rule); assert(valid,err)
-            assert(cat.id~="reagentbag" or d.rule=="","bolsa física de reagentes")
+            assert(cat.id~="reagentbag" or d.rule=="",A.L["bolsa física de reagentes"])
         end
         if d.tint then for _,key in ipairs({"r","g","b"}) do number(d.tint[key],0,1) end end
         if not d.hidden then visible=visible+1 end
     end
-    assert(visible>0,"todas as categorias ocultas")
-    for _,cat in ipairs(self.baseCategories) do assert(ids[cat.id],"categoria padrão ausente") end
-    for id in pairs(p.layout) do assert(ids[id],"layout desconhecido") end
+    assert(visible>0,A.L["todas as categorias ocultas"])
+    for _,cat in ipairs(self.baseCategories) do assert(ids[cat.id],A.L["categoria padrão ausente"]) end
+    for id in pairs(p.layout) do assert(ids[id],A.L["layout desconhecido"]) end
     number(p.settings.categorySpacing,0,16)
-    assert(p.settings.layoutLocked==nil or type(p.settings.layoutLocked)=="boolean","bloqueio de layout")
-    assert(p.settings.showItemLevel==nil or type(p.settings.showItemLevel)=="boolean","nível dos equipamentos")
-    for _,key in ipairs({"showUpgrade","showEquipmentSets","showTransmog"}) do assert(p.settings[key]==nil or type(p.settings[key])=="boolean","indicador") end
-    assert(p.settings.upgradeProvider==nil or p.settings.upgradeProvider=="ilvl" or p.settings.upgradeProvider=="pawn","avaliação de equipamento")
+    assert(p.settings.layoutLocked==nil or type(p.settings.layoutLocked)=="boolean",A.L["bloqueio de layout"])
+    assert(p.settings.showItemLevel==nil or type(p.settings.showItemLevel)=="boolean",A.L["nível dos equipamentos"])
+    for _,key in ipairs({"showUpgrade","showEquipmentSets","showTransmog"}) do assert(p.settings[key]==nil or type(p.settings[key])=="boolean",A.L["indicador"]) end
+    assert(p.settings.upgradeProvider==nil or p.settings.upgradeProvider=="ilvl" or p.settings.upgradeProvider=="pawn",A.L["avaliação de equipamento"])
     if p.settings.currencies then
-        assert(type(p.settings.currencies)=="table" and #p.settings.currencies<=7,"moedas")
+        assert(type(p.settings.currencies)=="table" and #p.settings.currencies<=7,A.L["moedas"])
         local seen={}
         for index,id in pairs(p.settings.currencies) do
             number(index,1,#p.settings.currencies); number(id,1,10000000)
-            assert(index%1==0 and id%1==0 and not seen[id],"moeda duplicada/inválida"); seen[id]=true
+            assert(index%1==0 and id%1==0 and not seen[id],A.L["moeda duplicada/inválida"]); seen[id]=true
         end
     end
     local tabIDs={default=true}
     if p.tabs then
-        assert(type(p.tabs)=="table" and #p.tabs>=1 and #p.tabs<=8 and p.tabs[1].id=="default","abas")
+        assert(type(p.tabs)=="table" and #p.tabs>=1 and #p.tabs<=8 and p.tabs[1].id=="default",A.L["abas"])
         tabIDs={}
         for _,tab in ipairs(p.tabs) do
-            assert(type(tab.id)=="string" and (tab.id=="default" or tab.id:match("^tab%d+$")) and not tabIDs[tab.id],"aba inválida")
-            assert(type(tab.name)=="string" and #tab.name>0 and #tab.name<=40,"nome de aba")
+            assert(type(tab.id)=="string" and (tab.id=="default" or tab.id:match("^tab%d+$")) and not tabIDs[tab.id],A.L["aba inválida"])
+            assert(type(tab.name)=="string" and #tab.name>0 and #tab.name<=40,A.L["nome de aba"])
             tabIDs[tab.id]=true
         end
     end
-    assert(p.categoryTabs==nil or type(p.categoryTabs)=="table","categorias das abas")
-    for id,tab in pairs(p.categoryTabs or {}) do assert(ids[id] and tabIDs[tab],"atribuição de aba") end
+    assert(p.categoryTabs==nil or type(p.categoryTabs)=="table",A.L["categorias das abas"])
+    for id,tab in pairs(p.categoryTabs or {}) do assert(ids[id] and tabIDs[tab],A.L["atribuição de aba"]) end
     number(p.window.scale or 0.85,0.5,1.25)
     if p.window.width then number(p.window.width,400,50000) end
     if p.window.height then number(p.window.height,300,50000) end
     number(p.window.x or 0,-50000,50000); number(p.window.y or 0,-50000,50000)
     p.manualCategories=p.manualCategories or {}; p.favorites=p.favorites or {}
-    for id,cat in pairs(p.manualCategories) do number(id,1,10000000); assert(id%1==0 and ids[cat],"regra inválida") end
-    assert(type(p.manualCategories)=="table" and type(p.favorites)=="table","regras")
+    for id,cat in pairs(p.manualCategories) do number(id,1,10000000); assert(id%1==0 and ids[cat],A.L["regra inválida"]) end
+    assert(type(p.manualCategories)=="table" and type(p.favorites)=="table",A.L["regras"])
     for id,f in pairs(p.favorites) do
-        number(id,1,10000000); assert(id%1==0 and type(f)=="table" and ids[f.category],"favorito inválido")
+        number(id,1,10000000); assert(id%1==0 and type(f)=="table" and ids[f.category],A.L["favorito inválido"])
         number(f.index,1,4096); assert(f.index%1==0)
-        assert(f.name==nil or (type(f.name)=="string" and #f.name<=512),"nome de favorito")
+        assert(f.name==nil or (type(f.name)=="string" and #f.name<=512),A.L["nome de favorito"])
         f.identity=nil -- GUIDs and physical inventory positions are never shared.
     end
     for id,a in pairs(p.layout) do
@@ -324,17 +324,17 @@ function A:ValidateProfile(p)
             if id<other and not a.hidden and not b.hidden and ((p.categoryTabs or {})[id] or "default")==((p.categoryTabs or {})[other] or "default") then
                 local function rect(d) return self:PanelRect(d) end
                 local ax,ay,aw,ah=rect(a); local bx,by,bw,bh=rect(b)
-                assert(not (ax<bx+bw and ax+aw>bx and ay<by+bh and ay+ah>by),"categorias sobrepostas")
+                assert(not (ax<bx+bw and ax+aw>bx and ay<by+bh and ay+ah>by),A.L["categorias sobrepostas"])
             end
         end
     end
     if p.extraLayouts then
-        assert(type(p.extraLayouts)=="table","layouts adicionais")
+        assert(type(p.extraLayouts)=="table",A.L["layouts adicionais"])
         local count=0
         for key,layout in pairs(p.extraLayouts) do
-            count=count+1; assert(count<=64 and type(key)=="string" and #key<=60,"limite de layouts")
+            count=count+1; assert(count<=64 and type(key)=="string" and #key<=60,A.L["limite de layouts"])
             local storage,tab=key:match("^([%w_]+):([%w_]+)$")
-            assert((storage=="bags" or storage=="character" or storage and storage:match("^account_%d+$")) and tabIDs[tab],"área/aba desconhecida")
+            assert((storage=="bags" or storage=="character" or storage and storage:match("^account_%d+$")) and tabIDs[tab],A.L["área/aba desconhecida"])
             self:ValidateProfile({version=1,categories=self:Copy(p.categories),layout=layout,settings=p.settings,window=p.window,
                 tabs=p.tabs,categoryTabs=p.categoryTabs,manualCategories={},favorites={}})
         end
@@ -344,7 +344,7 @@ end
 function A:ImportProfile(name,code)
     if not self:CanChangeProfile() then return false end
     name=(name or ""):match("^%s*(.-)%s*$")
-    if #name==0 or #name>60 or BlockBagsDB.profiles[name] then self:Print("Escolha um nome novo para importar sem substituir perfis."); return false end
+    if #name==0 or #name>60 or BlockBagsDB.profiles[name] then self:Print(A.L["Escolha um nome novo para importar sem substituir perfis."]); return false end
     local p,err=self:DecodeProfile(code)
     if not p then self:Print(err); return false end
     p.version=nil

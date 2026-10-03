@@ -27,20 +27,20 @@ function A:GetScannedBags()
     return {}
 end
 function A:StorageChoices()
-    local choices={{id="bags",name="Inventário"}}
+    local choices={{id="bags",name=A.L["Inventário"]}}
     if not self.atBank or not Enum.BankType then return choices end
-    if C_Bank.CanViewBank(Enum.BankType.Character) then choices[#choices+1]={id="character",name="Banco do personagem"} end
+    if C_Bank.CanViewBank(Enum.BankType.Character) then choices[#choices+1]={id="character",name=A.L["Banco do personagem"]} end
     local names={}
     if C_Bank.FetchPurchasedBankTabData and C_Bank.CanViewBank(Enum.BankType.Account) then
         for _,tab in ipairs(C_Bank.FetchPurchasedBankTabData(Enum.BankType.Account) or {}) do names[tab.ID]=tab.name end
     end
     for index,id in ipairs(self:GetBankContainers(Enum.BankType.Account)) do
-        choices[#choices+1]={id="account_"..id,name="Tropa: "..(names[id] or "Aba "..index)}
+        choices[#choices+1]={id="account_"..id,name=A.L["Tropa: "]..(names[id] or A.L["Aba "]..index)}
     end
     return choices
 end
 function A:SetStorage(storage)
-    if self.draft or InCombatLockdown() then self:Print("Salve ou cancele a edição antes de trocar de armazenamento."); return false end
+    if self.draft or InCombatLockdown() then self:Print(A.L["Salve ou cancele a edição antes de trocar de armazenamento."]); return false end
     local found=false; for _,choice in ipairs(self:StorageChoices()) do if choice.id==storage then found=true end end
     if not found then return false end
     self:CancelBulkAction()
@@ -66,7 +66,7 @@ function A:PaintStorageSelector()
         end)
     end
     self.storageSelector:SetShown(self.atBank==true and not self.draft)
-    local name="Inventário"
+    local name=A.L["Inventário"]
     for _,choice in ipairs(self:StorageChoices()) do if choice.id==(self.storage or "bags") then name=choice.name end end
     self.storageSelector:OverrideText(name)
     self.windowTitle:SetText(name)
@@ -105,11 +105,11 @@ end
 function A:PurchaseBankTab(bankType)
     if InCombatLockdown() or not self.atBank or not C_Bank.CanPurchaseBankTab or not C_Bank.CanPurchaseBankTab(bankType) then return end
     local data=C_Bank.FetchNextPurchasableBankTabData(bankType)
-    if not data or not data.canAfford then self:Print("Não há uma aba disponível para compra ou gold suficiente."); return end
+    if not data or not data.canAfford then self:Print(A.L["Não há uma aba disponível para compra ou gold suficiente."]); return end
     local ok,costText=pcall(GetCoinTextureString,data.tabCost)
-    if not ok or type(costText)~="string" then self:Print("Não foi possível obter o preço desta aba."); return end
+    if not ok or type(costText)~="string" then self:Print(A.L["Não foi possível obter o preço desta aba."]); return end
     StaticPopupDialogs.BLOCKBAGS_PURCHASE_BANK_TAB=StaticPopupDialogs.BLOCKBAGS_PURCHASE_BANK_TAB or {
-        text="%s",button1=ACCEPT or "Comprar",button2=CANCEL,timeout=0,whileDead=true,hideOnEscape=true,
+        text="%s",button1=ACCEPT or A.L["Comprar"],button2=CANCEL,timeout=0,whileDead=true,hideOnEscape=true,
         OnAccept=function(_,info)
             if not A.atBank or InCombatLockdown() or not C_Bank.CanPurchaseBankTab(info.bankType) then return end
             local current=C_Bank.FetchNextPurchasableBankTabData(info.bankType)
@@ -118,7 +118,7 @@ function A:PurchaseBankTab(bankType)
             if not ok or cost~=info.costText then A:PurchaseBankTab(info.bankType); return end
             C_Bank.PurchaseBankTab(info.bankType)
         end}
-    local message=(data.purchasePromptTitle or "Comprar aba do banco").."\nCusto: "..costText.."\nConfirmar a compra?"
+    local message=(data.purchasePromptTitle or A.L["Comprar aba do banco"])..A.L["\nCusto: "]..costText..A.L["\nConfirmar a compra?"]
     StaticPopup_Show("BLOCKBAGS_PURCHASE_BANK_TAB",message,nil,{bankType=bankType,costText=costText})
 end
 function A:BankClosed()

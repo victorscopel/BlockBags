@@ -28,7 +28,7 @@ function A:DecorateInventory()
     caption:EnableMouse(false)
     self.windowTitle=caption:CreateFontString(nil,"OVERLAY","GameFontNormalSmall")
     self.windowTitle:SetPoint("CENTER")
-    self.windowTitle:SetText("Inventário")
+    self.windowTitle:SetText(A.L["Inventário"])
 end
 
 function A:StyleCategory(panel,data)

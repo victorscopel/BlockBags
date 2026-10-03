@@ -15,7 +15,7 @@ end
 function A:UndoEdit()
     if not self.draft or InCombatLockdown() then return end
     local snapshot = table.remove(self.undoStack or {})
-    if not snapshot then self:Print("Nada para desfazer."); return end
+    if not snapshot then self:Print(A.L["Nada para desfazer."]); return end
     self.draft, self.draftSettings = snapshot.layout, snapshot.settings
     if self.visibilityChanged then
         for _,item in ipairs(self.items or {}) do item.category=self:Classify(item) end
@@ -29,7 +29,7 @@ end
 function A:SetManualCategory(item, category, index)
     if InCombatLockdown() or self.draft then return end
     if category == "reagentbag" or item.bag == Enum.BagIndex.ReagentBag then
-        self:Print("A categoria da bolsa de reagentes acompanha a bolsa física."); return
+        self:Print(A.L["A categoria da bolsa de reagentes acompanha a bolsa física."]); return
     end
     local id = item.info.itemID
     self.profile.manualCategories[id] = category
@@ -76,7 +76,7 @@ function A:OpenItemActions(item)
             return b
         end
         f.favorite=action("",-42,function() if f.item then self:ToggleFavorite(f.item) end; f:Hide() end)
-        action("Restaurar categoria automática",-72,function() if f.item then self:SetManualCategory(f.item,nil) end; f:Hide() end)
+        action(A.L["Restaurar categoria automática"],-72,function() if f.item then self:SetManualCategory(f.item,nil) end; f:Hide() end)
         for i=1,6 do
             local b=action("",-110-(i-1)*29,function()
                 local cat=f.choices and f.choices[(f.page-1)*6+i]
@@ -89,17 +89,17 @@ function A:OpenItemActions(item)
             for i,b in ipairs(f.rows) do
                 local cat=f.choices[(f.page-1)*6+i]
                 b:SetShown(cat~=nil)
-                if cat then b:SetText("Mover para "..self:CategoryName(cat.id)) end
+                if cat then b:SetText(A.L["Mover para "]..self:CategoryName(cat.id)) end
             end
         end
-        f.next=action("Mais categorias",-298,function() f.page=f.page%math.max(1,math.ceil(#f.choices/6))+1; f.Draw() end)
+        f.next=action(A.L["Mais categorias"],-298,function() f.page=f.page%math.max(1,math.ceil(#f.choices/6))+1; f.Draw() end)
         f:SetScript("OnHide",function() f.item=nil; f.choices=nil end)
     end
     if self.favoriteDialog then self.favoriteDialog:Hide() end
     f.item=self:Copy(item); f.page=1; f.choices={}
     for _,cat in ipairs(self.categories) do if cat.id~="reagentbag" and not self:GetLayout()[cat.id].hidden then f.choices[#f.choices+1]=cat end end
     f.title:SetText(item.name)
-    f.favorite:SetText(self.profile.favorites[item.info.itemID] and "Remover favorito" or "Favoritar e fixar neste slot")
+    f.favorite:SetText(self.profile.favorites[item.info.itemID] and A.L["Remover favorito"] or A.L["Favoritar e fixar neste slot"])
     f.next:SetShown(#f.choices>6); f.Draw(); f:Show()
 end
 
@@ -107,7 +107,7 @@ function A:OpenFavorites()
     if InCombatLockdown() then return end
     local f=self.favoriteDialog
     if not f then
-        f=self:CreateEditorDialog("Favoritos",340); self.favoriteDialog=f
+        f=self:CreateEditorDialog(A.L["Favoritos"],340); self.favoriteDialog=f
         f.page=1; f.rows={}
         for row=1,7 do
             local b=CreateFrame("Button",nil,f,"UIPanelButtonTemplate")
@@ -119,15 +119,15 @@ function A:OpenFavorites()
             f.rows[row]=b
         end
         f.Draw=function()
-            f.title:SetText(#f.entries==0 and "Você ainda não tem favoritos" or "Favoritos — página "..f.page)
+            f.title:SetText(#f.entries==0 and A.L["Você ainda não tem favoritos"] or A.L["Favoritos — página "]..f.page)
             for row,b in ipairs(f.rows) do
                 local entry=f.entries[(f.page-1)*7+row]
                 b:SetShown(entry~=nil)
-                if entry then b:SetText("Remover: "..(entry.name or tostring(entry.id))) end
+                if entry then b:SetText(A.L["Remover: "]..(entry.name or tostring(entry.id))) end
             end
         end
         local nextPage=CreateFrame("Button",nil,f,"UIPanelButtonTemplate")
-        nextPage:SetSize(135,24); nextPage:SetPoint("BOTTOMRIGHT",-20,17); nextPage:SetText("Próxima página")
+        nextPage:SetSize(135,24); nextPage:SetPoint("BOTTOMRIGHT",-20,17); nextPage:SetText(A.L["Próxima página"])
         nextPage:SetScript("OnClick",function() f.page=f.page%math.max(1,math.ceil(#f.entries/7))+1; f.Draw() end)
         f:SetScript("OnHide",function() f.entries=nil end)
     end
@@ -145,12 +145,12 @@ function A:ReportMemory(collect)
     if update then update() end
     local kb=memory and memory("BlockBags") or 0
     if collect then
-        if InCombatLockdown() then self:Print("Faça este diagnóstico fora de combate."); return end
+        if InCombatLockdown() then self:Print(A.L["Faça este diagnóstico fora de combate."]); return end
         local ok,err=pcall(collectgarbage,"collect")
-        if not ok then self:Print("O cliente não permitiu a coleta: "..tostring(err)); return end
+        if not ok then self:Print(A.L["O cliente não permitiu a coleta: "]..tostring(err)); return end
         if update then update() end
         local after=memory and memory("BlockBags") or 0
-        self:Print(string.format("Coleta manual: %.2f MB antes → %.2f MB depois; %.2f MB liberados.",kb/1024,after/1024,(kb-after)/1024))
+        self:Print(string.format(A.L["Coleta manual: %.2f MB antes → %.2f MB depois; %.2f MB liberados."],kb/1024,after/1024,(kb-after)/1024))
         kb=after
     end
     local buttons,panels,cache,loading=0,0,0,0
@@ -158,10 +158,10 @@ function A:ReportMemory(collect)
     for _ in pairs(self.panels or {}) do panels=panels+1 end
     for _ in pairs(self.itemCache or {}) do cache=cache+1 end
     for _ in pairs(self.loading or {}) do loading=loading+1 end
-    self:Print(string.format("Memória atribuída: %.2f MB; botões: %d; painéis: %d; metadados: %d; cargas pendentes: %d; histórico: %d.",kb/1024,buttons,panels,cache,loading,#(self.undoStack or {})))
-    if self.lastMemoryKB then self:Print(string.format("Diferença desde a medição anterior: %+.2f MB.",(kb-self.lastMemoryKB)/1024)) end
+    self:Print(string.format(A.L["Memória atribuída: %.2f MB; botões: %d; painéis: %d; metadados: %d; cargas pendentes: %d; histórico: %d."],kb/1024,buttons,panels,cache,loading,#(self.undoStack or {})))
+    if self.lastMemoryKB then self:Print(string.format(A.L["Diferença desde a medição anterior: %+.2f MB."],(kb-self.lastMemoryKB)/1024)) end
     self.lastMemoryKB=kb
-    if not collect then self:Print("/ab memory gc compara antes/depois de uma coleta manual. Use fora de combate; pode causar uma pausa breve.") end
+    if not collect then self:Print(A.L["/bb memory gc compara antes/depois de uma coleta manual. Use fora de combate; pode causar uma pausa breve."]) end
 end
 
 function A:CollectSearchResults(query)

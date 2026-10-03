@@ -34,23 +34,23 @@ function A:SettingsChanged()
 end
 
 function A:SetCategoryOption(id,key,value)
-    if InCombatLockdown() then self:Print("Aguarde o fim do combate."); return end
+    if InCombatLockdown() then self:Print(A.L["Aguarde o fim do combate."]); return end
     local data=self:GetLayout()[id]
     if not data then return end
     if key=="rule" then
-        if id=="reagentbag" then self:Print("A bolsa de reagentes acompanha a bolsa física."); return end
+        if id=="reagentbag" then self:Print(A.L["A bolsa de reagentes acompanha a bolsa física."]); return end
         local valid,err=self:ValidateCategoryRule(value)
         if not valid then self:Print(err); return end
     end
     if key=="width" or key=="height" then
-        if not self.draft then self:Print("Entre no modo Editar layout para alterar dimensões."); self:RefreshSettings(); return end
+        if not self.draft then self:Print(A.L["Entre no modo Editar layout para alterar dimensões."]); self:RefreshSettings(); return end
         local candidate=self:Copy(data); candidate[key]=value
-        if not self:CanPlace(id,candidate) then self:Print("Esse tamanho não cabe: verifique o mínimo, os outros painéis e a janela."); self:RefreshSettings(); return end
+        if not self:CanPlace(id,candidate) then self:Print(A.L["Esse tamanho não cabe: verifique o mínimo, os outros painéis e a janela."]); self:RefreshSettings(); return end
     end
     if key=="hidden" and value then
         local visible=0
         for _,d in pairs(self:GetLayout()) do if not d.hidden then visible=visible+1 end end
-        if visible<=1 then self:Print("Mantenha pelo menos uma categoria visível."); return end
+        if visible<=1 then self:Print(A.L["Mantenha pelo menos uma categoria visível."]); return end
     end
     if key=="hidden" and not value then
         -- A hidden panel may have been overlapped during layout editing.
@@ -75,7 +75,7 @@ end
 function A:ChooseCategoryColor(id)
     if InCombatLockdown() then return end
     if not ColorPickerFrame and C_AddOns then C_AddOns.LoadAddOn("Blizzard_ColorPicker") end
-    if not ColorPickerFrame or not ColorPickerFrame.SetupColorPickerAndShow then self:Print("Seletor de cores do WoW indisponível."); return end
+    if not ColorPickerFrame or not ColorPickerFrame.SetupColorPickerAndShow then self:Print(A.L["Seletor de cores do WoW indisponível."]); return end
     local layout=self:GetLayout()
     local before=self:Copy(layout[id].tint)
     local c=before or {r=0.4,g=0.65,b=1}
@@ -110,12 +110,12 @@ function A:RegisterSettings()
     local general=page("BlockBags",780)
     local category=Settings.RegisterCanvasLayoutCategory(general,"BlockBags")
     Settings.RegisterAddOnCategory(category)
-    local categories=page("Categorias",1480)
-    local categoryPage=Settings.RegisterCanvasLayoutSubcategory(category,categories,"Categorias")
-    local profiles=page("Perfis",840)
-    local profilePage=Settings.RegisterCanvasLayoutSubcategory(category,profiles,"Perfis")
-    local features=page("Moedas, indicadores e abas",1080)
-    local featurePage=Settings.RegisterCanvasLayoutSubcategory(category,features,"Recursos")
+    local categories=page(A.L["Categorias"],1480)
+    local categoryPage=Settings.RegisterCanvasLayoutSubcategory(category,categories,A.L["Categorias"])
+    local profiles=page(A.L["Perfis"],840)
+    local profilePage=Settings.RegisterCanvasLayoutSubcategory(category,profiles,A.L["Perfis"])
+    local features=page(A.L["Moedas, indicadores e abas"],1080)
+    local featurePage=Settings.RegisterCanvasLayoutSubcategory(category,features,A.L["Recursos"])
     self.settingsPages={general=general,categories=categories,profiles=profiles,features=features}
     self.settingsIDs={general=category:GetID(),categories=categoryPage:GetID(),profiles=profilePage:GetID(),features=featurePage:GetID()}
     for _,panel in pairs(self.settingsPages) do panel:SetScript("OnShow",function() self:BuildSettingsControls(); self:RefreshSettings() end) end
@@ -127,10 +127,10 @@ function A:BuildSettingsControls()
     self.settingsControls={}
     local controls=self.settingsControls
     local g,c,p=self.settingsPages.general.content,self.settingsPages.categories.content,self.settingsPages.profiles.content
-    local status=section(g,"Perfil e edição",-42,106)
+    local status=section(g,A.L["Perfil e edição"],-42,106)
     controls.info=text(status,"",16,-44,560)
-    text(status,"As opções são salvas no perfil ativo. No editor, use Salvar ou Cancelar.",16,-72,560)
-    local layout=section(g,"Layout do inventário",-160,188)
+    text(status,A.L["As opções são salvas no perfil ativo. No editor, use Salvar ou Cancelar."],16,-72,560)
+    local layout=section(g,A.L["Layout do inventário"],-160,188)
     controls.generalSpacing=self:CreateSettingSlider(layout,-91,0,16,1,function(value)
         if InCombatLockdown() then self:RefreshSettings(); return end
         if self.draft then self:PushUndo() end
@@ -138,18 +138,18 @@ function A:BuildSettingsControls()
         self:PackLayout(self:GetLayout(),value)
         self:SettingsChanged(); self:RefreshSettings()
     end)
-    text(layout,"Define a distância real entre painéis. Alterar este valor aproxima as categorias mantendo sua ordem. Itens entrando ou saindo nunca movem os painéis.",16,-122,560)
-    local actions=section(g,"Acesso rápido",-360,94)
-    button(actions,"Editar layout",16,-48,180,function() SettingsPanel:Hide(); self.window:Show(); self:StartEdit() end)
-    button(actions,"Gerenciar favoritos",212,-48,190,function() SettingsPanel:Hide(); self.window:Show(); self:OpenFavorites() end)
-    local help=section(g,"Organização dos itens",-466,146)
-    text(help,"Arraste entre categorias ou use Alt + clique direito para atribuir um item. Missões reúne itens que o WoW associa a uma missão. A bolsa física de reagentes mantém suas restrições.",16,-44,560)
-    button(help,"Diagnóstico de memória",16,-105,210,function() self:ReportMemory() end)
-    local direct=section(g,"Movimento direto das categorias",-624,110)
+    text(layout,A.L["Define a distância real entre painéis. Alterar este valor aproxima as categorias mantendo sua ordem. Itens entrando ou saindo nunca movem os painéis."],16,-122,560)
+    local actions=section(g,A.L["Acesso rápido"],-360,94)
+    button(actions,A.L["Editar layout"],16,-48,180,function() SettingsPanel:Hide(); self.window:Show(); self:StartEdit() end)
+    button(actions,A.L["Gerenciar favoritos"],212,-48,190,function() SettingsPanel:Hide(); self.window:Show(); self:OpenFavorites() end)
+    local help=section(g,A.L["Organização dos itens"],-466,146)
+    text(help,A.L["Arraste entre categorias ou use Alt + clique direito para atribuir um item. Missões reúne itens que o WoW associa a uma missão. A bolsa física de reagentes mantém suas restrições."],16,-44,560)
+    button(help,A.L["Diagnóstico de memória"],16,-105,210,function() self:ReportMemory() end)
+    local direct=section(g,A.L["Movimento direto das categorias"],-624,110)
     controls.layoutLock=button(direct,"",16,-40,255,function() self:ToggleLayoutLock() end)
-    text(direct,"Arraste o cabeçalho sem abrir o editor. Shift ignora o encaixe. Clique direito no cabeçalho abre as opções da categoria.",16,-77,560)
+    text(direct,A.L["Arraste o cabeçalho sem abrir o editor. Shift ignora o encaixe. Clique direito no cabeçalho abre as opções da categoria."],16,-77,560)
 
-    local choose=section(c,"Categoria selecionada",-42,92)
+    local choose=section(c,A.L["Categoria selecionada"],-42,92)
     controls.categorySelect=dropdown(choose,16,-47,350,function(_,root)
         for _,cat in ipairs(self.categories) do
             root:CreateRadio(self:CategoryName(cat.id),function(id) return self.settingsCategory==id end,
@@ -157,9 +157,9 @@ function A:BuildSettingsControls()
         end
     end)
     controls.categoryTitle=text(choose,"",385,-52,200)
-    local identity=section(c,"Nome e comportamento",-146,199)
+    local identity=section(c,A.L["Nome e comportamento"],-146,199)
     controls.categoryName=input(identity,20,-50,340)
-    button(identity,"Renomear",380,-50,160,function()
+    button(identity,A.L["Renomear"],380,-50,160,function()
         local name=(controls.categoryName:GetText() or ""):match("^%s*(.-)%s*$")
         if #name>0 and #name<=60 then self:SetCategoryOption(self.settingsCategory,"name",name) end
     end)
@@ -169,57 +169,57 @@ function A:BuildSettingsControls()
     controls.positions=button(identity,"",248,-89,292,function()
         local d=self:GetLayout()[self.settingsCategory]; self:SetCategoryOption(self.settingsCategory,"compact",not d.compact)
     end)
-    text(identity,"Ocultar mantém os itens acessíveis em outra categoria visível.",20,-127,550)
-    controls.deleteCategory=button(identity,"Excluir categoria criada",20,-158,245,function()
+    text(identity,A.L["Ocultar mantém os itens acessíveis em outra categoria visível."],20,-127,550)
+    controls.deleteCategory=button(identity,A.L["Excluir categoria criada"],20,-158,245,function()
         if self:CanChangeProfile() and self:IsCustomCategory(self.settingsCategory) then
             StaticPopup_Show("BLOCKBAGS_DELETE_CATEGORY",self:CategoryName(self.settingsCategory),nil,{id=self.settingsCategory})
         end
     end)
-    local dimensions=section(c,"Dimensões do painel",-357,212)
+    local dimensions=section(c,A.L["Dimensões do painel"],-357,212)
     controls.width=self:CreateSettingSlider(dimensions,-85,96,12000,1,function(value) self:SetCategoryOption(self.settingsCategory,"width",value) end)
     controls.height=self:CreateSettingSlider(dimensions,-148,76,12000,1,function(value) self:SetCategoryOption(self.settingsCategory,"height",value) end)
-    text(dimensions,"Disponíveis no modo Editar layout. Valores em pixels; espaço sobrando é permitido.",20,-178,550)
-    local appearance=section(c,"Aparência desta categoria",-581,251)
+    text(dimensions,A.L["Disponíveis no modo Editar layout. Valores em pixels; espaço sobrando é permitido."],20,-178,550)
+    local appearance=section(c,A.L["Aparência desta categoria"],-581,251)
     controls.size=self:CreateSettingSlider(appearance,-91,24,56,2,function(value) self:SetCategoryOption(self.settingsCategory,"itemSize",value) end)
     controls.spacing=self:CreateSettingSlider(appearance,-154,0,12,1,function(value) self:SetCategoryOption(self.settingsCategory,"itemSpacing",value) end)
-    controls.color=button(appearance,"Escolher cor…",20,-198,210,function() self:ChooseCategoryColor(self.settingsCategory) end)
+    controls.color=button(appearance,A.L["Escolher cor…"],20,-198,210,function() self:ChooseCategoryColor(self.settingsCategory) end)
     controls.swatch=controls.color:CreateTexture(nil,"OVERLAY")
     controls.swatch:SetSize(18,18); controls.swatch:SetPoint("RIGHT",-8,0)
-    button(appearance,"Remover cor",248,-198,160,function() self:SetCategoryOption(self.settingsCategory,"tint",nil) end)
-    local create=section(c,"Criar categoria",-844,149)
+    button(appearance,A.L["Remover cor"],248,-198,160,function() self:SetCategoryOption(self.settingsCategory,"tint",nil) end)
+    local create=section(c,A.L["Criar categoria"],-844,149)
     controls.newCategory=input(create,20,-50,340)
-    button(create,"Criar",380,-50,160,function()
+    button(create,A.L["Criar"],380,-50,160,function()
         local id=self:CreateCategory(controls.newCategory:GetText())
         if id then self.settingsCategory=id; controls.newCategory:SetText(""); self:RefreshSettings() end
     end)
-    text(create,"Atribua itens por arraste ou escolha manual. Depois, posicione e redimensione o painel no editor. Encerre a edição antes de criar uma categoria.",20,-90,550)
-    local automatic=section(c,"Regra automática desta categoria",-1005,260)
+    text(create,A.L["Atribua itens por arraste ou escolha manual. Depois, posicione e redimensione o painel no editor. Encerre a edição antes de criar uma categoria."],20,-90,550)
+    local automatic=section(c,A.L["Regra automática desta categoria"],-1005,260)
     controls.rule=input(automatic,20,-51,540); controls.rule:SetMaxLetters(256)
-    controls.applyRule=button(automatic,"Aplicar regra",20,-86,220,function()
+    controls.applyRule=button(automatic,A.L["Aplicar regra"],20,-86,220,function()
         self:SetCategoryOption(self.settingsCategory,"rule",controls.rule:GetText())
     end)
-    text(automatic,"Exemplos: tipo:consumivel   qualidade:epico   nivel:>=80\nCombine filtros com espaços: tipo:equipamento !qualidade:lixo\nTexto simples procura pelo nome. Regra vazia remove a classificação automática desta categoria. A primeira regra compatível na lista vence; atribuições manuais e favoritos têm prioridade.",20,-130,560)
+    text(automatic,A.L["Exemplos: tipo:consumivel   qualidade:epico   nivel:>=80\nCombine filtros com espaços: tipo:equipamento !qualidade:lixo\nTexto simples procura pelo nome. Regra vazia remove a classificação automática desta categoria. A primeira regra compatível na lista vence; atribuições manuais e favoritos têm prioridade."],20,-130,560)
 
-    local active=section(p,"Selecionar perfil",-42,154)
+    local active=section(p,A.L["Selecionar perfil"],-42,154)
     controls.profileTitle=text(active,"",20,-43,550)
     controls.profileSelect=dropdown(active,20,-77,330,function(_,root)
         local keys={}; for key in pairs(BlockBagsDB.profiles) do keys[#keys+1]=key end; table.sort(keys)
         for _,key in ipairs(keys) do root:CreateRadio(key,function(name) return self.settingsProfile==name end,
             function(name) self.settingsProfile=name; self:RefreshSettings() end,key) end
     end)
-    button(active,"Ativar",365,-77,90,function() self:SelectProfile(self.settingsProfile) end)
-    button(active,"Excluir",470,-77,90,function()
+    button(active,A.L["Ativar"],365,-77,90,function() self:SelectProfile(self.settingsProfile) end)
+    button(active,A.L["Excluir"],470,-77,90,function()
         if self:CanChangeProfile() then StaticPopup_Show("BLOCKBAGS_DELETE_PROFILE",self.settingsProfile,nil,{name=self.settingsProfile}) end
     end)
     controls.profileChoice=text(active,"",20,-119,550)
-    local manage=section(p,"Criar ou renomear",-208,167)
-    text(manage,"Nome do perfil",20,-43,550)
+    local manage=section(p,A.L["Criar ou renomear"],-208,167)
+    text(manage,A.L["Nome do perfil"],20,-43,550)
     controls.profileName=input(manage,20,-69,540)
-    button(manage,"Criar vazio",20,-111,160,function() self:CreateProfile(controls.profileName:GetText(),false) end)
-    button(manage,"Duplicar ativo",198,-111,172,function() self:CreateProfile(controls.profileName:GetText(),true) end)
-    button(manage,"Renomear ativo",388,-111,172,function() self:RenameProfile(controls.profileName:GetText()) end)
-    local transfer=section(p,"Importar e exportar",-387,368)
-    text(transfer,"Digite um nome acima para importar. Cole o código abaixo; a importação cria um perfil novo e não substitui os existentes.",20,-43,550)
+    button(manage,A.L["Criar vazio"],20,-111,160,function() self:CreateProfile(controls.profileName:GetText(),false) end)
+    button(manage,A.L["Duplicar ativo"],198,-111,172,function() self:CreateProfile(controls.profileName:GetText(),true) end)
+    button(manage,A.L["Renomear ativo"],388,-111,172,function() self:RenameProfile(controls.profileName:GetText()) end)
+    local transfer=section(p,A.L["Importar e exportar"],-387,368)
+    text(transfer,A.L["Digite um nome acima para importar. Cole o código abaixo; a importação cria um perfil novo e não substitui os existentes."],20,-43,550)
     local codeBox=CreateFrame("Frame",nil,transfer,"BackdropTemplate")
     codeBox:SetPoint("TOPLEFT",20,-96); codeBox:SetSize(540,172)
     codeBox:SetBackdrop({bgFile="Interface\\Buttons\\WHITE8X8",edgeFile="Interface\\Buttons\\WHITE8X8",edgeSize=1})
@@ -233,15 +233,15 @@ function A:BuildSettingsControls()
     controls.code:SetScript("OnTextChanged",function(f)
         local height=f:GetStringHeight(); if type(height)=="number" then f:SetHeight(math.max(155,height+24)) end
     end)
-    button(transfer,"Exportar ativo",20,-285,210,function()
+    button(transfer,A.L["Exportar ativo"],20,-285,210,function()
         controls.code:SetText(self:ExportProfile()); controls.code:SetFocus(); controls.code:HighlightText()
     end)
-    button(transfer,"Importar como novo",248,-285,230,function() self:ImportProfile(controls.profileName:GetText(),controls.code:GetText()) end)
-    text(transfer,"Ctrl+C para copiar · Ctrl+V para colar. O código não contém itens físicos.",20,-331,550)
-    text(p,"Perfis podem ser compartilhados entre personagens. Salve ou cancele a edição antes de gerenciá-los.",32,-776,580)
-    StaticPopupDialogs.BLOCKBAGS_DELETE_PROFILE={text="Excluir o perfil %s?",button1=YES,button2=CANCEL,timeout=0,whileDead=true,hideOnEscape=true,preferredIndex=3,
+    button(transfer,A.L["Importar como novo"],248,-285,230,function() self:ImportProfile(controls.profileName:GetText(),controls.code:GetText()) end)
+    text(transfer,A.L["Ctrl+C para copiar · Ctrl+V para colar. O código não contém itens físicos."],20,-331,550)
+    text(p,A.L["Perfis podem ser compartilhados entre personagens. Salve ou cancele a edição antes de gerenciá-los."],32,-776,580)
+    StaticPopupDialogs.BLOCKBAGS_DELETE_PROFILE={text=A.L["Excluir o perfil %s?"],button1=YES,button2=CANCEL,timeout=0,whileDead=true,hideOnEscape=true,preferredIndex=3,
         OnAccept=function(_,data) A:DeleteProfile(data.name) end}
-    StaticPopupDialogs.BLOCKBAGS_DELETE_CATEGORY={text="Excluir a categoria %s? Os itens continuarão acessíveis. As regras desta categoria serão removidas.",button1=YES,button2=CANCEL,timeout=0,whileDead=true,hideOnEscape=true,preferredIndex=3,
+    StaticPopupDialogs.BLOCKBAGS_DELETE_CATEGORY={text=A.L["Excluir a categoria %s? Os itens continuarão acessíveis. As regras desta categoria serão removidas."],button1=YES,button2=CANCEL,timeout=0,whileDead=true,hideOnEscape=true,preferredIndex=3,
         OnAccept=function(_,data) A:DeleteCategory(data.id) end}
     self:BuildFeatureSettings()
     self.settingsInitializing=false
@@ -266,30 +266,30 @@ function A:RefreshSettings()
     self.settingsProfile=BlockBagsDB.profiles[self.settingsProfile or ""] and self.settingsProfile or self.profileKey
     local d=self:GetLayout()[self.settingsCategory]
     self.settingsInitializing=true
-    c.info:SetText("Perfil ativo: "..self.profileKey..(self.draft and " — prévia de edição" or ""))
-    c.categoryTitle:SetText(d.hidden and "Oculta" or "Visível")
+    c.info:SetText(A.L["Perfil ativo: "]..self.profileKey..(self.draft and A.L[" — prévia de edição"] or ""))
+    c.categoryTitle:SetText(d.hidden and A.L["Oculta"] or A.L["Visível"])
     c.categorySelect:OverrideText(self:CategoryName(self.settingsCategory))
     c.profileSelect:OverrideText(self.settingsProfile)
     c.categoryName:SetText(self:CategoryName(self.settingsCategory))
     c.rule:SetText(d.rule or ""); c.applyRule:SetEnabled(self.settingsCategory~="reagentbag")
-    c.visibility:SetText(d.hidden and "Mostrar categoria" or "Ocultar categoria")
-    c.positions:SetText(d.compact and "Posições: automáticas" or "Posições: fixas")
+    c.visibility:SetText(d.hidden and A.L["Mostrar categoria"] or A.L["Ocultar categoria"])
+    c.positions:SetText(d.compact and A.L["Posições: automáticas"] or A.L["Posições: fixas"])
     c.deleteCategory:SetEnabled(self:IsCustomCategory(self.settingsCategory) and not self.draft)
-    c.profileTitle:SetText("Perfil ativo: "..self.profileKey)
-    c.profileChoice:SetText("Selecionado: "..self.settingsProfile)
+    c.profileTitle:SetText(A.L["Perfil ativo: "]..self.profileKey)
+    c.profileChoice:SetText(A.L["Selecionado: "]..self.settingsProfile)
     for _,pageFrame in pairs(self.settingsPages) do pageFrame.content.initializing=true end
     c.generalSpacing:SetValue(self:GetSettings().categorySpacing or 0)
-    c.layoutLock:SetText(self:GetSettings().layoutLocked and "Desbloquear movimento" or "Bloquear movimento")
+    c.layoutLock:SetText(self:GetSettings().layoutLocked and A.L["Desbloquear movimento"] or A.L["Bloquear movimento"])
     c.layoutLock:SetEnabled(not self.draft)
     c.size:SetValue(d.itemSize or 36); c.spacing:SetValue(d.itemSpacing or 4)
     local _,_,width,height=self:PanelRect(d)
     c.width:SetValue(width); c.height:SetValue(height)
     c.width:SetAvailable(self.draft~=nil); c.height:SetAvailable(self.draft~=nil)
-    c.width.caption:SetText("Largura do painel: "..width.." px")
-    c.height.caption:SetText("Altura do painel: "..height.." px")
-    c.generalSpacing.caption:SetText("Espaçamento das categorias: "..(self:GetSettings().categorySpacing or 0).." px")
-    c.size.caption:SetText("Tamanho dos itens: "..(d.itemSize or 36).." px")
-    c.spacing.caption:SetText("Espaçamento dos itens: "..(d.itemSpacing or 4).." px")
+    c.width.caption:SetText(A.L["Largura do painel: "]..width.." px")
+    c.height.caption:SetText(A.L["Altura do painel: "]..height.." px")
+    c.generalSpacing.caption:SetText(A.L["Espaçamento das categorias: "]..(self:GetSettings().categorySpacing or 0).." px")
+    c.size.caption:SetText(A.L["Tamanho dos itens: "]..(d.itemSize or 36).." px")
+    c.spacing.caption:SetText(A.L["Espaçamento dos itens: "]..(d.itemSpacing or 4).." px")
     local color=d.tint or {r=0.4,g=0.4,b=0.4}; c.swatch:SetColorTexture(color.r,color.g,color.b,1)
     for _,pageFrame in pairs(self.settingsPages) do pageFrame.content.initializing=false end
     self:RefreshFeatureSettings()
@@ -340,9 +340,9 @@ function A:ProtectInventoryDuringSettings(protectInventory)
 end
 
 function A:OpenSettings(section,id)
-    if InCombatLockdown() then self:Print("Aguarde o fim do combate."); return end
+    if InCombatLockdown() then self:Print(A.L["Aguarde o fim do combate."]); return end
     self:RegisterSettings()
-    if not self.settingsIDs then self:Print("A página de opções do WoW está indisponível."); return end
+    if not self.settingsIDs then self:Print(A.L["A página de opções do WoW está indisponível."]); return end
     if id then self.settingsCategory=id end
     for _,key in ipairs({"customization","generalSettings","profileChooser","favoriteDialog","itemActions"}) do
         if self[key] then self[key]:Hide() end
@@ -359,7 +359,7 @@ function A:OpenSettings(section,id)
         self.settingsMenuSession=nil
         self.settingsInventorySession=nil
         self:RestoreInventoryEscape()
-        self:Print("Não foi possível abrir as opções: "..tostring(err))
+        self:Print(A.L["Não foi possível abrir as opções: "]..tostring(err))
     end
 end
 function A:OpenCustomization(id) self:OpenSettings("categories",id) end
