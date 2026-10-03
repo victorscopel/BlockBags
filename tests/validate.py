@@ -1131,3 +1131,5 @@ print("Bindings/security setup OK: automatic XML load, one header, preserved sec
 lua.execute((root / "tests" / "favorite_restore.lua").read_text(encoding="utf-8"))
 
 lua.execute((root / "tests" / "position_modes.lua").read_text(encoding="utf-8"))
+
+lua.execute((root / "tests" / "resize_slots.lua").read_text(encoding="utf-8"))

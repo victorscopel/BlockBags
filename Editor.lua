@@ -39,9 +39,9 @@ function A:BuildEditorVisuals()
     local preview=CreateFrame("Frame",nil,f,"BackdropTemplate")
     preview:SetBackdrop({bgFile="Interface\\Buttons\\WHITE8X8"})
     preview:SetBackdropColor(0.04,0.06,0.08,0.92)
-    preview:EnableMouse(false); preview:SetClipsChildren(true); preview.lines={}
-    preview.caption=preview:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
-    preview.caption:SetPoint("TOPLEFT",6,-6)
+    preview:EnableMouse(false); preview:SetClipsChildren(true); preview.lines={}; preview.slots={}
+    preview.caption=f:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+    preview.caption:SetPoint("BOTTOMLEFT",preview,"TOPLEFT",0,8)
     f.preview=preview; f:Hide(); self.editorVisuals=f
 end
 
@@ -80,12 +80,26 @@ function A:UpdateEditorVisuals(id,candidate,resize,valid,free)
         end
     end
     local p=f.preview
-    p:SetShown(resize)
+    p:SetShown(resize); p.caption:SetShown(resize)
     if not resize then return end
     local m=self:ItemMetrics(candidate)
     p:ClearAllPoints(); p:SetPoint("TOPLEFT",f,"TOPLEFT",x+self.padding,-y-self.header-self.padding)
     p:SetSize(m.width,m.height)
     for _,line in ipairs(p.lines) do line:Hide() end
+    for _,slot in ipairs(p.slots) do slot:Hide() end
+    for index=1,math.min(m.cols*m.rows,4096) do
+        local slot=p.slots[index]
+        if not slot then
+            slot=p:CreateTexture(nil,"ARTWORK")
+            slot:SetTexture("Interface\\Buttons\\UI-EmptySlot")
+            p.slots[index]=slot
+        end
+        local column,row=(index-1)%m.cols,math.floor((index-1)/m.cols)
+        slot:ClearAllPoints(); slot:SetPoint("TOPLEFT",p,"TOPLEFT",column*m.step,-row*m.step)
+        slot:SetSize(m.size,m.size)
+        slot:SetVertexColor(valid and 0.85 or 1,valid and 0.95 or 0.35,valid and 1 or 0.35,0.95)
+        slot:Show()
+    end
     local n=0
     local function grid(vertical,index,closing)
         n=n+1

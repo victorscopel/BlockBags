@@ -401,7 +401,7 @@ function A:CreatePanel(category)
     panel.resize:SetScript("OnEnter",function()
         GameTooltip:SetOwner(panel.resize,"ANCHOR_TOP")
         GameTooltip:SetText(A.L["Redimensionar categoria"])
-        GameTooltip:AddLine(A.L["Arraste para ajustar livremente. Shift desativa o encaixe nas bordas."],1,1,1,true)
+        GameTooltip:AddLine(A.L["Arraste para encaixar o tamanho nos slots. Segure Shift para ajustar livremente."],1,1,1,true)
         GameTooltip:Show()
     end)
     panel.resize:SetScript("OnLeave",function() GameTooltip:Hide() end)
@@ -575,7 +575,10 @@ function A:BeginPanelDrag(panel, resize)
             local minW,minH=self:MinimumPanelSize(candidate)
             candidate.width = math.max(minW, drag.width + dx)
             candidate.height = math.max(minH, drag.height + dy)
-            if not free then self:SnapResize(panel.id,candidate,drag.snap) end
+            if not free then
+                self:SnapResize(panel.id,candidate,drag.snap)
+                self:SnapResizeToSlots(panel.id,candidate)
+            end
         else
             candidate.x = math.max(0, drag.original.x + dx/self.cell)
             candidate.y = math.max(0, drag.original.y + dy/self.cell)

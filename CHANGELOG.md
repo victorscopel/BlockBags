@@ -2,6 +2,8 @@
 
 ## 0.5.2 — preview
 
+- Show individual item slots during category resizing and snap dimensions to whole slots; hold Shift for free pixel sizing.
+
 - Keep whole stacks in their original slot when dropped within the same category; matching stacks still use native merging.
 
 - Switching to automatic positions releases manual slot placements and sorts consistently across the header, settings and saved edits; favorites remain reserved.

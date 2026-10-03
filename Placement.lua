@@ -256,6 +256,34 @@ function A:MagneticSnap(id,candidate,resize,state)
     return candidate
 end
 
+function A:SnapResizeToSlots(id,candidate)
+    local metrics=self:ItemMetrics(candidate)
+    local minW,minH=self:MinimumPanelSize(candidate)
+    local borderX,borderY=self.padding*2,self.header+self.padding*2
+    local minCols=math.max(1,math.ceil((minW-borderX+metrics.spacing)/metrics.step))
+    local minRows=math.max(1,math.ceil((minH-borderY+metrics.spacing)/metrics.step))
+    local rawW,rawH=candidate.width,candidate.height
+    local cols=(rawW-borderX+metrics.spacing)/metrics.step
+    local rows=(rawH-borderY+metrics.spacing)/metrics.step
+    local nearestCols=math.max(minCols,math.floor(cols+0.5))
+    local nearestRows=math.max(minRows,math.floor(rows+0.5))
+    local bestW,bestH,bestDistance
+    -- Try the nearest size and its smaller neighbor when rounding hits a panel.
+    for _,c in ipairs({nearestCols,math.max(minCols,math.floor(cols))}) do
+        for _,n in ipairs({nearestRows,math.max(minRows,math.floor(rows))}) do
+            candidate.width=c*metrics.step-metrics.spacing+borderX
+            candidate.height=n*metrics.step-metrics.spacing+borderY
+            local distance=math.abs(candidate.width-rawW)+math.abs(candidate.height-rawH)
+            if self:CanPlace(id,candidate) and (not bestDistance or distance<bestDistance) then
+                bestW,bestH,bestDistance=candidate.width,candidate.height,distance
+            end
+        end
+    end
+    candidate.width=bestW or nearestCols*metrics.step-metrics.spacing+borderX
+    candidate.height=bestH or nearestRows*metrics.step-metrics.spacing+borderY
+    return candidate
+end
+
 function A:SnapResize(id,candidate,state)
     return self:MagneticSnap(id,candidate,true,state)
 end
