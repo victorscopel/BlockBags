@@ -6,3 +6,4 @@
 *.py text eol=lf
 *.yml text eol=lf
 LICENSE text eol=lf
+.pkgmeta text eol=lf

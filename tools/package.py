@@ -10,7 +10,7 @@ match = re.search(r"^## Version:\s*([\w.\-]+)\s*$", toc, re.MULTILINE)
 if not match:
     raise SystemExit("TOC has no valid version")
 version = match.group(1)
-files = {toc_path, ROOT / "Bindings.xml", ROOT / "README.md", ROOT / "LICENSE", ROOT / "THIRD_PARTY_NOTICES.md"}
+files = {toc_path, ROOT / "Bindings.xml", ROOT / "README.md", ROOT / "CHANGELOG.md", ROOT / "LICENSE", ROOT / "THIRD_PARTY_NOTICES.md"}
 for line in toc.splitlines():
     entry = line.strip()
     if not entry or entry.startswith("#"):

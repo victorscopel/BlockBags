@@ -9,7 +9,7 @@ inventory, so you can always find things where you expect them.
 Arrange categories like blocks, choose their dimensions, and decide whether each
 category keeps item positions or automatically fills gaps.
 
-> **Early preview — 0.6.2.** Bank integration and bulk actions are still being
+> **Early preview — 0.8.0.** Bank integration and bulk actions are still being
 > tested in-game. The interface follows your WoW client language: Portuguese or English.
 
 ## Features
