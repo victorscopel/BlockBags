@@ -22,11 +22,11 @@ or automatic item positions for each category.
 - Item levels, possible upgrades, equipment sets and uncollected appearances; optional Pawn support.
 - Search filters, selected backpack currencies and confirmed category management actions.
 - Profile import/export codes.
-- Optional read-only offline history with configurable character, item and age limits.
+- Optional read-only offline inventory with configurable character, item and age limits.
 
 Open your bags normally or use **/bb**. The circular bag button provides settings
 and layout tools. **/bb config** opens native settings, **/bb offline** shows saved
-history and **/bb diagnostics** reports performance measurements.
+inventories and **/bb diagnostics** reports performance measurements.
 
 Stack grouping keeps access to original slots through **+**. Using or dragging an
 icon affects that physical stack only. Offline collection is disabled by default

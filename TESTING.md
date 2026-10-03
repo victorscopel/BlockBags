@@ -13,7 +13,7 @@ python tools/package.py
 
 The suite uses Lua 5.1 through lupa and mocked WoW APIs. It compiles all modules
 and exercises persistent slots, rules, profiles, native button setup, banks,
-combat snippets, themes, grouping, locale catalogs and bounded offline history.
+combat snippets, themes, grouping, locale catalogs and bounded offline inventory.
 Stress checks measure frame reuse, coalescing and retained Lua growth after test GC.
 They do not measure native frame memory or certify freedom from taint.
 
@@ -87,7 +87,7 @@ release. Enable `/console scriptErrors 1`, disable other bag replacements and
 - [ ] Check ptBR/enUS/esES/esMX/frFR wording. Default labels follow locale changes;
   custom names remain unchanged.
 - [ ] Export/import each scope: rules, themes, sorting and grouping survive;
-  physical GUIDs and offline history are excluded.
+  physical GUIDs and offline inventory are excluded.
 
 ### Character bank and Warband bank
 
@@ -113,7 +113,7 @@ release. Enable `/console scriptErrors 1`, disable other bag replacements and
 - [ ] Delayed bank data recovers within six retries; switching/closing cancels
   stale callbacks. Existing data survives migration/reload.
 
-### Offline history and performance
+### Offline inventory and performance
 
 - [ ] Collection starts only after enabling. Visit backpack and both bank scopes;
   /bb offline shows dates, searchable saved records and backpack gold.
@@ -129,3 +129,12 @@ release. Enable `/console scriptErrors 1`, disable other bag replacements and
   testing. Record WoW build/addon version, reproduction and full errors.
 
 Do not require full WTF folders to reproduce issues.
+
+### First-open input and rule controls
+
+- [ ] After `/reload`, open the backpack and click/use/drag an item before entering layout editing.
+- [ ] Organize, position mode and customization buttons respond on the first opening.
+- [ ] Click between overlapping backpack/bank windows; visible item slots receive clicks before their category background.
+- [ ] Start/cancel layout editing, switch physical bag view and return; item interaction remains available outside editing.
+- [ ] Rule-priority buttons show arrows, move the selected category and disable at the top/bottom of the list.
+- [ ] Offline inventory uses the new name in each supported language; its menu shortcut is absent without collection or saved inventories.

@@ -137,8 +137,8 @@ function A:RegisterSettings()
     self.settingsIDs={general=category:GetID(),categories=categoryPage:GetID(),profiles=profilePage:GetID(),features=featurePage:GetID()}
     self.settingsIDs.rules,self.settingsIDs.tools=rulePage:GetID(),toolPage:GetID()
     if not self.isBankWindow then
-        local offline=page(A.L["Histórico offline"],710)
-        local offlinePage=Settings.RegisterCanvasLayoutSubcategory(category,offline,A.L["Histórico offline"])
+        local offline=page(A.L["Inventário offline"],710)
+        local offlinePage=Settings.RegisterCanvasLayoutSubcategory(category,offline,A.L["Inventário offline"])
         self.settingsPages.offline=offline; self.settingsIDs.offline=offlinePage:GetID()
     end
     for _,panel in pairs(self.settingsPages) do panel:SetScript("OnShow",function() self:BuildSettingsControls(); self:RefreshSettings() end) end

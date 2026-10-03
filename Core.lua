@@ -1,7 +1,7 @@
 local _, A = ...
 BlockBags = A
 AnchorBags = A -- Compatibility for existing bindings/scripts.
-A.version = "0.9.1"
+A.version = "0.9.2"
 A.cell, A.padding, A.header, A.scrollGutter = 40, 8, 36, 0
 A.categories = {
     { id = "equipment", name = A.L["Equipamentos"], x = 0, y = 0, cols = 8, rows = 4 },
@@ -261,6 +261,6 @@ SlashCmdList.BLOCKBAGS = function(message)
         else A:Print(A.L["Use /bb scale 0.85 (intervalo: 0.5 a 1.25)."]) end
     elseif command == "help" then
         A:Print(A.L["/bb — abrir; /bb edit — editar; /bb config — opções; /bb memory — diagnóstico; /bb reset — restaurar layout; /bb scale 0.85."])
-        A:Print(A.L["/bb offline — histórico; /bb diagnostics — CPU, memória e tempo de atualização."])
+        A:Print(A.L["/bb offline — inventário offline; /bb diagnostics — CPU, memória e tempo de atualização."])
     else A:Toggle() end
 end

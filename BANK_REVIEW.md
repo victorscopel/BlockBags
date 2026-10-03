@@ -41,7 +41,7 @@ presets, appearance copying and grouping. They have no backpack favorites,
 currencies, equipped-bag bar or virtual category tabs. Presets affect the current
 scope; all purchased physical tabs remain unified.
 
-Offline history is configured once from backpack settings. It records only
+Offline inventory is configured once from backpack settings. It records only
 visited, viewable bank scopes and keeps one shared Warband snapshot. No bank
 transaction can run from the viewer. Bank mutations stay paused during combat.
 

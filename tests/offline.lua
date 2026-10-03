@@ -4,10 +4,27 @@ local clock=10000000
 GetServerTime=function() return clock end; date=function(_,value) return tostring(value) end
 local cache=T:GetOfflineCache(); assert(not cache.enabled and cache.maxItems==6000 and cache.maxCharacters==5 and cache.retentionDays==30)
 assert(not T:CaptureOfflineSnapshot())
+local oldMenu=MenuUtil.CreateContextMenu
+local labels={}
+MenuUtil.CreateContextMenu=function(_,builder)
+    builder(nil,{CreateCheckbox=function() end,CreateDivider=function() end,
+        CreateButton=function(_,label) labels[label]=true end})
+end
+T.bagMenuButton.scripts.OnClick(T.bagMenuButton,"LeftButton")
+assert(not labels[T.L["Inventário offline"]])
 cache.enabled=true
+labels={}; T.bagMenuButton.scripts.OnClick(T.bagMenuButton,"LeftButton")
+assert(labels[T.L["Inventário offline"]])
+MenuUtil.CreateContextMenu=oldMenu
 assert(T:CaptureOfflineSnapshot())
 local key=T.characterKey..":bags"
 local snapshot=cache.snapshots[key]; assert(snapshot and #snapshot.items==4 and snapshot.items[1].offline)
+cache.enabled=false; labels={}; MenuUtil.CreateContextMenu=function(_,builder)
+    builder(nil,{CreateCheckbox=function() end,CreateDivider=function() end,CreateButton=function(_,label) labels[label]=true end})
+end
+T.bagMenuButton.scripts.OnClick(T.bagMenuButton,"LeftButton")
+assert(labels[T.L["Inventário offline"]])
+cache.enabled=true; MenuUtil.CreateContextMenu=oldMenu
 local fields=snapshot.items[1]; assert(not fields.identity and not fields.tooltipText)
 clock=clock+100; assert(T:CaptureOfflineSnapshot() and cache.snapshots[key]==snapshot and snapshot.at==clock)
 local originalCount=fields.info.stackCount

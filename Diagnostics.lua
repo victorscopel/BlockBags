@@ -20,7 +20,7 @@ function A:ReportPerformance()
     local cache=self:GetOfflineCache()
     local snapshots,items=0,0
     for _,snapshot in pairs(cache.snapshots or {}) do snapshots=snapshots+1; items=items+#snapshot.items end
-    self:Print(string.format(self.L["Histórico offline: %d registros; %d itens. Limite: %d itens."],snapshots,items,cache.maxItems or 6000))
+    self:Print(string.format(self.L["Inventário offline: %d registros; %d itens. Limite: %d itens."],snapshots,items,cache.maxItems or 6000))
     local cpu=C_AddOns and C_AddOns.GetAddOnCPUUsage or GetAddOnCPUUsage
     if cpu and GetCVarBool and GetCVarBool("scriptProfile") then
         self:Print(string.format(self.L["CPU atribuída pelo WoW: %.2f ms."],cpu("BlockBags") or 0))

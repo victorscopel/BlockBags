@@ -87,19 +87,19 @@ function A:BuildRoadmapSettings()
     text(diagnostics,self.L["As medições acompanham atualizações por evento. Não há varredura contínua nem coleta de lixo automática."],20,-89)
     if not self.isBankWindow then
         local offline=self.settingsPages.offline.content
-        local history=section(offline,self.L["Histórico offline"],-42,182)
+        local history=section(offline,self.L["Inventário offline"],-42,182)
         c.cacheEnabled=CreateFrame("CheckButton",nil,history,"UICheckButtonTemplate"); c.cacheEnabled:SetPoint("TOPLEFT",16,-43); c.cacheEnabled:SetSize(26,26)
         text(history,self.L["Salvar mochila e bancos visitados para consulta"],50,-48,510)
         c.cacheEnabled:SetScript("OnClick",function() self:SetOfflineOption("enabled",not self:GetOfflineCache().enabled) end)
-        button(history,self.L["Abrir histórico"],20,-90,250,function() self:OpenOfflineInventory() end)
-        button(history,self.L["Limpar histórico…"],300,-90,250,function()
+        button(history,self.L["Abrir inventário offline"],20,-90,250,function() self:OpenOfflineInventory() end)
+        button(history,self.L["Limpar inventário offline…"],300,-90,250,function()
             StaticPopupDialogs.BLOCKBAGS_CLEAR_OFFLINE=StaticPopupDialogs.BLOCKBAGS_CLEAR_OFFLINE or {
                 text=self.L["Apagar todos os registros offline? Os itens e perfis não serão alterados."],button1=ACCEPT,button2=CANCEL,
                 timeout=0,whileDead=true,hideOnEscape=true,OnAccept=function() self:ClearOfflineCache() end}
             StaticPopup_Show("BLOCKBAGS_CLEAR_OFFLINE")
         end)
         text(history,self.L["Desativado por padrão. Mostra apenas dados da última visita, sem permitir usar ou mover itens. Desativar a coleta mantém os registros até limpar ou expirar."],20,-132)
-        local limits=section(offline,self.L["Limites do histórico"],-236,268)
+        local limits=section(offline,self.L["Limites do inventário offline"],-236,268)
         c.characters=self:CreateSettingSlider(limits,-83,1,20,1,function(value) self:SetOfflineOption("maxCharacters",value) end)
         c.items=self:CreateSettingSlider(limits,-146,500,12000,500,function(value) self:SetOfflineOption("maxItems",value) end)
         c.days=self:CreateSettingSlider(limits,-209,1,90,1,function(value) self:SetOfflineOption("retentionDays",value) end)

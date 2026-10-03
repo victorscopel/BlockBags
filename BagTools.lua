@@ -54,7 +54,10 @@ function A:CreateBagMenuButton()
             root:CreateButton(A.L["Configurações"], function() self:OpenGeneralSettings() end)
             root:CreateButton(A.L["Layouts e ferramentas"],function() self:OpenSettings("tools") end)
             root:CreateButton(A.L["Regras automáticas"],function() self:OpenSettings("rules") end)
-            if not self.isBankWindow then root:CreateButton(A.L["Histórico offline"],function() self:OpenOfflineInventory() end) end
+            if not self.isBankWindow then
+                local cache=self:GetOfflineCache()
+                if cache.enabled or next(cache.snapshots) then root:CreateButton(A.L["Inventário offline"],function() self:OpenOfflineInventory() end) end
+            end
             root:CreateButton(A.L["Editar layout"], function() self:StartEdit() end)
             root:CreateButton(A.L[self.isBankWindow and "Indicadores e abas" or "Moedas, indicadores e abas"], function() self:OpenSettings("features") end)
             if self.atBank and C_Bank and C_Bank.CanPurchaseBankTab then

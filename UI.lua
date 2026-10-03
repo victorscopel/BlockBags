@@ -168,9 +168,11 @@ function A:BuildUI()
     self.lockButton:SetPoint("RIGHT",self.seenButton,"LEFT",-5,0)
 
     self.viewport = CreateFrame("ScrollFrame", nil, w)
+    self.viewport:SetMouseClickEnabled(false)
     self.viewport:SetPoint("TOPLEFT", 16, -78)
     self.viewport:SetPoint("BOTTOMRIGHT", -24, 46)
     self.canvas = CreateFrame("Frame", nil, self.viewport)
+    self.canvas:EnableMouse(false)
     self.canvas:SetSize(self.canvasWidth, self.canvasHeight)
     if self.UpdateEditorGrid then self:UpdateEditorGrid() end
     self.viewport:SetScrollChild(self.canvas)
@@ -445,6 +447,22 @@ function A:CreatePanel(category)
     panel.resize:RegisterForDrag("LeftButton")
     panel.resize:SetScript("OnDragStart", function() self:BeginPanelDrag(panel, true) end)
     panel.resize:SetScript("OnDragStop", function() self:EndPanelDrag(panel) end)
+    self:UpdatePanelLayers(panel)
+end
+
+function A:UpdatePanelLayers(panel)
+    local level=panel:GetFrameLevel()
+    if panel.layerLevel==level then return end
+    panel.layerLevel=level
+    -- The full-panel drop receiver stays below slots and header controls.
+    panel.dropTarget:SetFrameLevel(level+1)
+    panel.scroll:SetFrameLevel(level+2)
+    panel.content:SetFrameLevel(level+3)
+    for _,parent in pairs(panel.bagParents) do parent:SetFrameLevel(level+4) end
+    for _,control in ipairs({panel.move,panel.organize,panel.mode,panel.customize}) do control:SetFrameLevel(level+8) end
+    panel.dropGlow:SetFrameLevel(level+10)
+    panel.resize:SetFrameLevel(level+20)
+    panel.bar:SetFrameLevel(level+30)
 end
 
 function A:ApplyLayout()
@@ -452,6 +470,7 @@ function A:ApplyLayout()
     local layout = self:GetLayout()
     for _, cat in ipairs(self.categories) do
         local panel, data = self.panels[cat.id], layout[cat.id]
+        self:UpdatePanelLayers(panel)
         panel:SetShown(self:CategoryDisplayed(cat.id) and not self.physicalBagView)
         panel.title:SetText(self:CategoryName(cat.id))
         local x, y, width, height = self:PanelRect(data)
@@ -717,6 +736,7 @@ function A:GetItemButton(item, panel)
         else b:Initialize(item.bag, item.slot) end
         b:HookScript("OnMouseDown",function() self:FocusWindow() end)
         b:RegisterForClicks("LeftButtonUp","RightButtonUp")
+        b:RegisterForDrag("LeftButton")
         b:SetAttribute("useOnKeyDown",false)
         b:SetAttribute("item2",item.bag.." "..item.slot)
         b:SetAttribute("type2","item")
@@ -795,6 +815,7 @@ function A:GetItemButton(item, panel)
         b.favoriteMarker:SetPoint("TOPRIGHT",-1,-1)
         b.focusBorder=CreateFrame("Frame",nil,b,"BackdropTemplate")
         b.focusBorder:SetAllPoints(b)
+        b.focusBorder:EnableMouse(false)
         b.focusBorder:SetFrameLevel(b:GetFrameLevel()+5)
         b.focusBorder:SetBackdrop({edgeFile="Interface\\Buttons\\WHITE8X8",edgeSize=2})
         b.focusBorder:SetBackdropBorderColor(1,0.82,0,1)
@@ -802,6 +823,9 @@ function A:GetItemButton(item, panel)
     end
     b.anchorOwner=self
     if b.anchorParent~=parent then b:SetParent(parent); b.anchorParent=parent end
+    -- Native templates can carry a level from their original container.
+    local level=parent:GetFrameLevel()+1
+    if b:GetFrameLevel()~=level then b:SetFrameLevel(level) end
     if b.anchorWheel~=panel.wheel then b:SetScript("OnMouseWheel",panel.wheel); b.anchorWheel=panel.wheel end
     return b
 end

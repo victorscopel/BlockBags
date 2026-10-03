@@ -2,6 +2,16 @@ local T=RoadmapFixture
 local c=T.ruleControls
 local savedData,savedUnsupported=c.data,c.unsupported
 local row=c.rows[1]
+assert(c.priorityUp.icon.texture=="Interface\\Buttons\\UI-SpellbookIcon-NextPage-Up")
+assert(c.priorityUp.icon.rotation==-c.priorityDown.icon.rotation)
+local first
+for index,cat in ipairs(T.categories) do if cat.id==T.settingsCategory then first=index end end
+assert(first and c.priorityDown:IsEnabled())
+c.priorityDown.scripts.OnClick()
+assert(T.categories[first+1].id==T.settingsCategory and c.priorityUp:IsEnabled())
+c.priorityUp.scripts.OnClick()
+assert(T.categories[first].id==T.settingsCategory)
+assert(c.priorityUp:IsEnabled()==(first>1))
 
 -- Native dropdowns populate and query their selections during SetupMenu.
 c.data={}; c.unsupported=false
@@ -71,4 +81,4 @@ end
 assert(createdFrames==frames)
 c.data,c.unsupported=savedData,savedUnsupported
 T:RefreshRuleEditorRows(); T:PreviewRuleEditor()
-print("Rule editor menus OK: immediate initialization, missing rows, dynamic choices, removed/replaced rows and stale field callbacks, 100 reopenings reuse controls")
+print("Rule editor menus OK: immediate initialization, missing rows, dynamic choices, removed/replaced rows and stale field callbacks, texture priority buttons, boundary states and 100 reopenings reuse controls")

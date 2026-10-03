@@ -118,6 +118,8 @@ UISpecialFrames = {}
 STANDARD_TEXT_FONT = "font"
 function methods:CreateFontString() return CreateFrame("FontString",nil,self) end
 function methods:CreateTexture() return CreateFrame("Texture",nil,self) end
+function methods:SetTexture(texture) self.texture=texture end
+function methods:SetRotation(rotation) self.rotation=rotation end
 function methods:SetScript(key, fn) self.scripts[key]=fn end
 function methods:HookScript(key, fn) self.scripts[key]=fn end
 function methods:GetScript(key) return self.scripts[key] end
@@ -1205,5 +1207,6 @@ lua.execute((root / "tests" / "bank_tools.lua").read_text(encoding="utf-8"))
 
 lua.execute((root / "tests" / "roadmap.lua").read_text(encoding="utf-8"))
 lua.execute((root / "tests" / "rule_editor.lua").read_text(encoding="utf-8"))
+lua.execute((root / "tests" / "input_layers.lua").read_text(encoding="utf-8"))
 lua.execute((root / "tests" / "offline.lua").read_text(encoding="utf-8"))
 lua.execute((root / "tests" / "combat.lua").read_text(encoding="utf-8"))

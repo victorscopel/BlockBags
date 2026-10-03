@@ -6,7 +6,7 @@ BlockBags replaces the bags in World of Warcraft Retail with categories that kee
 their position and size when items enter or leave your inventory. Arrange panels
 like blocks, resize each one, and choose fixed or automatic item positions.
 
-> **Early preview — 0.9.1.** Combat controls, bank transactions and visual behavior
+> **Early preview — 0.9.2.** Combat controls, bank transactions and visual behavior
 > still need testing in the Retail client. Automated Lua tests do not certify
 > freedom from taint. Interface languages: English, Portuguese, Spanish (esES/esMX)
 > and French. Other clients use English.
@@ -30,7 +30,7 @@ like blocks, resize each one, and choose fixed or automatic item positions.
   Optional Pawn support.
 - Search filters, selected backpack currencies and confirmed category actions.
 - Shareable profiles with validated import/export codes.
-- Optional, bounded offline history and performance diagnostics.
+- Optional, bounded offline inventory and performance diagnostics.
 
 ## Installation
 
@@ -54,7 +54,7 @@ reposition it; a background drop leaves it in place.
 
 Right-click a header for sorting, customization and bulk actions. Fixed positions
 preserve holes; automatic positions sort and fill gaps. Favorites keep their slots.
-Native AddOns settings contain **Rules**, **Layouts and tools** and **Offline history**.
+Native AddOns settings contain **Rules**, **Layouts and tools** and **Offline inventory**.
 Closing settings leaves your bags open.
 
 Opening a bank shows a second window. Its selector switches between character
@@ -73,7 +73,7 @@ Collapsed groups reveal individual physical stacks. Banks remain paused. `/bb`
 cannot perform a protected toggle in combat; use a bag key. Actual taint testing
 in Retail is still required before considering this build stable.
 
-### Virtual stacks and offline history
+### Virtual stacks and offline inventory
 
 Grouping is optional per category. Identical links/bindings share an icon and total
 count; **+** reveals the original slots. Use/drag acts on that physical stack only.
@@ -83,10 +83,12 @@ never merges items or changes saved placements.
 Offline collection is disabled by default. Enable it to record inventories you
 visit. `/bb offline` opens a searchable, read-only viewer showing last-visit data.
 Default limits: **5 characters, 6,000 occupied slots total and 30 days**. Configurable
-bounds: 1–20 characters, 500–12,000 slots and 1–90 days; each snapshot holds at most
-1,600 slots. Warband has one shared record. Oldest snapshots are discarded first;
-oversized records are rejected. Disabling collection retains records until they
-expire or are cleared. History is excluded from profile exports.
+bounds: 1–20 characters, 500–12,000 slots and 1–90 days; each saved inventory holds
+at most 1,600 slots. Warband has one shared record. Oldest records are discarded
+first; oversized records are rejected. Disabling collection retains records until
+they expire or are cleared. Saved inventories are excluded from profile exports.
+The bag-menu shortcut appears only when collection is enabled or saved inventories
+exist.
 
 ## Search and rules
 

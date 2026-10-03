@@ -26,6 +26,17 @@ end
 local function button(parent,value,x,y,width,fn)
     local b=CreateFrame("Button",nil,parent,"UIPanelButtonTemplate"); b:SetPoint("TOPLEFT",x,y); b:SetSize(width,26); b:SetText(value); b:SetScript("OnClick",fn); return b
 end
+local function priorityButton(parent,x,direction,title,fn)
+    local b=button(parent,"",x,-80,70,fn)
+    b.icon=b:CreateTexture(nil,"OVERLAY")
+    b.icon:SetTexture("Interface\\Buttons\\UI-SpellbookIcon-NextPage-Up")
+    b.icon:SetSize(18,18); b.icon:SetPoint("CENTER")
+    b.icon:SetRotation(direction<0 and math.pi/2 or -math.pi/2)
+    b:SetScript("OnEnter",function() GameTooltip:SetOwner(b,"ANCHOR_TOP"); GameTooltip:SetText(title); GameTooltip:Show() end)
+    b:SetScript("OnLeave",function() GameTooltip:Hide() end)
+    return b
+end
+
 local function dropdown(parent,x,y,width,fn)
     local d=CreateFrame("DropdownButton",nil,parent,"WowStyle2DropdownTemplate"); d:SetPoint("TOPLEFT",x,y); d:SetSize(width,26); d:SetupMenu(fn); return d
 end
@@ -104,8 +115,8 @@ function A:BuildRuleEditor()
                 function() self.settingsCategory=cat.id; self:RefreshSettings() end)
         end end
     end)
-    button(parent,"↑",392,-80,70,function() self:MoveCategoryRulePriority(self.settingsCategory,-1) end)
-    button(parent,"↓",474,-80,70,function() self:MoveCategoryRulePriority(self.settingsCategory,1) end)
+    c.priorityUp=priorityButton(parent,392,-1,self.L["Aumentar prioridade"],function() self:MoveCategoryRulePriority(self.settingsCategory,-1) end)
+    c.priorityDown=priorityButton(parent,474,1,self.L["Diminuir prioridade"],function() self:MoveCategoryRulePriority(self.settingsCategory,1) end)
     c.priority=label(parent,"",20,-119)
     label(parent,self.L["Condições do mesmo grupo usam E. Grupos diferentes usam OU."],20,-154)
     label(parent,self.L["Grupo"],20,-185,65); label(parent,self.L["Filtro"],98,-185,140); label(parent,self.L["Valor"],320,-185,190)
@@ -223,6 +234,10 @@ function A:RefreshRuleEditor()
         c.advanced:SetText(rule)
     end
     c.category:OverrideText(self:CategoryName(self.settingsCategory))
-    for index,cat in ipairs(self.categories) do if cat.id==self.settingsCategory then c.priority:SetText(string.format(self.L["Prioridade: %d/%d"],index,#self.categories)) end end
+    for index,cat in ipairs(self.categories) do if cat.id==self.settingsCategory then
+        c.priority:SetText(string.format(self.L["Prioridade: %d/%d"],index,#self.categories))
+        c.priorityUp:SetEnabled(index>1); c.priorityUp.icon:SetAlpha(index>1 and 1 or 0.3)
+        c.priorityDown:SetEnabled(index<#self.categories); c.priorityDown.icon:SetAlpha(index<#self.categories and 1 or 0.3)
+    end end
     self:RefreshRuleEditorRows(); self:PreviewRuleEditor()
 end

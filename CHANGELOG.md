@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.9.2 — preview
+
+- Keep item slots and category controls above the background drop receiver from the first render; normalize native item-button levels after reparenting.
+- Register item dragging explicitly and keep transparent layout frames from intercepting clicks.
+- Replace rule-priority arrow glyphs with native artwork, translated tooltips and disabled boundary states.
+- Rename offline history to Offline inventory across settings, menus and supported languages. Keep its bag-menu shortcut hidden until collection is enabled or saved inventories exist.
+- Test initial click routing, focus/edit transitions, priority actions and optional offline access without allocating new controls during repeated renders.
+
 ## 0.9.1 — preview
 
 - Initialize visual rule data and category selection before native dropdowns generate their menus, including bank settings.
