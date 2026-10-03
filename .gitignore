@@ -1,0 +1,16 @@
+/dist/
+__pycache__/
+*.py[cod]
+.venv/
+.idea/
+.vscode/
+*.log
+*.zip
+*.bak
+*.tmp
+WTF/
+SavedVariables/
+BlockBagsDB.lua
+BlockBagsDB.lua.bak
+AnchorBagsDB.lua
+.blockbags-backups/

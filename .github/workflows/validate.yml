@@ -1,0 +1,28 @@
+name: Validate and package
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: tests/requirements.txt
+      - run: python -m pip install -r tests/requirements.txt
+      - run: python tests/validate.py
+      - run: python tools/package.py
+      - uses: actions/upload-artifact@v7
+        with:
+          name: BlockBags
+          path: dist/BlockBags-*.zip
+          if-no-files-found: error

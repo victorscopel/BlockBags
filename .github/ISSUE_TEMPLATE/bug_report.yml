@@ -1,0 +1,26 @@
+name: Reportar problema
+description: Erro de Lua, interação, layout ou desempenho no Retail.
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Versão do BlockBags e build do WoW
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Passos para reproduzir
+      description: Informe o armazenamento, a aba e a ação realizada.
+    validations:
+      required: true
+  - type: textarea
+    id: error
+    attributes:
+      label: Resultado, erro de Lua e screenshots
+      description: Cole o erro completo; evite anexar dados pessoais ou SavedVariables completos.
+  - type: textarea
+    id: addons
+    attributes:
+      label: Outros addons relevantes
+      description: Inclua ElvUI, Pawn e outros addons de inventário.
