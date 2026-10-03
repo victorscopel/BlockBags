@@ -2,6 +2,8 @@
 
 ## 0.5.2 — preview
 
+- Switching to automatic positions releases manual slot placements and sorts consistently across the header, settings and saved edits; favorites remain reserved.
+
 - Restore favorites to a free slot in their automatic category without displacing existing items.
 
 - Move only the selected stack between categories, leaving identical stacks in place.

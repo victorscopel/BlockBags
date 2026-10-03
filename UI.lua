@@ -317,13 +317,8 @@ function A:CreatePanel(category)
         self:Render()
     end)
     panel.organize:SetPoint("TOPLEFT", 8, -24)
-    panel.mode = iconButton(panel, "Interface\\Buttons\\UI-CheckBox-Up", A.L["Posições fixas ou automáticas"], A.L["F: mantém posições fixas. A: ordena por nome e fecha espaços automaticamente nesta categoria. Favoritos ficam reservados nos dois modos."], function()
-        if InCombatLockdown() then self:Print(A.L["Aguarde o fim do combate."]); return end
-        local layout = self:GetLayout()[panel.id]
-        self:PushUndo()
-        layout.compact = not layout.compact
-        if not self.draft then self:Reconcile() end
-        self:Render()
+    panel.mode = iconButton(panel, "Interface\\Buttons\\UI-CheckBox-Up", A.L["Posições fixas ou automáticas"], A.L["F: mantém posições fixas. A: ordena por nome e fecha espaços automaticamente nesta categoria. Favoritos ficam reservados nos dois modos. Itens soltos manualmente mantêm o slot até organizar ou alternar novamente."], function()
+        self:SetCategoryOption(panel.id,"compact",not self:GetLayout()[panel.id].compact)
     end)
     panel.mode:SetPoint("LEFT", panel.organize, "RIGHT", 4, 0)
     panel.mode:SetNormalTexture("Interface\\Buttons\\UI-CheckBox-Up")
@@ -528,6 +523,12 @@ function A:FinishEdit(save)
     for _, panel in pairs(self.panels) do panel:SetScript("OnUpdate", nil); panel.drag = nil end
     self.window:StopMovingOrSizing()
     if save and self.draft then
+        local previous=self:GetBaseLayout()
+        for id,data in pairs(self.draft) do
+            if data.compact and previous[id] and not previous[id].compact then
+                self:ReleaseCategoryDropSlots(id)
+            end
+        end
         self:SetBaseLayout(self.draft)
         self.profile.settings = self.draftSettings
         self.profile.window.width, self.profile.window.height = self.window:GetWidth(), self.window:GetHeight()

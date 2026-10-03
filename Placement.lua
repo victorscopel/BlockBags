@@ -8,14 +8,17 @@ local function compare(a, b)
     return a.slotKey < b.slotKey
 end
 
+function A:ReleaseCategoryDropSlots(category)
+    local dropSlots=self:GetDropSlots()
+    for identity,target in pairs(dropSlots) do
+        if target.category==category then dropSlots[identity]=nil end
+    end
+end
+
 function A:Reconcile()
     local stored=self:GetPositions()
     local dropSlots=self:GetDropSlots()
-    if self.organizeCategory then
-        for identity,target in pairs(dropSlots) do
-            if target.category==self.organizeCategory then dropSlots[identity]=nil end
-        end
-    end
+    if self.organizeCategory then self:ReleaseCategoryDropSlots(self.organizeCategory) end
     self.groups = self.groups or {}
     for id in pairs(self.groups) do if not self:GetLayout()[id] then self.groups[id]=nil end end
     for id in pairs(self.emptyPositions or {}) do if not self:GetLayout()[id] then self.emptyPositions[id]=nil end end
@@ -56,7 +59,8 @@ function A:Reconcile()
             end
             if chosen then nextPositions[chosen.identity],claimed[index]=index,chosen end
         end
-        local compact = self:GetLayout()[cat.id].compact or self.organizeCategory == cat.id
+        local modeLayout=self.draft and self:GetBaseLayout() or self:GetLayout()
+        local compact = modeLayout[cat.id].compact or self.organizeCategory == cat.id
         for _, item in ipairs(group.items) do
             local target = self.pendingPlacements and self.pendingPlacements[item.slotKey]
             if target and (not target.itemID or target.itemID==item.info.itemID) and target.category==cat.id then

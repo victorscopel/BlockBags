@@ -113,7 +113,7 @@ local english = {
     ["Exemplos: tipo:consumivel   qualidade:epico   nivel:>=80\nCombine filtros com espaços: tipo:equipamento !qualidade:lixo\nTexto simples procura pelo nome. Regra vazia remove a classificação automática desta categoria. A primeira regra compatível na lista vence; atribuições manuais e favoritos têm prioridade."] = "Examples: type:consumable   quality:epic   ilvl:>=80\nCombine filters with spaces: type:equipment !quality:poor\nPlain text searches names. An empty rule removes automatic matching for this category. The first matching rule wins; manual assignments and favorites take priority.",
     ["Expansão desconhecida: "] = "Unknown expansion: ",
     ["Exportar ativo"] = "Export active",
-    ["F: mantém posições fixas. A: ordena por nome e fecha espaços automaticamente nesta categoria. Favoritos ficam reservados nos dois modos."] = "F: keep fixed positions. A: sort by name and fill gaps automatically. Favorites keep their reserved slots in both modes.",
+    ["F: mantém posições fixas. A: ordena por nome e fecha espaços automaticamente nesta categoria. Favoritos ficam reservados nos dois modos. Itens soltos manualmente mantêm o slot até organizar ou alternar novamente."] = "F: keep fixed positions. A: sort by name and fill gaps automatically. Favorites keep their reserved slots in both modes. Manually dropped items keep their slot until you sort or switch modes again.",
     ["Favoritar e fixar neste slot"] = "Favorite and pin to this slot",
     ["Favoritos"] = "Favorites",
     ["Favoritos — página "] = "Favorites — page ",

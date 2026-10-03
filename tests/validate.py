@@ -1129,3 +1129,5 @@ assert 'b:HookScript("OnClick"' in item_button_source and 'b:SetScript("OnClick"
 print("Bindings/security setup OK: automatic XML load, one header, preserved secure click handler")
 
 lua.execute((root / "tests" / "favorite_restore.lua").read_text(encoding="utf-8"))
+
+lua.execute((root / "tests" / "position_modes.lua").read_text(encoding="utf-8"))

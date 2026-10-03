@@ -63,7 +63,13 @@ function A:SetCategoryOption(id,key,value)
         end
     end
     if self.draft then self:PushUndo() end
+    local enableAutomatic=key=="compact" and value and not data.compact
     data[key]=value
+    if enableAutomatic and not self.draft then self:ReleaseCategoryDropSlots(id) end
+    if key=="compact" and self.draft then
+        self:Render(); self:RefreshSettings()
+        return
+    end
     -- Reclassify existing items when visibility changes; preserve manual rules.
     if key=="hidden" or key=="rule" then
         self.visibilityChanged=true
