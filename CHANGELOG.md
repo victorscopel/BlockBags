@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.1 — preview
+
+- Initialize visual rule data and category selection before native dropdowns generate their menus, including bank settings.
+- Guard callbacks after a condition is removed or its field/category changes.
+- Test immediate menu generation and selection during settings construction, matching WoW's dropdown lifecycle.
+
 ## 0.9.0 — preview
 
 - Prepare secure backpack keybind, X and item-use paths for combat; defer layout and scrolling until combat ends.

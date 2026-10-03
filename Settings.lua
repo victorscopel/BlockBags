@@ -146,6 +146,8 @@ end
 
 function A:BuildSettingsControls()
     if self.settingsControls then return end
+    if self.isBankWindow and self.settingsCategory=="reagentbag" then self.settingsCategory=nil end
+    self.settingsCategory=self:GetLayout()[self.settingsCategory or ""] and self.settingsCategory or self.categories[1].id
     self.settingsInitializing=true
     self.settingsControls={}
     local controls=self.settingsControls

@@ -121,6 +121,33 @@ function methods:CreateTexture() return CreateFrame("Texture",nil,self) end
 function methods:SetScript(key, fn) self.scripts[key]=fn end
 function methods:HookScript(key, fn) self.scripts[key]=fn end
 function methods:GetScript(key) return self.scripts[key] end
+function methods:SetupMenu(generator)
+    self.menuGenerator=generator
+    if self:IsShown() then self:GenerateMenu() end
+end
+function methods:GenerateMenu()
+    local entries={}
+    local root={}
+    local function entry(title,selected,responder,data)
+        local item={title=title,selected=selected,responder=responder,data=data}
+        entries[#entries+1]=item
+        return item
+    end
+    function root:CreateRadio(title,selected,responder,data) return entry(title,selected,responder,data) end
+    root.CreateCheckbox=root.CreateRadio
+    function root:CreateTitle(title) return entry(title) end
+    function root:CreateButton(title,responder,data) return entry(title,nil,responder,data) end
+    self.menuEntries=entries
+    self.menuGenerator(self,root)
+    self:SignalUpdate()
+end
+function methods:SignalUpdate()
+    for _,entry in ipairs(rawget(self,"menuEntries") or {}) do
+        if entry.selected then entry.isSelected=not not entry.selected(entry.data) end
+    end
+end
+function methods:OpenMenu() self:GenerateMenu() end
+
 function methods:Init(kind,bag,slot) self.bankType=kind; self.bankTabID=bag; self.containerSlotID=slot end
 function methods:GetBankTabID() return self.bankTabID end
 function methods:GetContainerSlotID() return self.containerSlotID end
@@ -1177,5 +1204,6 @@ lua.execute((root / "tests" / "bank_access.lua").read_text(encoding="utf-8"))
 lua.execute((root / "tests" / "bank_tools.lua").read_text(encoding="utf-8"))
 
 lua.execute((root / "tests" / "roadmap.lua").read_text(encoding="utf-8"))
+lua.execute((root / "tests" / "rule_editor.lua").read_text(encoding="utf-8"))
 lua.execute((root / "tests" / "offline.lua").read_text(encoding="utf-8"))
 lua.execute((root / "tests" / "combat.lua").read_text(encoding="utf-8"))

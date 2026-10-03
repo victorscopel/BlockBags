@@ -95,7 +95,8 @@ end
 function A:BuildRuleEditor()
     if self.ruleControls then return end
     local parent=self.settingsPages.rules.content
-    local c={rows={}}; self.ruleControls=c
+    -- SetupMenu can query selections before the saved rule is loaded.
+    local c={rows={},data={},initializing=true}; self.ruleControls=c
     label(parent,self.L["Categoria e prioridade"],20,-50)
     c.category=dropdown(parent,20,-80,360,function(_,root)
         for _,cat in ipairs(self.categories) do if cat.id~="reagentbag" then
@@ -113,20 +114,28 @@ function A:BuildRuleEditor()
         local row={}; c.rows[index]=row
         local function changed() self:RefreshRuleEditorRows(); self:PreviewRuleEditor() end
         row.group=dropdown(parent,20,y,70,function(_,root)
-            for n=1,4 do root:CreateRadio(tostring(n),function() return c.data[index] and c.data[index].group==n end,
-                function() c.data[index].group=n; changed() end) end
+            local data=c.data[index]
+            if not data then return end
+            for n=1,4 do root:CreateRadio(tostring(n),function() return c.data[index]==data and data.group==n end,
+                function() if c.data[index]~=data then return end; data.group=n; changed() end) end
         end)
         row.field=dropdown(parent,98,y,146,function(_,root)
+            local data=c.data[index]
+            if not data then return end
             for _,entry in ipairs(A.ruleFields) do
-                root:CreateRadio(self.L[entry[2]],function() return c.data[index] and c.data[index].field==entry[1] end,function()
-                    local data=c.data[index]; data.field=entry[1]; data.operator="="; data.value=choices[entry[1]] and choices[entry[1]][1][1] or ""
+                root:CreateRadio(self.L[entry[2]],function() return c.data[index]==data and data.field==entry[1] end,function()
+                    if c.data[index]~=data then return end
+                    data.field=entry[1]; data.operator="="; data.value=choices[entry[1]] and choices[entry[1]][1][1] or ""
                     changed()
                 end)
             end
         end)
         row.operator=dropdown(parent,252,y,64,function(_,root)
-            for _,op in ipairs({"=",">",">=","<","<="}) do root:CreateRadio(op,function() return c.data[index] and c.data[index].operator==op end,
-                function() c.data[index].operator=op; changed() end) end
+            local data=c.data[index]
+            if not data then return end
+            local field=data.field
+            for _,op in ipairs({"=",">",">=","<","<="}) do root:CreateRadio(op,function() return c.data[index]==data and data.field==field and data.operator==op end,
+                function() if c.data[index]~=data or data.field~=field then return end; data.operator=op; changed() end) end
         end)
         row.value=CreateFrame("EditBox",nil,parent,"InputBoxTemplate"); row.value:SetPoint("TOPLEFT",324,y); row.value:SetSize(177,26); row.value:SetAutoFocus(false); row.value:SetMaxLetters(100)
         row.value:SetScript("OnEscapePressed",function(e) e:ClearFocus() end)
@@ -135,15 +144,18 @@ function A:BuildRuleEditor()
         end)
         row.choice=dropdown(parent,320,y,185,function(_,root)
             local data=c.data[index]
-            for _,entry in ipairs(data and choices[data.field] or {}) do
-                root:CreateRadio(self.L[entry[2]],function() return data.value==entry[1] end,function() data.value=entry[1]; changed() end)
+            if not data then return end
+            local field=data.field
+            for _,entry in ipairs(choices[field] or {}) do
+                root:CreateRadio(self.L[entry[2]],function() return c.data[index]==data and data.field==field and data.value==entry[1] end,
+                    function() if c.data[index]~=data or data.field~=field then return end; data.value=entry[1]; changed() end)
             end
         end)
         row.invert=CreateFrame("CheckButton",nil,parent,"UICheckButtonTemplate"); row.invert:SetPoint("TOPLEFT",511,y); row.invert:SetSize(26,26)
-        row.invert:SetScript("OnClick",function() c.data[index].invert=not c.data[index].invert; changed() end)
+        row.invert:SetScript("OnClick",function() local data=c.data[index]; if data then data.invert=not data.invert; changed() end end)
         row.invert:SetScript("OnEnter",function() GameTooltip:SetOwner(row.invert,"ANCHOR_RIGHT"); GameTooltip:SetText(self.L["Excluir correspondências"]); GameTooltip:Show() end)
         row.invert:SetScript("OnLeave",function() GameTooltip:Hide() end)
-        row.remove=button(parent,"−",548,y,36,function() table.remove(c.data,index); changed() end)
+        row.remove=button(parent,"−",548,y,36,function() if c.data[index] then table.remove(c.data,index); changed() end end)
     end
     c.add=button(parent,self.L["Adicionar condição"],20,-548,205,function()
         if #c.data<8 then c.data[#c.data+1]={field="type",value="consumable",operator="=",group=1}; self:RefreshRuleEditorRows(); self:PreviewRuleEditor() end
