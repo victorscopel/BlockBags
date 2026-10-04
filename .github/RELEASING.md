@@ -55,8 +55,15 @@ classify `rc` as a preview suffix.
 
 The webhook asks CurseForge to build and upload its package. Separately, the
 GitHub release workflow runs validation, builds the local ZIP and attaches it to
-a GitHub release. There is no need to create that GitHub release manually or
-upload the ZIP manually to CurseForge when automatic packaging succeeds.
+a GitHub release. If the release was created manually, the workflow uploads the
+ZIP to that existing release and preserves its title, notes and release label.
+Rerunning the workflow replaces an asset with the same filename. There is no
+need to upload the ZIP manually to CurseForge when automatic packaging succeeds.
+
+Workflow fixes apply to new tags containing the fix. Rerunning a failed run for
+an older tag uses that tag's original workflow, so it will not pick up a later
+fix on main. Keep published version tags unchanged; the existing CurseForge
+package is unaffected by a failed GitHub release step.
 
 ## Check the result
 

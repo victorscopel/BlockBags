@@ -20,7 +20,7 @@ jobs:
       - run: python tests/validate.py esES
       - run: python tests/validate.py frFR
       - run: python tools/package.py
-      - name: Create release
+      - name: Create release or upload package
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -29,4 +29,8 @@ jobs:
           case "$GITHUB_REF_NAME" in
             *alpha*|*beta*|*rc*) args+=(--prerelease) ;;
           esac
-          gh release create "$GITHUB_REF_NAME" dist/BlockBags-*.zip --verify-tag --generate-notes "${args[@]}"
+          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" dist/BlockBags-*.zip --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" dist/BlockBags-*.zip --verify-tag --generate-notes "${args[@]}"
+          fi
