@@ -739,13 +739,15 @@ function A:GetItemButton(item, panel)
         b:RegisterForDrag("LeftButton")
         b:SetAttribute("useOnKeyDown",false)
         b:SetAttribute("item2",item.bag.." "..item.slot)
+        b:SetAttribute("macrotext2","/use "..item.bag.." "..item.slot)
         b:SetAttribute("type2","item")
         for _,prefix in ipairs({"alt-","ctrl-","shift-","alt-ctrl-","alt-shift-","ctrl-shift-","alt-ctrl-shift-"}) do
             b:SetAttribute(prefix.."type2","")
         end
         b:HookScript("PreClick",function(frame)
             if InCombatLockdown() then return end
-            local action=self:CanUseItemDirectly() and "item" or ""
+            local info=C_Container.GetContainerItemInfo(frame.bagID,frame:GetID())
+            local action=self:CanUseItemDirectly() and info and info.hyperlink and "item" or ""
             if frame:GetAttribute("type2")~=action then frame:SetAttribute("type2",action) end
         end)
         b.bagID=item.bag

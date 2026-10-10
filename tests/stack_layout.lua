@@ -9,7 +9,7 @@ C_Container.GetContainerNumSlots=function(bag) return bag==0 and 8 or 0 end
 C_Container.GetContainerNumFreeSlots=function() return 6,0 end
 C_Container.GetContainerItemInfo=function(bag,slot)
     local value=bag==0 and slots[slot]
-    if value then return {itemID=value.id,stackCount=value.count,quality=1,iconFileID=value.id} end
+    if value then return {itemID=value.id,hyperlink="item:"..value.id,stackCount=value.count,quality=1,iconFileID=value.id} end
 end
 C_Container.GetContainerItemQuestInfo=function() return {} end
 C_Item.GetItemGUID=function(location) return slots[location.slot] and slots[location.slot].guid end

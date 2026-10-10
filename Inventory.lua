@@ -2,6 +2,7 @@ local _, A = ...
 A.itemCache = {}
 A.loading = {}
 A.itemRequests = {}
+A.itemRequestAttempts = {}
 
 function A:AutomaticCategory(item)
     -- Group reagent-bag slots in their own category.
@@ -38,16 +39,17 @@ end
 
 function A:LoadMetadata(id)
     if self.itemCache[id] then return self.itemCache[id] end
-    if self.loading[id] or self.itemRequests[id]=="failed" then return end
+    if self.loading[id] then return end
     local name, _, _, itemLevel, _, _, subtype, maxStack, equipLoc, _, _, classID, subclassID, bindType, expansionID, _, reagent = C_Item.GetItemInfo(id)
     if name then
         local data = { name = name, classID = classID, subclassID = subclassID, reagent = reagent, itemLevel=itemLevel,
             subtype=subtype,maxStack=maxStack,equipLoc=equipLoc,bindType=bindType,expansionID=expansionID }
         self.itemCache[id] = data
-        self.loading[id],self.itemRequests[id]=nil,nil
+        self.loading[id],self.itemRequests[id],self.itemRequestAttempts[id]=nil,nil,nil
         return data
     end
-    if not self.itemRequests[id] then
+    if not self.itemRequests[id] and (self.itemRequestAttempts[id] or 0)<3 then
+        self.itemRequestAttempts[id]=(self.itemRequestAttempts[id] or 0)+1
         self.itemRequests[id] = true
         self.loading[id] = true
         C_Item.RequestLoadItemDataByID(id)
@@ -62,7 +64,14 @@ function A:ItemDataResult(id,success)
     -- Retry missing metadata on inventory events, rather than on a timer.
 end
 
+function A:RetryFailedMetadata()
+    for id,state in pairs(self.itemRequests) do
+        if state=="failed" and (self.itemRequestAttempts[id] or 0)<3 then self.itemRequests[id]=nil end
+    end
+end
+
 function A:ScanInventory(changedBags)
+    self:RetryFailedMetadata()
     self:RefreshEquipmentData()
     self.slotModels=self.slotModels or {}
     self.slotLocations=self.slotLocations or {}
@@ -165,6 +174,7 @@ function A:ScanInventory(changedBags)
     -- Remove cached metadata for items no longer in this inventory.
     for id in pairs(self.itemCache) do if not present[id] then self.itemCache[id]=nil end end
     for id in pairs(self.itemRequests) do if not present[id] then self.itemRequests[id],self.loading[id]=nil,nil end end
+    for id in pairs(self.itemRequestAttempts) do if not present[id] then self.itemRequestAttempts[id]=nil end end
     self.items = items
     self.capacity=self.capacity or {}
     self.capacity.free,self.capacity.total=free,total

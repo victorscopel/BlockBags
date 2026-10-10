@@ -144,3 +144,10 @@ Do not require full WTF folders to reproduce issues.
 - [ ] Enter and leave combat repeatedly with the backpack open and closed, physical bags visible and hidden, and while editing a layout. Confirm no Invalid frame handle errors.
 - [ ] Use consumables and open/close the backpack with keys, X and Escape in combat.
 - [ ] Confirm window dragging remains blocked in combat and works again afterward.
+
+## Empty-slot item use regression (0.9.4)
+
+- [ ] Right-click empty backpack slots before and after entering combat; confirm no IsEquippableItem errors.
+- [ ] Consume the last item in a stack during combat and right-click the same slot again. Confirm no Lua errors or use of another stack in a different slot.
+- [ ] Loot an item into a prepared empty slot during combat and use it from that slot.
+- [ ] Check equipping items outside combat, consumables in combat, Alt-right-click, Shift-right-click, merchant selling and bank transfers.

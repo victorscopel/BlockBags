@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.9.4 — preview
+
+- Recover temporarily failed item metadata on later refreshes, with at most three requests per item while present and separate backpack/bank counters.
+
+- Check the live physical slot before enabling right-click item use outside combat, including empty slots and stale item displays.
+- Use the native exact-slot /use command for secure combat clicks, so clicking a consumed or empty stack does not pass nil to IsEquippableItem.
+- Add regressions for empty, consumed and replenished slots, interaction-context guards and secure combat item use.
+
 ## 0.9.3 — preview
 
 - Explicitly protect the editor controls and equipped-bag panel referenced by the secure combat handler, preventing invalid frame handles on combat entry.

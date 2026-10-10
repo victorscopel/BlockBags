@@ -71,7 +71,24 @@ button:SetAttribute("combat-reveal",true); button:Hide()
 T.window:Hide(); combat=true; header:SetAttribute("state-combat","combat")
 run(header,header:GetAttribute("_onstate-combat"),nil,nil,"combat")
 assert(header.bindings.B and header.bindings["SHIFT-B"] and header.bindings["CTRL-B"] and not header.bindings.ESCAPE)
-assert(button:GetAttribute("type2")=="item" and button:IsShown() and not T.bagSlots:IsShown())
+assert(button:GetAttribute("type2")=="macro" and button:IsShown() and not T.bagSlots:IsShown())
+local useCalls=0
+local occupied=true
+local function combatClick()
+    local wrap=button.secureWrappers.PreClick
+    run(wrap.header,wrap.source,button,"RightButton")
+    local action=button:GetAttribute("type2")
+    if action=="item" then
+        assert(occupied,"C_Item.IsEquippableItem received nil after combat consumption")
+        useCalls=useCalls+1
+    elseif action=="macro" then
+        assert(button:GetAttribute("macrotext2")=="/use 0 1","combat use must target the clicked slot")
+        if occupied then useCalls=useCalls+1 end
+    end
+end
+combatClick(); assert(useCalls==1)
+occupied=false; combatClick(); assert(useCalls==1)
+occupied=true; combatClick(); assert(useCalls==2)
 local beforeScroll=T.panels.consumables.offset
 local originalScroll=T.panels.consumables.scroll.SetVerticalScroll
 T.panels.consumables.scroll.SetVerticalScroll=function() error("insecure scroll during combat") end
@@ -101,4 +118,4 @@ for n=1,1000 do local started=T:BeginRefreshMeasurement(); T:FinishRefreshMeasur
 assert(T.refreshMetrics.count==1000 and T.refreshMetrics.maximum==2 and T.refreshMetrics.total==2000)
 T:ResetPerformanceMeasurements(); assert(not T.refreshMetrics)
 debugprofilestop=oldTimer
-print("Combat setup OK: protected window/close wrappers, prepared physical slots, combat-only binding overrides, secure open/toggle/close, scoped Escape binding, native type2 item action, collapsed-stack reveal, no insecure show/attribute writes, frozen geometry, return-to-peace cleanup and constant-size refresh metrics; actual taint requires Retail")
+print("Combat setup OK: protected window/close wrappers, prepared physical slots, combat-only binding overrides, secure open/toggle/close, scoped Escape binding, native exact-slot /use action, collapsed-stack reveal, no insecure show/attribute writes, frozen geometry, return-to-peace cleanup and constant-size refresh metrics; actual taint requires Retail")

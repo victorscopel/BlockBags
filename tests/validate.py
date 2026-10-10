@@ -556,6 +556,19 @@ assert(requests==1 and A.loading[999])
 A:ItemDataResult(999,false)
 for n=1,50 do A:LoadMetadata(999) end
 assert(requests==1 and not A.loading[999])
+-- Data may become cached after a failed response without a successful callback.
+C_Item.GetItemInfo=function() return "Recovered item" end
+assert(A:LoadMetadata(999).name=="Recovered item")
+assert(not A.itemRequests[999] and not A.loading[999])
+-- Refreshes may retry transient failures, but repeated failures have a cap.
+C_Item.GetItemInfo=function() return nil end
+local before=requests
+for n=1,10 do
+    A:RetryFailedMetadata()
+    A:LoadMetadata(998)
+    A:ItemDataResult(998,false)
+end
+assert(requests-before==3,"metadata retries must stop after three requests")
 C_Item.GetItemInfo=getInfo
 A:ScanInventory()
 assert(not A.itemRequests[999])
@@ -570,7 +583,7 @@ for n=1,20 do A:SelectProfile("Stress profile"); A:SelectProfile(key) end
 local frames=createdFrames
 for n=1,50 do A:SelectProfile("Stress profile"); A:SelectProfile(key) end
 assert(createdFrames==frames,"Profile changes leaked panel frames")
-print("Load/pool OK: 100 failed metadata queries issue one request; changing profiles 100 times creates zero new frames after warmup")
+print("Load/pool OK: request deduplication, cached recovery, three-request retry cap and changing profiles 100 times creates zero new frames after warmup")
 ''')
 
 lua.execute('''
@@ -1209,4 +1222,5 @@ lua.execute((root / "tests" / "roadmap.lua").read_text(encoding="utf-8"))
 lua.execute((root / "tests" / "rule_editor.lua").read_text(encoding="utf-8"))
 lua.execute((root / "tests" / "input_layers.lua").read_text(encoding="utf-8"))
 lua.execute((root / "tests" / "offline.lua").read_text(encoding="utf-8"))
+lua.execute((root / "tests" / "secure_item_use.lua").read_text(encoding="utf-8"))
 lua.execute((root / "tests" / "combat.lua").read_text(encoding="utf-8"))

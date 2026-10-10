@@ -16,7 +16,7 @@ local stateSnippet=[[
         for i=1,self:GetAttribute("slot-count") or 0 do
             local slot=self:GetFrameRef("slot-"..i)
             slot:EnableMouse(true)
-            slot:SetAttribute("type2","item")
+            slot:SetAttribute("type2","macro")
             if slot:GetAttribute("combat-reveal") then slot:Show() end
         end
         local bags=self:GetFrameRef("bag-slots")
@@ -55,7 +55,8 @@ function A:PrepareCombatButton(button)
     control:SetFrameRef("slot-"..self.combatButtonCount,button)
     control:SetAttribute("slot-count",self.combatButtonCount)
     SecureHandlerWrapScript(button,"PreClick",control,[[
-        if control:GetAttribute("state-combat")=="combat" then self:SetAttribute("type2","item") end
+        -- The native /use command accepts empty bag slots; the item action does not.
+        if control:GetAttribute("state-combat")=="combat" then self:SetAttribute("type2","macro") end
     ]])
 end
 

@@ -161,7 +161,7 @@ function A:EnsureBankWindow()
     bank.L,bank.locale,bank.version=self.L,self.locale,self.version
     bank.cell,bank.padding,bank.header,bank.scrollGutter=self.cell,self.padding,self.header,self.scrollGutter
     bank.categories=self:Copy(self.baseCategories)
-    bank.itemCache,bank.loading,bank.itemRequests={},{},{}
+    bank.itemCache,bank.loading,bank.itemRequests,bank.itemRequestAttempts={},{},{},{}
     bank.bankRoot=migrateBankDatabase(self)
     bank.bankRoot.scopes=bank.bankRoot.scopes or {}
     for _,scope in ipairs({"character","account"}) do
@@ -279,9 +279,7 @@ function A:ScheduleBankLoadRetry()
         if generation~=self.bankLoadGeneration or not self.atBank then return end
         self.bankLoadRetryQueued=nil
         if not self.window:IsShown() then return end
-        for id,state in pairs(self.itemRequests) do
-            if state=="failed" then self.itemRequests[id]=nil; self.loading[id]=nil end
-        end
+        self:RetryFailedMetadata()
         self:QueueRefresh()
     end)
 end
