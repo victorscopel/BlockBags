@@ -49,9 +49,9 @@ assert(itemTarget()==b,"first render: category background intercepts item clicks
 assert(top(panel.organize,panel.dropTarget)==panel.organize,"category background intercepts organize button")
 assert(top(panel.mode,panel.dropTarget)==panel.mode,"category background intercepts position mode")
 assert(top(panel.customize,panel.dropTarget)==panel.customize,"category background intercepts customization")
-itemTarget().scripts.OnClick(b,"LeftButton"); assert(nativeClicks==1)
+b.interactionLayer.scripts.OnClick(b.interactionLayer,"LeftButton"); assert(nativeClicks==1)
 T:FocusWindow(); assert(itemTarget()==b)
-T:Render(); itemTarget().scripts.OnClick(b,"LeftButton"); assert(nativeClicks==2)
+T:Render(); b.interactionLayer.scripts.OnClick(b.interactionLayer,"LeftButton"); assert(nativeClicks==2)
 T:StartEdit(); assert(not b.mouse)
 T:FinishEdit(false); assert(itemTarget()==b and b.mouse)
 local before=createdFrames

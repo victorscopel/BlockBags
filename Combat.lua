@@ -1,123 +1,50 @@
 local _, A = ...
 
-local toggleSnippet=[[
-    local window=self:GetFrameRef("window")
-    if button=="Close" then window:Hide()
-    elseif button=="Open" then window:Show()
-    elseif window:IsShown() then window:Hide() else window:Show() end
-]]
-local stateSnippet=[[
-    self:ClearBindings()
-    if newstate=="combat" and self:GetAttribute("integrated") then
-        for i=1,self:GetAttribute("key-count") or 0 do
-            self:SetBindingClick(true,self:GetAttribute("key-"..i),self:GetName(),self:GetAttribute("action-"..i))
-        end
-        if self:GetFrameRef("window"):IsShown() then self:SetBindingClick(true,"ESCAPE",self:GetName(),"Close") end
-        for i=1,self:GetAttribute("slot-count") or 0 do
-            local slot=self:GetFrameRef("slot-"..i)
-            slot:EnableMouse(true)
-            slot:SetAttribute("type2","macro")
-            if slot:GetAttribute("combat-reveal") then slot:Show() end
-        end
-        local bags=self:GetFrameRef("bag-slots")
-        if bags then bags:Hide() end
-        self:GetFrameRef("save"):Hide()
-        self:GetFrameRef("cancel"):Hide()
-        self:GetFrameRef("undo"):Hide()
+function A:UpdateItemInteraction(button)
+    local receiver=button.interactionLayer
+    if not receiver then return end
+    local enabled=not self.draft and not InCombatLockdown()
+    if receiver.interactionEnabled~=enabled then
+        receiver.interactionEnabled=enabled
+        receiver:EnableMouse(enabled)
     end
-]]
-
-function A:BuildCombatControls()
-    if self.isBankWindow or not SecureHandlerWrapScript or not RegisterStateDriver then return end
-    local control=CreateFrame("Button","BlockBagsSecureToggle",UIParent,"SecureHandlerClickTemplate,SecureHandlerStateTemplate")
-    self.combatController=control
-    control:RegisterForClicks("AnyUp")
-    control:SetFrameRef("window",self.window)
-    -- Restricted combat handlers require explicitly protected target frames.
-    for _,key in ipairs({"save","cancel","undo"}) do control:SetFrameRef(key,self[key.."Button"]) end
-    control:SetAttribute("_onclick",toggleSnippet)
-    control:SetAttribute("_onstate-combat",stateSnippet)
-    control:SetAttribute("key-count",0); control:SetAttribute("slot-count",0)
-    self.closeButton:RegisterForClicks("LeftButtonUp")
-    self.closeButton:SetFrameRef("window",self.window)
-    self.closeButton:SetAttribute("_onclick",[[self:GetFrameRef("window"):Hide()]])
-    SecureHandlerWrapScript(self.window,"OnShow",control,[[
-        if control:GetAttribute("state-combat")=="combat" and control:GetAttribute("integrated") then
-            control:SetBindingClick(true,"ESCAPE",control:GetName(),"Close")
-        end
-    ]])
-    SecureHandlerWrapScript(self.window,"OnHide",control,[[control:ClearBinding("ESCAPE")]])
+    if not enabled then return end
+    local intercept=IsAltKeyDown() or self.atBank==true
+    if receiver.interceptsRight~=intercept then
+        receiver.interceptsRight=intercept
+        if intercept then receiver:SetPassThroughButtons() else receiver:SetPassThroughButtons("RightButton") end
+    end
 end
 
-function A:PrepareCombatButton(button)
-    local control=self.combatController
-    if not control then return end
-    self.combatButtonCount=(self.combatButtonCount or 0)+1
-    control:SetFrameRef("slot-"..self.combatButtonCount,button)
-    control:SetAttribute("slot-count",self.combatButtonCount)
-    SecureHandlerWrapScript(button,"PreClick",control,[[
-        -- The native /use command accepts empty bag slots; the item action does not.
-        if control:GetAttribute("state-combat")=="combat" then self:SetAttribute("type2","macro") end
-    ]])
-end
-
-function A:RefreshCombatBindings()
-    local control=self.combatController
-    if not control or InCombatLockdown() then return end
-    control:SetAttribute("integrated",self.integrationInstalled==true and not self.integrationBlocked)
-    local count,seen=0,{}
-    if GetBindingKey then
-        for _,entry in ipairs({{"TOGGLEBACKPACK","LeftButton"},{"TOGGLEBAGS","LeftButton"},{"OPENALLBAGS","LeftButton"},
-            {"CLOSEALLBAGS","Close"},{"TOGGLEBAG1","LeftButton"},{"TOGGLEBAG2","LeftButton"},
-            {"TOGGLEBAG3","LeftButton"},{"TOGGLEBAG4","LeftButton"},{"TOGGLEBAG5","LeftButton"},{"TOGGLEREAGENTBAG","LeftButton"},{"BLOCKBAGS_TOGGLE","LeftButton"},{"ANCHORBAGS_TOGGLE","LeftButton"}}) do
-            for _,key in ipairs({GetBindingKey(entry[1])}) do
-                if not seen[key] and count<32 then
-                    count=count+1; seen[key]=true
-                    control:SetAttribute("key-"..count,key); control:SetAttribute("action-"..count,entry[2])
-                end
-            end
-        end
-    end
-    control:SetAttribute("key-count",count)
-    if not self.combatDriverRegistered then
-        RegisterStateDriver(control,"combat","[combat] combat; peace")
-        self.combatDriverRegistered=true
-    elseif control:GetAttribute("state-combat")=="combat" then
-        -- During reload, the driver may already be in combat before keys arrive.
-        control:Execute("local newstate=self:GetAttribute('state-combat')\n"..stateSnippet)
-    end
-    local native=MainMenuBarBackpackButton
-    if native and self.integrationInstalled and not self.integrationBlocked and not self.combatBackpackProxy then
-        local proxy=CreateFrame("Button","BlockBagsSecureBackpack",native,"SecureHandlerClickTemplate")
-        self.combatBackpackProxy=proxy
-        proxy:SetAllPoints(native); proxy:SetFrameLevel(native:GetFrameLevel()+5)
-        proxy:RegisterForClicks("LeftButtonUp","RightButtonUp")
-        proxy:SetFrameRef("window",self.window); proxy:SetAttribute("_onclick",toggleSnippet)
-        proxy:SetScript("OnEnter",function()
-            local enter=native:GetScript("OnEnter")
-            if enter then enter(native) else GameTooltip:SetOwner(proxy,"ANCHOR_RIGHT"); GameTooltip:SetText(self:BackpackTitle()); GameTooltip:Show() end
-        end)
-        proxy:SetScript("OnLeave",function() GameTooltip:Hide() end)
-    end
+function A:UpdateInteractionLayers()
+    for _,button in pairs(self.buttons or {}) do self:UpdateItemInteraction(button) end
 end
 
 function A:PrepareStartupInventory()
-    if not self.ready or self.isBankWindow or InCombatLockdown() then return false end
-    -- Build slots synchronously while the loading phase still permits setup.
+    if not self.ready or self.isBankWindow or self.preparingCombatInventory then return false end
     self:ScanInventory()
     self:Reconcile()
     self.renderPreparing=true
+    self.preparingCombatInventory=InCombatLockdown()
     self:Render()
+    self.preparingCombatInventory=nil
     self.renderPreparing=nil
+    self.initialInventoryPrepared=true
+    if InCombatLockdown() and self.window and self.window:IsShown() then self:PaintCombatInventory() end
     return true
 end
 
 function A:PaintCombatInventory()
     if self.isBankWindow or not self.buttons or not self.window:IsShown() then return end
+    if not self.initialInventoryPrepared then self:PrepareStartupInventory(); return end
+    self:UpdateInteractionLayers()
     local search=(self.search:GetText() or ""):lower()
     for _,button in pairs(self.buttons) do
+        if button.combatReveal then button:Show() end
         if button:IsShown() then
             local info=C_Container.GetContainerItemInfo(button.bagID or button:GetBagID(),button:GetID())
+            button:SetHasItem(info~=nil)
+            button:SetReadable(info and info.isReadable or false)
             SetItemButtonTexture(button,info and info.iconFileID)
             SetItemButtonCount(button,info and info.stackCount or 0)
             SetItemButtonDesaturated(button,info and info.isLocked or false)

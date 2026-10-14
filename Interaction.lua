@@ -1,18 +1,5 @@
 local _, A = ...
 
-local itemContextFrames={"MerchantFrame","GuildBankFrame","MailFrame","AuctionHouseFrame","AuctionFrame",
-    "TradeFrame","ItemUpgradeFrame","ObliterumForgeFrame","ChallengesKeystoneFrame",
-    "AzeriteRespecFrame","RuneforgeFrame"}
-
-function A:CanUseItemDirectly()
-    if self.draft or self.atBank or (self.storage or "bags")~="bags" or CursorHasItem() then return false end
-    for _,name in ipairs(itemContextFrames) do
-        local frame=_G[name]
-        if frame and frame:IsShown() then return false end
-    end
-    return true
-end
-
 function A:InstallInteractionHooks()
     if self.interactionHooksInstalled or not C_Container.SplitContainerItem then return end
     self.interactionHooksInstalled=true

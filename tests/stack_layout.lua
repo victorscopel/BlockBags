@@ -154,16 +154,13 @@ for _,name in ipairs({"MerchantFrame","GuildBankFrame","MailFrame","AuctionHouse
     if _G[name] then _G[name]:Hide() end
 end
 local itemButton=A.buttons["0:1"]
+assert(itemButton.scripts.OnClick==itemButton.nativeClick)
 itemButton.scripts.OnClick(itemButton,"RightButton")
-itemButton.scripts.PreClick(itemButton)
-assert(uses==0 and itemButton:GetAttribute("type2")=="item")
-assert(itemButton:GetAttribute("item2")=="0 1" and itemButton:GetAttribute("useOnKeyDown")==false)
-assert(itemButton:GetAttribute("alt-type2")=="" and itemButton:GetAttribute("shift-type2")=="")
-modified=true; itemButton.scripts.OnClick(itemButton,"RightButton"); assert(uses==0)
+assert(uses==1 and usedBag==0 and usedSlot==1)
+assert(not itemButton:GetAttribute("type2") and not itemButton:GetAttribute("item2"))
+modified=true; itemButton.scripts.OnClick(itemButton,"RightButton"); assert(uses==1)
 modified=false
-MerchantFrame:Show(); assert(not A:CanUseItemDirectly())
-itemButton.scripts.PreClick(itemButton); assert(itemButton:GetAttribute("type2")=="")
-MerchantFrame:Hide(); itemButton.scripts.PreClick(itemButton); assert(itemButton:GetAttribute("type2")=="item")
-A.atBank=true; assert(not A:CanUseItemDirectly()); A.atBank=false
-cursor=91001; assert(not A:CanUseItemDirectly()); cursor=nil
-print("Item use OK: right-click is configured as a secure item action for the physical slot and does not call protected use in addon Lua; modified clicks and vendor/bank/cursor contexts retain native handling")
+MerchantFrame:Show(); itemButton.scripts.OnClick(itemButton,"RightButton"); assert(uses==2)
+MerchantFrame:Hide()
+A.atBank=false
+print("Item use OK: right-click keeps the native handler for the physical slot; modified clicks and merchant context retain native handling")

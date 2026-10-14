@@ -177,3 +177,16 @@ Do not require full WTF folders to reproduce issues.
 - [ ] Verify items are visible and consumables usable after the combat reload; check X and Escape.
 - [ ] Repeat with standard Toggle Backpack and Open All Bags bindings, and with virtual stack grouping.
 - [ ] Verify normal login and opening the bank remain unchanged.
+
+## Native backpack release (1.0.0)
+
+- [ ] Enter combat, move the backpack by its header, release outside the header and close with B, X, Escape and /bb.
+- [ ] Reload during combat and repeat opening/moving/closing before leaving combat.
+- [ ] Right-click consumables, equipment, empty slots and the last item in a stack without taint errors.
+- [ ] Outside combat, check Alt-right-click menus, Shift stack splitting, merges, exact-slot moves and same-category background drops.
+- [ ] Verify bank transfers, refunds and deposits retain their normal behavior; merchant selling and modified native clicks work.
+- [ ] Check scroll wheel over item icons, empty slots and virtual groups; edit/save/cancel restores receivers.
+
+The 0.9.8 combat-reload behavior was confirmed by the user. The native-window
+implementation introduces new item and movement paths that require this in-game
+checklist; automated mocks do not prove native protected-action behavior.

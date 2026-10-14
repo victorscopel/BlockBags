@@ -61,6 +61,7 @@ function A:PaintVirtualStack(button,item)
     local group=self.groups[item.category]
     local stack=group.virtualAt and group.virtualAt[button.anchorIndex]
     local active=stack and #stack.members>1 and button.anchorIndex==stack.first
+    button.combatReveal=group.virtualHidden[button.anchorIndex]==true and self:CategoryDisplayed(item.category)
     if active and not button.stackBadge then
         local badge=CreateFrame("Button",nil,button)
         button.stackBadge=badge
@@ -82,8 +83,5 @@ function A:PaintVirtualStack(button,item)
         button.stackBadge.stack=active and stack or nil
         if active then button.stackBadge.label:SetText(stack.expanded and "−" or "+") end
     end
-    if self.combatController then
-        local reveal=group.virtualHidden[button.anchorIndex]==true and self:CategoryDisplayed(item.category)
-        if button:GetAttribute("combat-reveal")~=reveal then button:SetAttribute("combat-reveal",reveal) end
-    end
+
 end

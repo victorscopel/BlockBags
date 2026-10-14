@@ -1,8 +1,8 @@
 # BlockBags roadmap
 
-## Implemented in the 0.9.0 preview
+## Implemented for 1.0.0
 
-- [x] Secure backpack toggle/item setup for combat, with layout changes deferred.
+- [x] Native backpack item clicks, combat toggling and window movement, with category layout changes deferred.
 - [x] Exact-slot drop previews and removal of missing favorites from their faded icons.
 - [x] Three layout presets, appearance copying and individual category reset.
 - [x] Visual AND/OR rules, matching-stack previews, priorities and text editing.
@@ -19,7 +19,7 @@
 Implemented features still require native checks. Mocked Lua tests do not mark
 protected actions or visual behavior as verified in WoW.
 
-## Before a stable release
+## Retail validation
 
 - [ ] Complete TESTING.md in Retail, especially combat taint, item use, stack
   splitting/merging, bank refunds and gold transactions.
@@ -28,11 +28,11 @@ protected actions or visual behavior as verified in WoW.
 - [ ] Check clipping, legibility, drop highlights and resize guides at different scales.
 - [ ] Review Spanish and French wording with players using those clients.
 - [ ] Test saved-data migrations and profile exchanges between locales.
-- [ ] Publish a tested alpha/beta and collect reproducible issues before release.
+- [ ] Collect reproducible issues from players and verify fixes in Retail.
 
 ## Possible follow-up work
 
-These are separate extensions, not requirements of this preview.
+These are separate extensions, not requirements of 1.0.0.
 
 - Additional client languages.
 - Recipe-level profession filters beyond material-family matching.

@@ -11,6 +11,7 @@ ignore:
   - .gitattributes
   - tests
   - tools
+  - docs
   - branding
   - dist
   - ARCHITECTURE.md

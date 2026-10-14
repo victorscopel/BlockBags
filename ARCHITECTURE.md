@@ -8,7 +8,7 @@ resize or move panels. Layout changes occur only through user interaction.
 - Locale/LocaleExtras/LocaleesES/LocalefrFR: English, Portuguese, Spanish and French catalogs; default-label migration preserves custom names.
 
 - Core: SavedVariables migration, event routing and coalesced refresh.
-- Combat: secure window/key controls, native item actions and prepared physical slots; layout/scroll mutations wait until combat ends.
+- Combat: ordinary movable backpack, native item clicks and bag-key integration; category layout/scroll mutations wait until combat ends.
 - Inventory: reusable physical-slot models and bounded current-inventory metadata.
 - ItemFeatures: instance ilvl, usability-aware upgrades, optional Pawn, equipment
   sets, transmog, binding data, on-demand tooltip indexing and selected currencies.
@@ -66,8 +66,7 @@ Records hold item data, not frames, GUIDs or secure action attributes.
 
 No idle OnUpdate: only active dragging/resizing uses it, skipping unchanged cursor
 positions. Refresh requests coalesce over 50ms. Hidden bank windows defer reads; the hidden
-backpack prepares physical slots on inventory events to permit secure opening in
-combat. Item requests
+backpack prepares physical slots during startup, including reloads in combat. Item requests
 have no permanent timer retry loop, and currency updates do not rescan inventory. Bank slots
 are scanned only while their bank is viewable. Metadata/tooltip data are refreshed
 by item or equipment/collection events; tooltips are queried only when searched.
@@ -88,13 +87,17 @@ callbacks cannot restart a cancelled queue. A rejected operation attempts once.
 
 ## Combat controls
 
-A secure state controller installs bag key overrides only in combat, then clears
-its own bindings. The backpack and X are explicitly protected; secure wrappers
-handle showing/hiding and Escape only while that window is open. Ordinary item use
-uses SecureActionButton outside insecure observers. Physical buttons are prepared
-outside combat; combat paints textures, counts, cooldowns and search highlighting.
-Placement and scrolling remain frozen; collapsed stacks reveal physical slots.
-Banks remain paused. Mocked snippets cannot certify native taint behavior.
+The backpack uses an ordinary window with native container item buttons. Native
+right-click scripts remain untouched. An ordinary child layer handles placement
+and Alt-right-click menus outside combat, passing normal right clicks through.
+During combat the layer disables mouse input and native buttons receive clicks.
+Passthrough configuration changes only outside combat. Native bag hooks toggle
+the ordinary window without binding overrides; the header and X remain usable.
+Startup can initialize ordinary slots after a combat reload. Later combat refreshes
+paint textures, counts, cooldowns and search highlighting; category placement and
+scrolling remain frozen, and collapsed stacks reveal physical slots. Retired slots
+clear their reveal flags. Banks remain paused. Mocks cannot certify native taint
+or mouse routing behavior.
 
 ## Integration constraints
 

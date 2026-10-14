@@ -2,10 +2,6 @@ local _, A = ...
 
 function A:Toggle()
     if not self.ready then return end
-    if InCombatLockdown() then
-        self:Print(A.L[(not self.integrationInstalled or self.integrationPending) and "Aguarde o fim do combate." or "Em combate, use sua tecla de mochila para abrir ou fechar."])
-        return
-    end
     self.window:SetShown(not self.window:IsShown())
 end
 
@@ -22,12 +18,28 @@ function A:RequestWindow(action)
         self.intentQueued = false
         local intent = self.windowIntent
         self.windowIntent = nil
-        if InCombatLockdown() then return end
         if intent == "toggle" then self:Toggle()
         elseif intent == "open" then self.window:Show()
         elseif intent == "close" and not self.openingSettings and not self.settingsInventorySession and not self.openingBank
             and not (self.bankController and (self.bankController.openingSettings or self.bankController.settingsInventorySession)) then self.window:Hide() end
     end)
+end
+
+function A:HideNativeBagFrames()
+    self.hiddenBags=self.hiddenBags or CreateFrame("Frame")
+    self.hiddenBags:Hide()
+    self.nativeBagsPending=nil
+    local function hideNative(frame)
+        if not frame then return end
+        if InCombatLockdown() and frame:IsProtected() then self.nativeBagsPending=true; return end
+        frame:SetParent(self.hiddenBags)
+    end
+    hideNative(ContainerFrameCombinedBags)
+    -- Include the backpack frame, which NUM_TOTAL_BAG_FRAMES omits.
+    for i = 1, NUM_CONTAINER_FRAMES or ((NUM_TOTAL_BAG_FRAMES or 5) + 1) do
+        local frame = _G["ContainerFrame" .. i]
+        hideNative(frame)
+    end
 end
 
 function A:InstallIntegration()
@@ -47,18 +59,9 @@ function A:InstallIntegration()
         self:Print(A.L["O módulo de bolsas do ElvUI está ativo. Desative-o e dê /reload. O BlockBags continua acessível por /bb."])
         return
     end
-    if InCombatLockdown() then self.integrationPending=true; return end
     self.integrationInstalled=true
-    self:RefreshCombatBindings()
     self:ApplyBlizzardBagBarVisibility()
-    self.hiddenBags = CreateFrame("Frame")
-    self.hiddenBags:Hide()
-    if ContainerFrameCombinedBags then ContainerFrameCombinedBags:SetParent(self.hiddenBags) end
-    -- Include the backpack frame, which NUM_TOTAL_BAG_FRAMES omits.
-    for i = 1, NUM_CONTAINER_FRAMES or ((NUM_TOTAL_BAG_FRAMES or 5) + 1) do
-        local frame = _G["ContainerFrame" .. i]
-        if frame then frame:SetParent(self.hiddenBags) end
-    end
+    self:HideNativeBagFrames()
     for _, name in ipairs({ "ToggleAllBags", "ToggleBackpack", "ToggleBag" }) do
         if type(_G[name]) == "function" then hooksecurefunc(name, function() self:RequestWindow("toggle") end) end
     end

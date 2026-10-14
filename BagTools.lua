@@ -74,9 +74,8 @@ end
 
 function A:BuildBagSlots()
     if self.bagSlots then return end
-    local panel = CreateFrame("Frame", nil, self.window, self.combatController and "BackdropTemplate,SecureHandlerBaseTemplate" or "BackdropTemplate")
+    local panel = CreateFrame("Frame", nil, self.window, "BackdropTemplate")
     self.bagSlots = panel
-    if self.combatController then self.combatController:SetFrameRef("bag-slots",panel) end
     panel:SetSize(230, 72)
     panel:SetPoint("BOTTOMLEFT", self.window, "TOPLEFT", 0, 10)
     panel:SetClampedToScreen(true)
@@ -235,16 +234,15 @@ function A:RenderPhysicalBags()
                 if model.info then self:PaintItem(b,model,search)
                 else self:PaintEmpty(b,model,panel,slot) end
                 b.anchorCategory, b.anchorIndex = nil, nil
+                b.combatReveal=false
                 if b.stackBadge then b.stackBadge:Hide() end
-                if self.combatController and b:GetAttribute("combat-reveal") then b:SetAttribute("combat-reveal",false) end
                 b:Show()
             end
         end
     end
     for bag,panel in pairs(self.physicalSections) do if not drawn[bag] then panel:Hide() end end
     for _,b in pairs(self.buttons) do if b.renderSerial ~= self.renderSerial then
-        b:Hide(); b.currentItem=nil
-        if self.combatController and b:GetAttribute("combat-reveal") then b:SetAttribute("combat-reveal",false) end
+        b:Hide(); b.currentItem=nil; b.combatReveal=false
     end end
     self.forceItemPaint=nil
     local c=self.capacity

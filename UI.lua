@@ -20,8 +20,8 @@ local function label(parent, text, size)
     return font
 end
 
-local function button(parent, text, width, action, protected)
-    local b = CreateFrame("Button", nil, parent, protected and "BackdropTemplate,SecureHandlerBaseTemplate" or "BackdropTemplate")
+local function button(parent, text, width, action)
+    local b = CreateFrame("Button", nil, parent, "BackdropTemplate")
     b:SetSize(width, 24)
     A:StyleCommand(b,text)
     b:SetScript("OnClick", action)
@@ -29,8 +29,8 @@ local function button(parent, text, width, action, protected)
     return b
 end
 
-local function iconButton(parent, texture, title, description, action, protected)
-    local b = CreateFrame("Button", nil, parent, protected and "SecureHandlerBaseTemplate" or nil)
+local function iconButton(parent, texture, title, description, action)
+    local b = CreateFrame("Button", nil, parent, nil)
     b:SetSize(18, 18)
     b:SetNormalTexture(texture)
     b:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
@@ -62,7 +62,7 @@ function A:BuildUI()
     self.canvasWidth, self.canvasHeight = 880, 600
     self.panels, self.buttons = {}, {}
     self.windowName=self.windowName or "BlockBagsWindow"
-    local w = CreateFrame("Frame", self.windowName, UIParent, self.isBankWindow and "BackdropTemplate" or "BackdropTemplate,SecureHandlerBaseTemplate")
+    local w = CreateFrame("Frame", self.windowName, UIParent, "BackdropTemplate")
     self.window = w
     w.blockOwner=self
     w:SetSize(self.profile.window.width or 912, self.profile.window.height or 716)
@@ -94,9 +94,11 @@ function A:BuildUI()
     move:EnableMouse(true)
     move:SetScript("OnMouseDown",function() self:FocusWindow() end)
     move:RegisterForDrag("LeftButton")
-    move:SetScript("OnDragStart", function() if not InCombatLockdown() then w:StartMoving() end end)
-    move:SetScript("OnDragStop", function()
-        if InCombatLockdown() then self.pendingRefresh=true; return end
+    move:SetScript("OnDragStart", function() if not self.isBankWindow or not InCombatLockdown() then w:StartMoving(); self.windowMoving=true end end)
+    local function stopWindowMove()
+        if self.isBankWindow and InCombatLockdown() then self.pendingRefresh=true; return end
+        if not self.windowMoving then return end
+        self.windowMoving=nil
         w:StopMovingOrSizing()
         local x, y = w:GetCenter()
         local scale = w:GetEffectiveScale() / UIParent:GetEffectiveScale()
@@ -106,14 +108,17 @@ function A:BuildUI()
         w:SetPoint("CENTER", UIParent, "CENTER", self.profile.window.x / scale, self.profile.window.y / scale)
         -- Store offsets in the window's own coordinate space.
         self.profile.window.x, self.profile.window.y = self.profile.window.x / scale, self.profile.window.y / scale
-    end)
-    local close = CreateFrame("Button", nil, w, self.isBankWindow and "UIPanelCloseButton" or "UIPanelCloseButton,SecureHandlerClickTemplate")
+    end
+    move:SetScript("OnDragStop",stopWindowMove)
+    move:SetScript("OnMouseUp",stopWindowMove)
+    self.stopWindowMove=stopWindowMove
+    local close = CreateFrame("Button", nil, w, "UIPanelCloseButton")
     self.closeButton=close
     close:SetFrameStrata("HIGH")
     close:SetFrameLevel(w:GetFrameLevel()+150)
     close:SetSize(24,24)
     close:SetPoint("TOPRIGHT", -4, -2)
-    if self.isBankWindow then close:SetScript("OnClick",function() if not InCombatLockdown() then w:Hide() end end) end
+    close:SetScript("OnClick",function() if not self.isBankWindow or not InCombatLockdown() then w:Hide() end end)
     close:Show()
 
     self.search = CreateFrame("EditBox", nil, w, "InputBoxTemplate")
@@ -134,13 +139,13 @@ function A:BuildUI()
     self.searchClear:SetScript("OnClick", function() self.search:SetText(""); self.search:ClearFocus() end)
     self.editButton = button(w, A.L["Editar layout"], 112, function() self:StartEdit() end)
     self.editButton:SetPoint("TOPRIGHT", -24, -48)
-    self.saveButton = button(w, A.L["Salvar"], 75, function() self:FinishEdit(true) end, not self.isBankWindow)
+    self.saveButton = button(w, A.L["Salvar"], 75, function() self:FinishEdit(true) end)
     self.saveButton:SetPoint("TOPRIGHT", -24, -48)
-    self.cancelButton = button(w, A.L["Cancelar"], 85, function() self:FinishEdit(false) end, not self.isBankWindow)
+    self.cancelButton = button(w, A.L["Cancelar"], 85, function() self:FinishEdit(false) end)
     self.cancelButton:SetPoint("RIGHT", self.saveButton, "LEFT", -6, 0)
     self.generalButton = button(w, A.L["Configurações"], 110, function() self:OpenGeneralSettings() end)
     self.generalButton:SetPoint("RIGHT", self.cancelButton, "LEFT", -6, 0)
-    self.undoButton = iconButton(w, "Interface\\Buttons\\UI-SpellbookIcon-PrevPage-Up", A.L["Desfazer"], A.L["Desfaz o último ajuste do editor (até 50 etapas)."], function() self:UndoEdit() end, not self.isBankWindow)
+    self.undoButton = iconButton(w, "Interface\\Buttons\\UI-SpellbookIcon-PrevPage-Up", A.L["Desfazer"], A.L["Desfaz o último ajuste do editor (até 50 etapas)."], function() self:UndoEdit() end)
     self.undoButton:SetPoint("RIGHT", self.generalButton, "LEFT", -5, 0)
     for _,control in ipairs({self.generalButton,self.cancelButton,self.saveButton,self.editButton,self.undoButton}) do
         control:SetFrameLevel(w:GetFrameLevel()+20)
@@ -227,6 +232,7 @@ function A:BuildUI()
         self.forceItemPaint=true; self:QueueRefresh()
     end)
     w:SetScript("OnHide", function()
+        if self.windowMoving then self.stopWindowMove() end
         if self.openingSettings and not InCombatLockdown() then w:Show(); return end
         self:PlayBackpackSound(false)
         self:CancelBulkAction()
@@ -242,7 +248,6 @@ function A:BuildUI()
     self:ResizeCanvas()
     self:ApplyLayout()
     self:UpdateHeaderLayers()
-    self:BuildCombatControls()
 end
 
 function A:CreateWindowScrollBar(vertical)
@@ -713,10 +718,12 @@ function A:GetItemButton(item, panel)
     local parent = panel.bagParents[item.bag]
     if not b then
         local bankButton=self.isBankWindow==true
-        local template=bankButton and "BankItemButtonTemplate" or "ContainerFrameItemButtonTemplate,SecureActionButtonTemplate"
+        local template=bankButton and "BankItemButtonTemplate" or "ContainerFrameItemButtonTemplate"
         b = CreateFrame("ItemButton", (self.itemButtonPrefix or "BlockBagsItem") .. item.bag .. "_" .. item.slot, parent, template)
         self.buttons[item.slotKey] = b
         b.stackBadge=false
+        b.combatReveal=false
+        b.interactionLayer=false
         if bankButton then
             b:Init(self:BankType(self.storage),item.bag,item.slot)
             b.GetBagID=function(frame) return frame:GetBankTabID() end
@@ -737,21 +744,16 @@ function A:GetItemButton(item, panel)
         b:HookScript("OnMouseDown",function() self:FocusWindow() end)
         b:RegisterForClicks("LeftButtonUp","RightButtonUp")
         b:RegisterForDrag("LeftButton")
-        b:SetAttribute("useOnKeyDown",false)
-        b:SetAttribute("item2",item.bag.." "..item.slot)
-        b:SetAttribute("macrotext2","/use "..item.bag.." "..item.slot)
-        b:SetAttribute("type2","item")
-        for _,prefix in ipairs({"alt-","ctrl-","shift-","alt-ctrl-","alt-shift-","ctrl-shift-","alt-ctrl-shift-"}) do
-            b:SetAttribute(prefix.."type2","")
+        local receiver=b
+        if not bankButton then
+            receiver=CreateFrame("Button",nil,b)
+            receiver:SetAllPoints(b)
+            receiver:SetFrameLevel(b:GetFrameLevel()+1)
+            receiver:RegisterForClicks("LeftButtonUp","RightButtonUp")
+            receiver:RegisterForDrag("LeftButton")
+            receiver:EnableMouseWheel(true)
+            b.interactionLayer=receiver
         end
-        b:HookScript("PreClick",function(frame)
-            if InCombatLockdown() then return end
-            local info=C_Container.GetContainerItemInfo(frame.bagID,frame:GetID())
-            local action=self:CanUseItemDirectly() and info and info.hyperlink and "item" or ""
-            if frame:GetAttribute("type2")~=action then frame:SetAttribute("type2",action) end
-        end)
-        b.bagID=item.bag
-        self:PrepareCombatButton(b)
         self:SizeItemButton(b,36)
         b:EnableMouseWheel(true)
         b:HookScript("OnEnter", function(frame)
@@ -761,20 +763,22 @@ function A:GetItemButton(item, panel)
         end)
         b:HookScript("OnLeave",function() self:HideCategoryDropHint() end)
         local nativeDrag=b:GetScript("OnDragStart")
-        b:SetScript("OnDragStart",function(frame,...)
+        receiver:SetScript("OnDragStart",function(_,...)
+            local frame=b
             if InCombatLockdown() then return end
             if bankButton and not self:CanMutateBank(nil,true) then return end
             self:CaptureItemSource(frame)
             if nativeDrag then nativeDrag(frame,...) end
         end)
         local nativeStop=b:GetScript("OnDragStop")
-        b:SetScript("OnDragStop",function(frame,...)
+        receiver:SetScript("OnDragStop",function(_,...)
+            local frame=b
             if InCombatLockdown() then return end
             self:CompleteItemDrag()
             if nativeStop then nativeStop(frame,...) end
         end)
         local nativeClick=bankButton and b:GetScript("OnClick") or (ContainerFrameItemButtonMixin and ContainerFrameItemButtonMixin.OnClick or ContainerFrameItemButton_OnClick)
-        -- Keep the secure template's OnClick untouched; observe it afterward.
+        -- The native button owns right-click item use; category actions use the receiver.
         local function click(frame,mouseButton,...)
             if InCombatLockdown() then return end
             if bankButton and not self:CanMutateBank(nil,true) then return end
@@ -787,20 +791,28 @@ function A:GetItemButton(item, panel)
                 self:OpenItemActions(frame.currentItem)
             elseif mouseButton=="RightButton" and self.atBank and frame.currentItem and not IsModifiedClick() then
                 self:TransferBankItem(frame.currentItem)
-            elseif mouseButton=="RightButton" and not IsModifiedClick() and frame:GetAttribute("type2")=="item" then
-                return
             elseif nativeClick then nativeClick(frame,mouseButton,...) end
         end
-        if bankButton then b:SetScript("OnClick",click) else b:HookScript("OnClick",click) end
+        receiver:SetScript("OnClick",function(_,mouseButton,...) click(b,mouseButton,...) end)
         for _, event in ipairs({"OnReceiveDrag", "OnMouseDown"}) do
             local native=b:GetScript(event)
-            b:SetScript(event,function(frame,...)
+            receiver:SetScript(event,function(_, ...)
+                local frame=b
                 if InCombatLockdown() then return end
                 if event=="OnMouseDown" then self:FocusWindow() end
                 if bankButton and not self:CanMutateBank(nil,true) then return end
                 if event=="OnReceiveDrag" and self:TryVirtualDrop(frame.anchorCategory,frame.anchorIndex) then return end
                 if CursorHasItem() then self:RememberDrop(frame) end
                 if native then native(frame,...) end
+            end)
+        end
+        if not bankButton then
+            receiver:SetScript("OnEnter",function()
+                self:UpdateItemInteraction(b)
+                local enter=b:GetScript("OnEnter"); if enter then enter(b) end
+            end)
+            receiver:SetScript("OnLeave",function()
+                local leave=b:GetScript("OnLeave"); if leave then leave(b) end
             end)
         end
         b.newMarker = label(b, "N", 11)
@@ -829,6 +841,11 @@ function A:GetItemButton(item, panel)
     local level=parent:GetFrameLevel()+1
     if b:GetFrameLevel()~=level then b:SetFrameLevel(level) end
     if b.anchorWheel~=panel.wheel then b:SetScript("OnMouseWheel",panel.wheel); b.anchorWheel=panel.wheel end
+    if b.interactionLayer then
+        b.interactionLayer:SetFrameLevel(b:GetFrameLevel()+1)
+        b.interactionLayer:SetScript("OnMouseWheel",panel.wheel)
+        self:UpdateItemInteraction(b)
+    end
     return b
 end
 
@@ -870,16 +887,15 @@ function A:PaintItem(b,item,search)
     b.focusBorder:SetShown(self.focusedSearchIdentity==item.identity)
     local match=search=="" or self:MatchesQuery(item,search)
     self:UpdateBankEligibility(b,item)
-    b:SetAlpha(match and 1 or 0.22); b:EnableMouse(not self.draft)
+    b:SetAlpha(match and 1 or 0.22); b:EnableMouse(not self.draft); self:UpdateItemInteraction(b)
     return match
 end
 
 function A:PaintEmpty(b,slot,panel,index)
     b.anchorSlotKey=slot.slotKey
     b.emptyAnchor,b.anchorCategory,b.anchorIndex=true,panel.id,index
-    b.currentItem=nil
+    b.currentItem=nil; b.combatReveal=false
     if b.stackBadge then b.stackBadge:Hide() end
-    if self.combatController then b:SetAttribute("combat-reveal",false) end
     local p=b.paintState
     if type(p)~="table" then p={}; b.paintState=p end
     if p.kind~="empty" or self.forceItemPaint then
@@ -895,7 +911,7 @@ function A:PaintEmpty(b,slot,panel,index)
     b.favoriteMarker:Hide(); b.focusBorder:Hide(); b.newMarker:Hide(); b.levelLabel:Hide()
     b.upgradeMarker:Hide(); b.setMarker:Hide(); b.transmogMarker:Hide()
     if b.IconQuestTexture then b.IconQuestTexture:Hide() end
-    b:SetAlpha(1); b:EnableMouse(not self.draft)
+    b:SetAlpha(1); b:EnableMouse(not self.draft); self:UpdateItemInteraction(b)
 end
 
 function A:PaintFavoriteGhost(panel,ordinal,id,index,size,x,y)
@@ -961,7 +977,7 @@ function A:PaintFavoriteGhost(panel,ordinal,id,index,size,x,y)
 end
 
 function A:Render()
-    if InCombatLockdown() then self.pendingRefresh = true; self:PaintCombatInventory(); return end
+    if InCombatLockdown() and not self.preparingCombatInventory then self.pendingRefresh = true; self:PaintCombatInventory(); return end
     if self.ready and not self.window:IsShown() and not self.renderPreparing then self.inventoryDirty=true; return end
     self:ApplyLayout()
     self:RefreshBagSlots()
@@ -1037,8 +1053,7 @@ function A:Render()
     for _,b in pairs(self.buttons) do
         if b.renderSerial~=self.renderSerial then
             if b:IsShown() then b:Hide() end
-            b.currentItem=nil
-            if self.combatController and b:GetAttribute("combat-reveal") then b:SetAttribute("combat-reveal",false) end
+            b.currentItem=nil; b.combatReveal=false
         end
     end
     self.forceItemPaint=nil

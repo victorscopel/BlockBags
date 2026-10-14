@@ -111,6 +111,18 @@ function CreateFrame(kind, name, parent, template)
     createdFrames=createdFrames+1
     local frame=setmetatable({ kind=kind, name=name, parent=parent, template=template, shown=true, text="", value=0,
         minimum=0, maximum=0, scripts={}, children={}, Low=false, High=false, Text=false, IconQuestTexture=false }, mt)
+    if template and template:find("ContainerFrameItemButtonTemplate",1,true) then
+        frame.scripts.OnClick=function(button,mouseButton,...)
+            if ContainerFrameItemButtonMixin and ContainerFrameItemButtonMixin.OnClick then
+                return ContainerFrameItemButtonMixin.OnClick(button,mouseButton,...)
+            end
+            if mouseButton=="RightButton" and not (IsModifiedClick and IsModifiedClick()) then
+                local info=C_Container.GetContainerItemInfo(button:GetBagID(),button:GetID())
+                if info and C_Container.UseContainerItem then C_Container.UseContainerItem(button:GetBagID(),button:GetID()) end
+            end
+        end
+        frame.nativeClick=frame.scripts.OnClick
+    end
     if template and template:find("UIPanelCloseButton") then
         frame.scripts.OnClick=function() parent:Hide() end
     end
@@ -120,6 +132,7 @@ UIParent = CreateFrame("Frame")
 GameTooltip = CreateFrame("GameTooltip")
 UISpecialFrames = {}
 STANDARD_TEXT_FONT = "font"
+IsAltKeyDown=function() return false end
 function methods:CreateFontString() return CreateFrame("FontString",nil,self) end
 function methods:CreateTexture() return CreateFrame("Texture",nil,self) end
 function methods:SetTexture(texture) self.texture=texture end
@@ -182,8 +195,8 @@ function methods:SetFrameLevel(value) self.level=value end
 function methods:SetFrameStrata(value) self.strata=value end
 function methods:GetFrameStrata() return rawget(self,"strata") or "MEDIUM" end
 function methods:SetResizable(value) self.resizable=value end
-function methods:GetWidth() return self.width or 912 end
-function methods:GetHeight() return self.height or 716 end
+function methods:GetWidth() return rawget(self,"width") or 912 end
+function methods:GetHeight() return rawget(self,"height") or 716 end
 function methods:GetValue() return self.value end
 function methods:GetEffectiveScale() return 1 end
 function methods:SetMinMaxValues(a,b) self.minimum=a; self.maximum=b end
@@ -194,6 +207,8 @@ function methods:SetValue(value)
 end
 function methods:Initialize(bag,slot) self.bag=bag; self.slot=slot; self:Show() end
 function methods:EnableMouse(enabled) self.mouse=enabled end
+function methods:GetBagID() return self.bag end
+function methods:SetPassThroughButtons(...) assert(not InCombatLockdown(),"passthrough cannot change during combat"); self.passThrough={...} end
 function methods:SetMouseClickEnabled(enabled) self.mouseClick=enabled end
 C_NewItems = { IsNewItem=function() return false end, RemoveNewItem=function() end }
 C_Container = { GetContainerNumFreeSlots=function() return 2,0 end }
@@ -850,7 +865,7 @@ assert(#A.emptySlots==0)
 A:CaptureItemSource(source); cursor=101
 GetMouseFoci=function() return {A.panels.misc.title} end
 -- Font -> panel ancestry, then the source's actual OnDragStop handler.
-source.scripts.OnDragStop(source)
+source.interactionLayer.scripts.OnDragStop(source.interactionLayer)
 assert(cursor==nil and clears==1 and pickups==0)
 assert(A.items[1].category=="misc" and physical[1]==101 and physical[2]==102)
 assert(A:GetStackCategories()[A.items[1].identity]=="misc")
@@ -880,7 +895,7 @@ for _,favorite in ipairs({true,false}) do
     assert(A.profile.manualCategories[101]==beforeRule and A.profile.favorites[101]==beforeFavorite)
     -- A full or partially filled target may leave items on the cursor.
     GetMouseFoci=function() return {focus} end
-    source.scripts.OnDragStop(source)
+    source.interactionLayer.scripts.OnDragStop(source.interactionLayer)
     assert(cursor==101 and clears==beforeClears and A.profile.manualCategories[101]==beforeRule)
     A.groups.consumables.positions[9]=target
 end
@@ -1182,8 +1197,8 @@ assert sum("header" in binding.attrib for binding in binding_root) == 1
 assert len({binding.attrib["name"] for binding in binding_root}) == len(binding_root)
 assert "Bindings.xml" not in (root / "BlockBags.toc").read_text(encoding="utf-8").splitlines()
 item_button_source = (root / "UI.lua").read_text(encoding="utf-8").split("function A:GetItemButton",1)[1].split("function A:PaintItem",1)[0]
-assert "ContainerFrameItemButtonTemplate,SecureActionButtonTemplate" in item_button_source
-assert 'if bankButton then b:SetScript("OnClick",click) else b:HookScript("OnClick",click) end' in item_button_source
+assert "ContainerFrameItemButtonTemplate,SecureActionButtonTemplate" not in item_button_source
+assert 'receiver:SetScript("OnClick"' in item_button_source
 print("Bindings/security setup OK: automatic XML load, one header, preserved secure click handler")
 
 lua.execute((root / "tests" / "favorite_restore.lua").read_text(encoding="utf-8"))
@@ -1227,6 +1242,7 @@ lua.execute((root / "tests" / "rule_editor.lua").read_text(encoding="utf-8"))
 lua.execute((root / "tests" / "input_layers.lua").read_text(encoding="utf-8"))
 lua.execute((root / "tests" / "offline.lua").read_text(encoding="utf-8"))
 lua.execute((root / "tests" / "secure_item_use.lua").read_text(encoding="utf-8"))
+lua.execute((root / "tests" / "native_window.lua").read_text(encoding="utf-8"))
 lua.execute((root / "tests" / "combat.lua").read_text(encoding="utf-8"))
 
 lua.execute((root / "tests" / "reload_combat.lua").read_text(encoding="utf-8"))

@@ -6,10 +6,8 @@ BlockBags replaces the bags in World of Warcraft Retail with categories that kee
 their position and size when items enter or leave your inventory. Arrange panels
 like blocks, resize each one, and choose fixed or automatic item positions.
 
-> **Early preview — 0.9.8.** Combat controls, bank transactions and visual behavior
-> still need testing in the Retail client. Automated Lua tests do not certify
-> freedom from taint. Interface languages: English, Portuguese, Spanish (esES/esMX)
-> and French. Other clients use English.
+Version **1.0.0** for World of Warcraft Retail **12.1.5**. Interface languages:
+English, Portuguese, Spanish (esES/esMX) and French. Other clients use English.
 
 ## Features
 
@@ -66,12 +64,11 @@ and bank profiles are exported separately.
 
 ### Combat
 
-The prepared backpack uses secure controls for bag keybinds, the native backpack
-button, X, Escape and ordinary right-click item use. Layout and scroll positions
-freeze in combat; editing, dragging, sorting and transfers wait until it ends.
-Collapsed groups reveal individual physical stacks. Banks remain paused. `/bb`
-cannot perform a protected toggle in combat; use a bag key. Actual taint testing
-in Retail is still required before considering this build stable.
+The backpack uses native item buttons in an ordinary movable window. Bag keys,
+X, Escape and `/bb` open or close it during combat. Drag the header to reposition
+the window. Category editing, sorting and transfers wait until combat ends;
+category geometry remains fixed while item counts and cooldowns update. Collapsed
+groups reveal individual stacks during combat. Banks remain paused.
 
 ### Virtual stacks and offline inventory
 
@@ -120,7 +117,7 @@ evaluation. `C` identifies equipment sets; `T` identifies uncollected appearance
 
 | Command | Action |
 | --- | --- |
-| `/bb` | Toggle backpack outside combat |
+| `/bb` | Toggle backpack |
 | `/bb config` | Native addon settings |
 | `/bb edit` | Layout editing |
 | `/bb offline` | Saved inventory history |

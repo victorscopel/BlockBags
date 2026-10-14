@@ -1,7 +1,7 @@
 local _, A = ...
 BlockBags = A
 AnchorBags = A -- Compatibility for existing bindings/scripts.
-A.version = "0.9.8"
+A.version = "1.0.0"
 A.cell, A.padding, A.header, A.scrollGutter = 40, 8, 36, 0
 A.categories = {
     { id = "equipment", name = A.L["Equipamentos"], x = 0, y = 0, cols = 8, rows = 4 },
@@ -158,22 +158,25 @@ events:SetScript("OnEvent", function(_, event, arg, success)
             "PLAYER_REGEN_DISABLED", "MERCHANT_SHOW", "MERCHANT_CLOSED", "CURSOR_CHANGED",
             "PLAYER_EQUIPMENT_CHANGED", "EQUIPMENT_SETS_CHANGED", "TRANSMOG_COLLECTION_UPDATED", "CURRENCY_DISPLAY_UPDATE",
             "BANKFRAME_OPENED", "BANKFRAME_CLOSED", "BAG_UPDATE", "PLAYERBANKSLOTS_CHANGED", "PLAYER_ACCOUNT_BANK_TAB_SLOTS_CHANGED",
-            "BANK_TABS_CHANGED", "BANK_TAB_SETTINGS_UPDATED", "UPDATE_BINDINGS", "PLAYER_LOGOUT" }) do events:RegisterEvent(name) end
+            "BANK_TABS_CHANGED", "BANK_TAB_SETTINGS_UPDATED", "MODIFIER_STATE_CHANGED", "PLAYER_LOGOUT" }) do events:RegisterEvent(name) end
         A:PrepareStartupInventory()
         A:QueueRefresh()
     elseif event == "PLAYER_LOGIN" then
         A:PrepareStartupInventory()
         A:InstallIntegration()
-        A:RefreshCombatBindings(); A:PruneOfflineCache()
+        A:PruneOfflineCache()
         A:QueueRefresh()
     elseif event == "PLAYER_REGEN_DISABLED" then
         A:CancelBulkAction()
         A:CancelInteractions()
         if A.draft then A:FinishEdit(false) end
+        A:UpdateInteractionLayers()
+        A.saveButton:Hide(); A.cancelButton:Hide(); A.undoButton:Hide()
         A:PaintCombatInventory()
     elseif event == "PLAYER_REGEN_ENABLED" then
-        if A.integrationPending then A:InstallIntegration() end
+        if A.nativeBagsPending then A:HideNativeBagFrames() end
         A.forceItemPaint=true
+        A:UpdateInteractionLayers()
         A:ApplyBlizzardBagBarVisibility()
         A.combatOverlay:Hide()
         if A.pendingEditCancel then
@@ -181,7 +184,6 @@ events:SetScript("OnEvent", function(_, event, arg, success)
             if snapshot.width then A.window:SetSize(snapshot.width,snapshot.height) end
             A:ResizeCanvas(); A:ApplyLayout()
         end
-        A:RefreshCombatBindings()
         if A.pendingStorageReset then A.pendingStorageReset=nil; A:SetStorage("bags") end
         if A.pendingBankOpen and A.atBank then A:BankOpened() end
         if A.physicalBagView then
@@ -189,8 +191,8 @@ events:SetScript("OnEvent", function(_, event, arg, success)
             else A:SetPhysicalBagView(false) end
         end
         A:QueueRefresh()
-    elseif event == "UPDATE_BINDINGS" then
-        A:RefreshCombatBindings()
+    elseif event == "MODIFIER_STATE_CHANGED" then
+        A:UpdateInteractionLayers()
     elseif event == "PLAYER_LOGOUT" then
         if A:GetOfflineCache().enabled and not InCombatLockdown() and not CursorHasItem() then A:ScanInventory() end
         A:CaptureOfflineSnapshot(); A:PruneOfflineCache()

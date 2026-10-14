@@ -32,13 +32,6 @@ Stack grouping keeps access to original slots through **+**. Using or dragging a
 icon affects that physical stack only. Offline collection is disabled by default
 and shows your last visit, not live inventories.
 
-During combat, secure controls open the prepared backpack and use items; layout
-changes and scrolling wait until combat ends. Banks remain paused. This is an
-**early preview**; protected actions and bank transactions still need Retail testing.
-
-Interface languages: English, Portuguese, Spanish (esES/esMX) and French. Other
-clients use English. Retail only; Classic and guild banks are not supported.
-Disable other bag replacements, including ElvUI's bags module.
-
-[Source and issue tracker](https://github.com/victorscopel/BlockBags).
-BlockBags is independent and does not require BetterBags or MyBags.
+During combat, you can open, close and move the backpack, and use items through
+native item buttons. Category editing, sorting and bank transfers wait until
+combat ends. Banks remain paused.

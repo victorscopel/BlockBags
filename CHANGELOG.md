@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.0
+
+- First release for World of Warcraft Retail 12.1.5.
+- Automatic categories, individual-stack assignments, persistent panel layouts, resizing and magnetic alignment.
+- Per-category appearance, sorting, visual rules, favorites with reserved slots, profile import/export and optional virtual stack grouping.
+- Separate character and Warband bank categories, profiles and management controls.
+- Replace custom secure backpack actions with native item buttons in an ordinary movable window.
+- Open, close and move the backpack during combat, including after reloading in combat; keep normal right-click item use native.
+- Preserve category placement, Alt-right-click menus and bank transfers through a separate interaction layer outside combat.
+- English, Portuguese, Spanish and French interfaces.
+
 ## 0.9.8 — preview
 
 - Prepare backpack slots and keybindings synchronously during loading before combat lockdown, rather than relying on a delayed first refresh.

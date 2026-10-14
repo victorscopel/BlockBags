@@ -1,141 +1,53 @@
 local T=RoadmapFixture
-local oldWrap,oldDriver,oldKeys,oldCombat=SecureHandlerWrapScript,RegisterStateDriver,GetBindingKey,InCombatLockdown
-local combat,secure=false,false
+local oldCombat,oldTimer=InCombatLockdown,C_Timer.After
+local combat=true
 InCombatLockdown=function() return combat end
-local function run(header,source,frame,button,newstate)
-    local fn=assert(loadstring(source))
-    setfenv(fn,setmetatable({self=frame or header,control=header,button=button,newstate=newstate},{__index=_G}))
-    local before=secure; secure=true; local ok,err=pcall(fn); secure=before; assert(ok,err)
-end
-SecureHandlerWrapScript=function(frame,script,header,source)
-    frame.secureWrappers=rawget(frame,"secureWrappers") or {}; frame.secureWrappers[script]={header=header,source=source}
-end
-RegisterStateDriver=function(frame,state,condition)
-    assert(state=="combat" and condition=="[combat] combat; peace")
-    assert((frame:GetAttribute("key-count") or 0)>0,"state driver started before binding preparation")
-    assert((frame:GetAttribute("slot-count") or 0)>0,"state driver started before slot preparation")
-    frame.driver=condition
-    frame:SetAttribute("state-combat","combat")
-    run(frame,frame:GetAttribute("_onstate-combat"),nil,nil,"combat")
-end
-GetBindingKey=function(command)
-    if command=="OPENALLBAGS" then return "B","SHIFT-B" end
-    if command=="BLOCKBAGS_TOGGLE" then return "CTRL-B" end
-end
-T:BuildCombatControls(); T.integrationInstalled=true
-T:BuildBagSlots()
-local header=T.combatController
-header.GetName=function() return "BlockBagsSecureToggle" end
-header.refs={window=T.window,save=T.saveButton,cancel=T.cancelButton,undo=T.undoButton,["bag-slots"]=T.bagSlots}
-header.SetFrameRef=function(_,name,frame) header.refs[name]=frame end
-local function frameHandle(frame)
-    if not frame then return nil end
-    return setmetatable({}, {__index=function(_,method)
-        return function(_, ...)
-            assert(not combat or (frame.template or ""):find("Secure"), "Invalid frame handle: "..tostring(frame.name or frame.kind))
-            return frame[method](frame, ...)
-        end
-    end})
-end
-header.GetFrameRef=function(_,name) return frameHandle(header.refs[name]) end
-header.bindings={}
-header.SetBindingClick=function(_,priority,key,name,button) assert(secure); header.bindings[key]={name=name,button=button} end
-header.ClearBindings=function() assert(secure); header.bindings={} end
-header.ClearBinding=function(_,key) assert(secure); header.bindings[key]=nil end
-header.Execute=function(frame,source) assert(not combat,"secure configuration is forbidden after lockdown"); run(frame,source) end
-local originalShow,originalHide=T.window.Show,T.window.Hide
+C_Timer.After=function(_,fn) fn() end
+T.initialInventoryPrepared=true
+local oldShow,oldHide,oldShown=T.window.Show,T.window.Hide,T.window.SetShown
+T.window.SetShown=function(w,shown) if shown then w:Show() else w:Hide() end end
 T.window.Show=function(w)
-    assert(not combat or secure,"insecure Show during combat")
-    originalShow(w)
-    local wrap=w.secureWrappers.OnShow; if wrap then run(wrap.header,wrap.source,w) end
+    local changed=not w:IsShown(); oldShow(w)
+    if changed and w.scripts.OnShow then w.scripts.OnShow(w) end
 end
 T.window.Hide=function(w)
-    assert(not combat or secure,"insecure Hide during combat")
-    originalHide(w)
-    local wrap=w.secureWrappers.OnHide; if wrap then run(wrap.header,wrap.source,w) end
+    local changed=w:IsShown(); oldHide(w)
+    if changed and w.scripts.OnHide then w.scripts.OnHide(w) end
 end
-for _,b in pairs(T.buttons) do T:PrepareCombatButton(b) end
-T:RefreshCombatBindings()
-assert(header.bindings.B,"reload in combat must install B without waiting for a combat transition")
-header.bindings={}
-T:RefreshCombatBindings()
-assert(header.bindings.B,"refresh must reapply an unchanged combat state after keys arrive")
-assert(header:GetAttribute("key-count")==3 and header:GetAttribute("slot-count")>0)
--- An ordinary child of a protected window still has an invalid restricted handle.
-local plain=CreateFrame("Frame",nil,T.window)
-header.refs.unprotected=plain
-combat=true
-assert(not pcall(function() header:GetFrameRef("unprotected"):Hide() end))
-combat=false
-header.refs.unprotected=nil
-for _,name in ipairs({"window","save","cancel","undo","bag-slots"}) do
-    assert((header.refs[name].template or ""):find("Secure"),name.." must be explicitly protected")
+assert(not (T.window.template or ""):find("Secure") and not T.combatController)
+local start,stop=0,0
+local oldStart,oldStop,oldCenter=T.window.StartMoving,T.window.StopMovingOrSizing,T.window.GetCenter
+T.window.StartMoving=function() start=start+1 end
+T.window.StopMovingOrSizing=function() stop=stop+1 end
+T.window.GetCenter=function() return 460,360 end
+local hidden=next(T.buttons)
+hidden=T.buttons[hidden]; hidden.combatReveal=true; hidden:Hide()
+T.window:Hide(); T:RequestWindow("toggle"); assert(T.window:IsShown() and hidden:IsShown())
+hidden.combatReveal=false
+T:RequestWindow("toggle"); assert(not T.window:IsShown())
+T:Toggle(); assert(T.window:IsShown())
+T.titleDrag.scripts.OnDragStart(); assert(start==1 and T.windowMoving)
+T.titleDrag.scripts.OnDragStop(); assert(stop==1 and not T.windowMoving)
+assert(type(T.profile.window.x)=="number" and type(T.profile.window.y)=="number")
+T.closeButton.scripts.OnClick(); assert(not T.window:IsShown())
+T:Toggle(); assert(T.window:IsShown())
+T:UpdateInteractionLayers()
+for _,button in pairs(T.buttons) do
+    assert(not button.interactionLayer.mouse and button.scripts.OnClick==button.nativeClick)
 end
-local button=T.buttons["0:1"]
-button:SetAttribute("combat-reveal",true)
-local originalItems=T.items
-T.items={originalItems[2],originalItems[3],originalItems[4]}; T:Reconcile(); T:Render()
-assert(not button:GetAttribute("combat-reveal") and not button:IsShown())
-T.items=originalItems; T:Reconcile(); T:Render()
-local originalAttribute=button.SetAttribute
-button.SetAttribute=function(b,name,value) assert(not combat or secure,"insecure attribute update"); originalAttribute(b,name,value) end
-button:SetAttribute("type2","")
-button:SetAttribute("combat-reveal",true); button:Hide()
-T.window:Hide(); combat=true; header:SetAttribute("state-combat","combat")
-run(header,header:GetAttribute("_onstate-combat"),nil,nil,"combat")
-assert(header.bindings.B and header.bindings["SHIFT-B"] and header.bindings["CTRL-B"] and not header.bindings.ESCAPE)
-assert(button:GetAttribute("type2")=="macro" and button:IsShown() and not T.bagSlots:IsShown())
-local useCalls=0
-local occupied=true
-local function combatClick()
-    local wrap=button.secureWrappers.PreClick
-    run(wrap.header,wrap.source,button,"RightButton")
-    local action=button:GetAttribute("type2")
-    if action=="item" then
-        assert(occupied,"C_Item.IsEquippableItem received nil after combat consumption")
-        useCalls=useCalls+1
-    elseif action=="macro" then
-        assert(button:GetAttribute("macrotext2")=="/use 0 1","combat use must target the clicked slot")
-        if occupied then useCalls=useCalls+1 end
-    end
-end
-combatClick(); assert(useCalls==1)
-occupied=false; combatClick(); assert(useCalls==1)
-occupied=true; combatClick(); assert(useCalls==2)
-local beforeScroll=T.panels.consumables.offset
-local originalScroll=T.panels.consumables.scroll.SetVerticalScroll
-T.panels.consumables.scroll.SetVerticalScroll=function() error("insecure scroll during combat") end
-T.panels.consumables.wheel(nil,-1)
-T.panels.consumables.bar.scripts.OnValueChanged(nil,100)
-assert(T.panels.consumables.offset==beforeScroll)
-T.panels.consumables.scroll.SetVerticalScroll=originalScroll
-run(header,header:GetAttribute("_onclick"),nil,header.bindings.B.button)
-assert(T.window:IsShown() and header.bindings.ESCAPE and header.bindings.ESCAPE.button=="Close")
-run(header,header:GetAttribute("_onclick"),nil,header.bindings.B.button)
-assert(not T.window:IsShown(),"OPENALLBAGS binding must toggle closed on the second press")
-run(header,header:GetAttribute("_onclick"),nil,header.bindings.B.button)
-assert(T.window:IsShown() and header.bindings.ESCAPE)
-T:Toggle(); assert(T.window:IsShown()) -- Slash commands never simulate secure clicks.
-local beforeLayout=T:Copy(T:GetLayout())
-T:Render(); assert(T.pendingRefresh and T.window:IsShown())
-for id,data in pairs(beforeLayout) do assert(T:GetLayout()[id].x==data.x and T:GetLayout()[id].width==data.width) end
-assert((T.closeButton.template or ""):find("SecureHandlerClickTemplate"),"X must own its secure click handler")
-assert(T.closeButton:GetAttribute("_onclick"),"X requires a direct secure close action")
-T.closeButton.GetFrameRef=function(_,name) assert(name=="window"); return frameHandle(T.window) end
-run(T.closeButton,T.closeButton:GetAttribute("_onclick"),T.closeButton,"LeftButton")
-assert(not T.window:IsShown() and not header.bindings.ESCAPE and header.bindings.B)
-run(header,header:GetAttribute("_onclick"),nil,"Open"); assert(T.window:IsShown())
-run(header,header:GetAttribute("_onclick"),nil,"Close"); assert(not T.window:IsShown())
-run(header,header:GetAttribute("_onstate-combat"),nil,nil,"peace"); assert(not next(header.bindings))
-combat=false
-button.SetAttribute=originalAttribute; T.window.Show,T.window.Hide=originalShow,originalHide
-SecureHandlerWrapScript,RegisterStateDriver,GetBindingKey,InCombatLockdown=oldWrap,oldDriver,oldKeys,oldCombat
-T.combatController=nil; T.combatButtonCount=nil; T.pendingRefresh=nil
--- Timing counters hold aggregates rather than one record per update.
-local oldTimer=debugprofilestop; local ticks=0
-DebugTime=function() ticks=ticks+2; return ticks end; debugprofilestop=DebugTime
-for n=1,1000 do local started=T:BeginRefreshMeasurement(); T:FinishRefreshMeasurement(started) end
-assert(T.refreshMetrics.count==1000 and T.refreshMetrics.maximum==2 and T.refreshMetrics.total==2000)
-T:ResetPerformanceMeasurements(); assert(not T.refreshMetrics)
-debugprofilestop=oldTimer
-print("Combat setup OK: protected window/close wrappers, prepared physical slots, combat-only binding overrides, secure open/toggle/close, scoped Escape binding, native exact-slot /use action, collapsed-stack reveal, no insecure show/attribute writes, frozen geometry, return-to-peace cleanup and constant-size refresh metrics; actual taint requires Retail")
+local layout=T:Copy(T:GetLayout())
+T:Render(); assert(T.pendingRefresh)
+for id,data in pairs(layout) do assert(T:GetLayout()[id].x==data.x and T:GetLayout()[id].width==data.width) end
+combat=false; T:UpdateInteractionLayers()
+for _,button in pairs(T.buttons) do assert(button.interactionLayer.mouse) end
+local oldItems,oldEmpty=T.items,T.emptySlots
+T.items={}; T.emptySlots={}; hidden.combatReveal=true
+T:Reconcile(); T:Render()
+assert(not hidden:IsShown() and hidden.combatReveal==false, "retired slots must not reappear in combat")
+T.items,T.emptySlots=oldItems,oldEmpty
+T:Reconcile(); T:Render()
+T.window.StartMoving,T.window.StopMovingOrSizing,T.window.GetCenter=oldStart,oldStop,oldCenter
+T.window.Show,T.window.Hide,T.window.SetShown=oldShow,oldHide,oldShown
+InCombatLockdown,C_Timer.After=oldCombat,oldTimer
+T.pendingRefresh=nil
+print("Combat window OK: ordinary templates, repeated native bag toggles, slash toggle, drag/save, X, native item routes and frozen category geometry")
