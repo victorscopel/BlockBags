@@ -2,7 +2,7 @@
 
 ## 1.0.0
 
-- First release for World of Warcraft Retail 12.1.5.
+- First stable release for World of Warcraft Retail 12.1.5.
 - Automatic categories, individual-stack assignments, persistent panel layouts, resizing and magnetic alignment.
 - Per-category appearance, sorting, visual rules, favorites with reserved slots, profile import/export and optional virtual stack grouping.
 - Separate character and Warband bank categories, profiles and management controls.

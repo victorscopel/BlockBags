@@ -187,6 +187,7 @@ Do not require full WTF folders to reproduce issues.
 - [ ] Verify bank transfers, refunds and deposits retain their normal behavior; merchant selling and modified native clicks work.
 - [ ] Check scroll wheel over item icons, empty slots and virtual groups; edit/save/cancel restores receivers.
 
-The 0.9.8 combat-reload behavior was confirmed by the user. The native-window
-implementation introduces new item and movement paths that require this in-game
-checklist; automated mocks do not prove native protected-action behavior.
+The user confirmed the 0.9.8 combat-reload behavior and tested the 1.0.0 native
+backpack, reporting that window movement works and the addon behaves correctly.
+The individual scenarios above remain available for detailed regression checks;
+automated mocks do not prove native protected-action behavior.
