@@ -68,7 +68,7 @@ function A:RefreshCombatBindings()
     control:SetAttribute("integrated",self.integrationInstalled==true and not self.integrationBlocked)
     local count,seen=0,{}
     if GetBindingKey then
-        for _,entry in ipairs({{"TOGGLEBACKPACK","LeftButton"},{"TOGGLEBAGS","LeftButton"},{"OPENALLBAGS","Open"},
+        for _,entry in ipairs({{"TOGGLEBACKPACK","LeftButton"},{"TOGGLEBAGS","LeftButton"},{"OPENALLBAGS","LeftButton"},
             {"CLOSEALLBAGS","Close"},{"TOGGLEBAG1","LeftButton"},{"TOGGLEBAG2","LeftButton"},
             {"TOGGLEBAG3","LeftButton"},{"TOGGLEBAG4","LeftButton"},{"TOGGLEBAG5","LeftButton"},{"TOGGLEREAGENTBAG","LeftButton"},{"BLOCKBAGS_TOGGLE","LeftButton"},{"ANCHORBAGS_TOGGLE","LeftButton"}}) do
             for _,key in ipairs({GetBindingKey(entry[1])}) do

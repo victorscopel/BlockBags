@@ -158,3 +158,9 @@ Do not require full WTF folders to reproduce issues.
 - [ ] Open and close the backpack with X, Escape and bag keys during combat.
 - [ ] Use consumables during combat, including consuming the final stack item.
 - [ ] Confirm protected window dragging remains blocked during combat and works afterward.
+
+## Combat key toggle (0.9.6)
+
+- [ ] Bind B to Open All Bags, enter combat and press it repeatedly. Each press must alternate the backpack open/closed.
+- [ ] Repeat with the backpack open before combat, then check X and Escape.
+- [ ] Check the Toggle Backpack binding separately; leaving combat restores normal behavior.

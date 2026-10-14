@@ -12,7 +12,7 @@ SecureHandlerWrapScript=function(frame,script,header,source)
 end
 RegisterStateDriver=function(frame,state,condition) assert(state=="combat" and condition=="[combat] combat; peace"); frame.driver=condition end
 GetBindingKey=function(command)
-    if command=="TOGGLEBAGS" then return "B","SHIFT-B" end
+    if command=="OPENALLBAGS" then return "B","SHIFT-B" end
     if command=="BLOCKBAGS_TOGGLE" then return "CTRL-B" end
 end
 T:BuildCombatControls(); T.integrationInstalled=true; T:RefreshCombatBindings()
@@ -96,8 +96,12 @@ T.panels.consumables.wheel(nil,-1)
 T.panels.consumables.bar.scripts.OnValueChanged(nil,100)
 assert(T.panels.consumables.offset==beforeScroll)
 T.panels.consumables.scroll.SetVerticalScroll=originalScroll
-run(header,header:GetAttribute("_onclick"),nil,"LeftButton")
+run(header,header:GetAttribute("_onclick"),nil,header.bindings.B.button)
 assert(T.window:IsShown() and header.bindings.ESCAPE and header.bindings.ESCAPE.button=="Close")
+run(header,header:GetAttribute("_onclick"),nil,header.bindings.B.button)
+assert(not T.window:IsShown(),"OPENALLBAGS binding must toggle closed on the second press")
+run(header,header:GetAttribute("_onclick"),nil,header.bindings.B.button)
+assert(T.window:IsShown() and header.bindings.ESCAPE)
 T:Toggle(); assert(T.window:IsShown()) -- Slash commands never simulate secure clicks.
 local beforeLayout=T:Copy(T:GetLayout())
 T:Render(); assert(T.pendingRefresh and T.window:IsShown())

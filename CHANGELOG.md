@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.9.6 — preview
+
+- Fix the Open All Bags keybinding in combat: it now toggles the backpack open and closed, matching the native ToggleAllBags action.
+- Test consecutive presses through the prepared binding, including Escape registration and cleanup.
+
 ## 0.9.5 — preview
 
 - Update the Retail interface version to 12.1.5.
