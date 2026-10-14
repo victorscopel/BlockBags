@@ -1,7 +1,7 @@
 local _, A = ...
 BlockBags = A
 AnchorBags = A -- Compatibility for existing bindings/scripts.
-A.version = "0.9.7"
+A.version = "0.9.8"
 A.cell, A.padding, A.header, A.scrollGutter = 40, 8, 36, 0
 A.categories = {
     { id = "equipment", name = A.L["Equipamentos"], x = 0, y = 0, cols = 8, rows = 4 },
@@ -159,8 +159,10 @@ events:SetScript("OnEvent", function(_, event, arg, success)
             "PLAYER_EQUIPMENT_CHANGED", "EQUIPMENT_SETS_CHANGED", "TRANSMOG_COLLECTION_UPDATED", "CURRENCY_DISPLAY_UPDATE",
             "BANKFRAME_OPENED", "BANKFRAME_CLOSED", "BAG_UPDATE", "PLAYERBANKSLOTS_CHANGED", "PLAYER_ACCOUNT_BANK_TAB_SLOTS_CHANGED",
             "BANK_TABS_CHANGED", "BANK_TAB_SETTINGS_UPDATED", "UPDATE_BINDINGS", "PLAYER_LOGOUT" }) do events:RegisterEvent(name) end
+        A:PrepareStartupInventory()
         A:QueueRefresh()
     elseif event == "PLAYER_LOGIN" then
+        A:PrepareStartupInventory()
         A:InstallIntegration()
         A:RefreshCombatBindings(); A:PruneOfflineCache()
         A:QueueRefresh()

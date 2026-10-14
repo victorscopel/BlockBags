@@ -10,12 +10,19 @@ end
 SecureHandlerWrapScript=function(frame,script,header,source)
     frame.secureWrappers=rawget(frame,"secureWrappers") or {}; frame.secureWrappers[script]={header=header,source=source}
 end
-RegisterStateDriver=function(frame,state,condition) assert(state=="combat" and condition=="[combat] combat; peace"); frame.driver=condition end
+RegisterStateDriver=function(frame,state,condition)
+    assert(state=="combat" and condition=="[combat] combat; peace")
+    assert((frame:GetAttribute("key-count") or 0)>0,"state driver started before binding preparation")
+    assert((frame:GetAttribute("slot-count") or 0)>0,"state driver started before slot preparation")
+    frame.driver=condition
+    frame:SetAttribute("state-combat","combat")
+    run(frame,frame:GetAttribute("_onstate-combat"),nil,nil,"combat")
+end
 GetBindingKey=function(command)
     if command=="OPENALLBAGS" then return "B","SHIFT-B" end
     if command=="BLOCKBAGS_TOGGLE" then return "CTRL-B" end
 end
-T:BuildCombatControls(); T.integrationInstalled=true; T:RefreshCombatBindings()
+T:BuildCombatControls(); T.integrationInstalled=true
 T:BuildBagSlots()
 local header=T.combatController
 header.GetName=function() return "BlockBagsSecureToggle" end
@@ -35,6 +42,7 @@ header.bindings={}
 header.SetBindingClick=function(_,priority,key,name,button) assert(secure); header.bindings[key]={name=name,button=button} end
 header.ClearBindings=function() assert(secure); header.bindings={} end
 header.ClearBinding=function(_,key) assert(secure); header.bindings[key]=nil end
+header.Execute=function(frame,source) assert(not combat,"secure configuration is forbidden after lockdown"); run(frame,source) end
 local originalShow,originalHide=T.window.Show,T.window.Hide
 T.window.Show=function(w)
     assert(not combat or secure,"insecure Show during combat")
@@ -47,6 +55,11 @@ T.window.Hide=function(w)
     local wrap=w.secureWrappers.OnHide; if wrap then run(wrap.header,wrap.source,w) end
 end
 for _,b in pairs(T.buttons) do T:PrepareCombatButton(b) end
+T:RefreshCombatBindings()
+assert(header.bindings.B,"reload in combat must install B without waiting for a combat transition")
+header.bindings={}
+T:RefreshCombatBindings()
+assert(header.bindings.B,"refresh must reapply an unchanged combat state after keys arrive")
 assert(header:GetAttribute("key-count")==3 and header:GetAttribute("slot-count")>0)
 -- An ordinary child of a protected window still has an invalid restricted handle.
 local plain=CreateFrame("Frame",nil,T.window)

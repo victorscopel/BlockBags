@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.8 — preview
+
+- Prepare backpack slots and keybindings synchronously during loading before combat lockdown, rather than relying on a delayed first refresh.
+- Register the combat state driver after binding preparation and reapply an already-active combat state when bindings change during safe loading.
+- Test a driver that starts directly in combat without a combat-exit transition. Preserve deferred initialization if lockdown has already begun.
+
 ## 0.9.7 — preview
 
 - Resume deferred bag integration and key preparation after leaving combat when login or /reload occurred during combat.

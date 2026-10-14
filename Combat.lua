@@ -38,7 +38,6 @@ function A:BuildCombatControls()
     control:SetAttribute("_onclick",toggleSnippet)
     control:SetAttribute("_onstate-combat",stateSnippet)
     control:SetAttribute("key-count",0); control:SetAttribute("slot-count",0)
-    RegisterStateDriver(control,"combat","[combat] combat; peace")
     self.closeButton:RegisterForClicks("LeftButtonUp")
     self.closeButton:SetFrameRef("window",self.window)
     self.closeButton:SetAttribute("_onclick",[[self:GetFrameRef("window"):Hide()]])
@@ -80,6 +79,13 @@ function A:RefreshCombatBindings()
         end
     end
     control:SetAttribute("key-count",count)
+    if not self.combatDriverRegistered then
+        RegisterStateDriver(control,"combat","[combat] combat; peace")
+        self.combatDriverRegistered=true
+    elseif control:GetAttribute("state-combat")=="combat" then
+        -- During reload, the driver may already be in combat before keys arrive.
+        control:Execute("local newstate=self:GetAttribute('state-combat')\n"..stateSnippet)
+    end
     local native=MainMenuBarBackpackButton
     if native and self.integrationInstalled and not self.integrationBlocked and not self.combatBackpackProxy then
         local proxy=CreateFrame("Button","BlockBagsSecureBackpack",native,"SecureHandlerClickTemplate")
@@ -93,6 +99,17 @@ function A:RefreshCombatBindings()
         end)
         proxy:SetScript("OnLeave",function() GameTooltip:Hide() end)
     end
+end
+
+function A:PrepareStartupInventory()
+    if not self.ready or self.isBankWindow or InCombatLockdown() then return false end
+    -- Build slots synchronously while the loading phase still permits setup.
+    self:ScanInventory()
+    self:Reconcile()
+    self.renderPreparing=true
+    self:Render()
+    self.renderPreparing=nil
+    return true
 end
 
 function A:PaintCombatInventory()

@@ -19,3 +19,21 @@ T:InstallIntegration()
 assert(bindings==1 and visibility==1 and createdFrames==frames,"resume must be idempotent")
 InCombatLockdown,C_AddOns=oldCombat,oldAddons
 print("Combat reload OK: integration deferred without protected setup, honest toggle guidance, safe completion and repeated resume without allocation")
+
+local oldCombat=InCombatLockdown
+local blocked=false
+InCombatLockdown=function() return blocked end
+local order={}
+local S=setmetatable({ready=true},{__index=A})
+S.ScanInventory=function() order[#order+1]="scan" end
+S.Reconcile=function() order[#order+1]="reconcile" end
+S.Render=function(self) assert(self.renderPreparing); order[#order+1]="render" end
+S.InstallIntegration=function() order[#order+1]="integration" end
+S.RefreshCombatBindings=function() order[#order+1]="bindings" end
+assert(S:PrepareStartupInventory())
+assert(table.concat(order,",")=="scan,reconcile,render","early loading must not install integration before competing addons load")
+assert(not S.renderPreparing)
+blocked=true
+assert(not S:PrepareStartupInventory() and #order==3,"late lockdown must never force startup writes")
+InCombatLockdown=oldCombat
+print("Startup preparation OK: slots render before integration/bindings, late lockdown is deferred")

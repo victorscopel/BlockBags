@@ -170,3 +170,10 @@ Do not require full WTF folders to reproduce issues.
 - [ ] Reload while already in combat. Confirm integration stays deferred and /bb asks to wait if controls are not ready.
 - [ ] Leave combat, then open and close BlockBags with B without another reload.
 - [ ] Enter combat again; B, X and Escape must work with the now-prepared backpack.
+
+## Initial combat state (0.9.8)
+
+- [ ] Reload while fighting a persistent enemy. Before killing it or leaving combat, press B twice and verify open/close.
+- [ ] Verify items are visible and consumables usable after the combat reload; check X and Escape.
+- [ ] Repeat with standard Toggle Backpack and Open All Bags bindings, and with virtual stack grouping.
+- [ ] Verify normal login and opening the bank remain unchanged.
