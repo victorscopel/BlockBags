@@ -109,8 +109,12 @@ local mt = { __index = function(_, key) return methods[key] or function() end en
 createdFrames=0
 function CreateFrame(kind, name, parent, template)
     createdFrames=createdFrames+1
-    return setmetatable({ kind=kind, name=name, parent=parent, template=template, shown=true, text="", value=0,
+    local frame=setmetatable({ kind=kind, name=name, parent=parent, template=template, shown=true, text="", value=0,
         minimum=0, maximum=0, scripts={}, children={}, Low=false, High=false, Text=false, IconQuestTexture=false }, mt)
+    if template and template:find("UIPanelCloseButton") then
+        frame.scripts.OnClick=function() parent:Hide() end
+    end
+    return frame
 end
 UIParent = CreateFrame("Frame")
 GameTooltip = CreateFrame("GameTooltip")

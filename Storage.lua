@@ -140,7 +140,7 @@ function A:PurchaseBankTab(bankType)
         if dialog and dialog.text and data.purchasePromptConfirmation then dialog.text:SetText(data.purchasePromptConfirmation) end
         return
     end
-    local ok,costText=pcall(GetCoinTextureString,data.tabCost)
+    local ok,costText=pcall(self.FormatMoney,self,data.tabCost)
     if not ok or type(costText)~="string" then self:Print(A.L["Não foi possível obter o preço desta aba."]); return end
     StaticPopupDialogs.BLOCKBAGS_PURCHASE_BANK_TAB=StaticPopupDialogs.BLOCKBAGS_PURCHASE_BANK_TAB or {
         text="%s",button1=ACCEPT or A.L["Comprar"],button2=CANCEL,timeout=0,whileDead=true,hideOnEscape=true,
@@ -148,7 +148,7 @@ function A:PurchaseBankTab(bankType)
             if not (info.owner or A).atBank or InCombatLockdown() or not C_Bank.CanPurchaseBankTab(info.bankType) then return end
             local current=C_Bank.FetchNextPurchasableBankTabData(info.bankType)
             if not current or not current.canAfford then return end
-            local ok,cost=pcall(GetCoinTextureString,current.tabCost)
+            local ok,cost=pcall((info.owner or A).FormatMoney,info.owner or A,current.tabCost)
             if not ok or cost~=info.costText then (info.owner or A):PurchaseBankTab(info.bankType); return end
             C_Bank.PurchaseBankTab(info.bankType)
         end}

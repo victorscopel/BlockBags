@@ -112,14 +112,17 @@ assert(not A:GetStackCategories()["guid:potion-split"])
 print("Stacks OK: per-GUID moves preserve other stacks and favorite; native split slot persists with compact mode; manual sort releases position; consumed assignments pruned; storage isolation")
 
 local nativeCoins=GetCoinTextureString
-GetCoinTextureString=function(amount)
+local nativeCurrency=C_CurrencyInfo
+GetCoinTextureString=nil
+C_CurrencyInfo={GetCoinTextureString=function(amount)
     return math.floor(amount/10000).."|Tgold|t "..(math.floor(amount/100)%100).."|Tsilver|t "..(amount%100).."|Tcopper|t"
-end
+end}
 assert(A:FormatMoney(4045798402)=="404.579|Tgold|t 84|Tsilver|t 2|Tcopper|t")
 assert(A:FormatMoney(10000000000)=="1.000.000|Tgold|t 0|Tsilver|t 0|Tcopper|t")
 assert(A:FormatMoney(9999901)=="999|Tgold|t 99|Tsilver|t 1|Tcopper|t")
 assert(A:FormatMoney(0)=="0|Tgold|t 0|Tsilver|t 0|Tcopper|t")
 GetCoinTextureString=nativeCoins
+C_CurrencyInfo=nativeCurrency
 
 A.profile.settings.currencies={301,2}
 C_CurrencyInfo={

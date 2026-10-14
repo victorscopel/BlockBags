@@ -107,13 +107,13 @@ function A:BuildUI()
         -- Store offsets in the window's own coordinate space.
         self.profile.window.x, self.profile.window.y = self.profile.window.x / scale, self.profile.window.y / scale
     end)
-    local close = CreateFrame("Button", nil, w, self.isBankWindow and "UIPanelCloseButton" or "UIPanelCloseButton,SecureHandlerBaseTemplate")
+    local close = CreateFrame("Button", nil, w, self.isBankWindow and "UIPanelCloseButton" or "UIPanelCloseButton,SecureHandlerClickTemplate")
     self.closeButton=close
     close:SetFrameStrata("HIGH")
     close:SetFrameLevel(w:GetFrameLevel()+150)
     close:SetSize(24,24)
     close:SetPoint("TOPRIGHT", -4, -2)
-    close:SetScript("OnClick",function() if not InCombatLockdown() then w:Hide() end end)
+    if self.isBankWindow then close:SetScript("OnClick",function() if not InCombatLockdown() then w:Hide() end end) end
     close:Show()
 
     self.search = CreateFrame("EditBox", nil, w, "InputBoxTemplate")

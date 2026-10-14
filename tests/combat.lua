@@ -102,7 +102,10 @@ T:Toggle(); assert(T.window:IsShown()) -- Slash commands never simulate secure c
 local beforeLayout=T:Copy(T:GetLayout())
 T:Render(); assert(T.pendingRefresh and T.window:IsShown())
 for id,data in pairs(beforeLayout) do assert(T:GetLayout()[id].x==data.x and T:GetLayout()[id].width==data.width) end
-local wrap=T.closeButton.secureWrappers.OnClick; run(wrap.header,wrap.source,T.closeButton,"LeftButton")
+assert((T.closeButton.template or ""):find("SecureHandlerClickTemplate"),"X must own its secure click handler")
+assert(T.closeButton:GetAttribute("_onclick"),"X requires a direct secure close action")
+T.closeButton.GetFrameRef=function(_,name) assert(name=="window"); return frameHandle(T.window) end
+run(T.closeButton,T.closeButton:GetAttribute("_onclick"),T.closeButton,"LeftButton")
 assert(not T.window:IsShown() and not header.bindings.ESCAPE and header.bindings.B)
 run(header,header:GetAttribute("_onclick"),nil,"Open"); assert(T.window:IsShown())
 run(header,header:GetAttribute("_onclick"),nil,"Close"); assert(not T.window:IsShown())

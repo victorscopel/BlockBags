@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.5 — preview
+
+- Update the Retail interface version to 12.1.5.
+- Use C_CurrencyInfo.GetCoinTextureString for backpack, Warband and offline balances, retaining gold separators and bank-tab cost confirmations.
+- Give the backpack close button its own secure click handler for closing in combat.
+- Keep protected window movement locked in combat; dragging and layout editing remain available outside combat.
+
 ## 0.9.4 — preview
 
 - Recover temporarily failed item metadata on later refreshes, with at most three requests per item while present and separate backpack/bank counters.

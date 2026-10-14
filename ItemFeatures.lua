@@ -1,7 +1,8 @@
 local _, A = ...
 
 function A:FormatMoney(amount)
-    local value=GetCoinTextureString(amount)
+    local formatter=C_CurrencyInfo and C_CurrencyInfo.GetCoinTextureString or GetCoinTextureString
+    local value=formatter(amount)
     local gold=math.floor(amount/10000)
     if gold<1000 then return value end
     return (value:gsub("^(%d+)",function(number)

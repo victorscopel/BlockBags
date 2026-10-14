@@ -151,3 +151,10 @@ Do not require full WTF folders to reproduce issues.
 - [ ] Consume the last item in a stack during combat and right-click the same slot again. Confirm no Lua errors or use of another stack in a different slot.
 - [ ] Loot an item into a prepared empty slot during combat and use it from that slot.
 - [ ] Check equipping items outside combat, consumables in combat, Alt-right-click, Shift-right-click, merchant selling and bank transfers.
+
+## Retail 12.1.5 compatibility (0.9.5)
+
+- [ ] Check backpack, Warband and offline money displays and bank-tab purchase costs.
+- [ ] Open and close the backpack with X, Escape and bag keys during combat.
+- [ ] Use consumables during combat, including consuming the final stack item.
+- [ ] Confirm protected window dragging remains blocked during combat and works afterward.

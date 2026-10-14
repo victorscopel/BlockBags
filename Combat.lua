@@ -39,7 +39,9 @@ function A:BuildCombatControls()
     control:SetAttribute("_onstate-combat",stateSnippet)
     control:SetAttribute("key-count",0); control:SetAttribute("slot-count",0)
     RegisterStateDriver(control,"combat","[combat] combat; peace")
-    SecureHandlerWrapScript(self.closeButton,"OnClick",control,[[control:GetFrameRef("window"):Hide(); return false]])
+    self.closeButton:RegisterForClicks("LeftButtonUp")
+    self.closeButton:SetFrameRef("window",self.window)
+    self.closeButton:SetAttribute("_onclick",[[self:GetFrameRef("window"):Hide()]])
     SecureHandlerWrapScript(self.window,"OnShow",control,[[
         if control:GetAttribute("state-combat")=="combat" and control:GetAttribute("integrated") then
             control:SetBindingClick(true,"ESCAPE",control:GetName(),"Close")
