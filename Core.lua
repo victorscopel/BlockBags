@@ -1,7 +1,7 @@
 local _, A = ...
 BlockBags = A
 AnchorBags = A -- Compatibility for existing bindings/scripts.
-A.version = "0.9.6"
+A.version = "0.9.7"
 A.cell, A.padding, A.header, A.scrollGutter = 40, 8, 36, 0
 A.categories = {
     { id = "equipment", name = A.L["Equipamentos"], x = 0, y = 0, cols = 8, rows = 4 },
@@ -170,6 +170,7 @@ events:SetScript("OnEvent", function(_, event, arg, success)
         if A.draft then A:FinishEdit(false) end
         A:PaintCombatInventory()
     elseif event == "PLAYER_REGEN_ENABLED" then
+        if A.integrationPending then A:InstallIntegration() end
         A.forceItemPaint=true
         A:ApplyBlizzardBagBarVisibility()
         A.combatOverlay:Hide()

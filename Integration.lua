@@ -3,7 +3,7 @@ local _, A = ...
 function A:Toggle()
     if not self.ready then return end
     if InCombatLockdown() then
-        self:Print(A.L["Em combate, use sua tecla de mochila para abrir ou fechar."])
+        self:Print(A.L[(not self.integrationInstalled or self.integrationPending) and "Aguarde o fim do combate." or "Em combate, use sua tecla de mochila para abrir ou fechar."])
         return
     end
     self.window:SetShown(not self.window:IsShown())
@@ -32,6 +32,7 @@ end
 
 function A:InstallIntegration()
     if self.integrationInstalled then return end
+    self.integrationPending=nil
     -- Skip integration when another bag replacement is active.
     for _, name in ipairs({ "BetterBags", "MyBags", "ArkInventory", "Baganator", "Bagnon" }) do
         if C_AddOns.IsAddOnLoaded(name) then
@@ -46,7 +47,7 @@ function A:InstallIntegration()
         self:Print(A.L["O módulo de bolsas do ElvUI está ativo. Desative-o e dê /reload. O BlockBags continua acessível por /bb."])
         return
     end
-    if InCombatLockdown() then return end
+    if InCombatLockdown() then self.integrationPending=true; return end
     self.integrationInstalled=true
     self:RefreshCombatBindings()
     self:ApplyBlizzardBagBarVisibility()

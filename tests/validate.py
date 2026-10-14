@@ -1228,3 +1228,5 @@ lua.execute((root / "tests" / "input_layers.lua").read_text(encoding="utf-8"))
 lua.execute((root / "tests" / "offline.lua").read_text(encoding="utf-8"))
 lua.execute((root / "tests" / "secure_item_use.lua").read_text(encoding="utf-8"))
 lua.execute((root / "tests" / "combat.lua").read_text(encoding="utf-8"))
+
+lua.execute((root / "tests" / "reload_combat.lua").read_text(encoding="utf-8"))

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.7 — preview
+
+- Resume deferred bag integration and key preparation after leaving combat when login or /reload occurred during combat.
+- Ask players to wait for combat to end when secure bag controls have not been initialized yet.
+- Keep native bags untouched until integration can be installed safely; initial combat setup is still deferred.
+
 ## 0.9.6 — preview
 
 - Fix the Open All Bags keybinding in combat: it now toggles the backpack open and closed, matching the native ToggleAllBags action.

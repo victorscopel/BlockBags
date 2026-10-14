@@ -164,3 +164,9 @@ Do not require full WTF folders to reproduce issues.
 - [ ] Bind B to Open All Bags, enter combat and press it repeatedly. Each press must alternate the backpack open/closed.
 - [ ] Repeat with the backpack open before combat, then check X and Escape.
 - [ ] Check the Toggle Backpack binding separately; leaving combat restores normal behavior.
+
+## Reload during combat (0.9.7)
+
+- [ ] Reload while already in combat. Confirm integration stays deferred and /bb asks to wait if controls are not ready.
+- [ ] Leave combat, then open and close BlockBags with B without another reload.
+- [ ] Enter combat again; B, X and Escape must work with the now-prepared backpack.
